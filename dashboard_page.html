@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honorian AskBot Dashboard - DHVSU</title>
+    <style>
+        :root {
+            --dhvsu-maroon: #800000;
+            --dhvsu-gold: #FFD700;
+            --light-maroon: #A52A2A;
+            --gray: #f2f2f2;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+    header {
+        background-color: var(--dhvsu-maroon);
+        color: white;
+        padding: 1rem 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+    
+    .logo-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+    
+    .logo {
+        width: 50px;
+        height: 50px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        box-shadow: 0 0 5px rgba(255,255,255,0.3);
+    }
+    
+    .logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .university-info {
+        display: flex;
+        flex-direction: column;
+        }
+    
+    .university-name {
+        font-size: 1.3rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        }
+    
+    .tagline {
+        font-size: 0.85rem;
+        color: var(--dhvsu-gold);
+        font-style: italic;
+        }
+    
+    .user-menu {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding-left: 15px;
+        border-left: 1px solid rgba(255,215,0,0.3);
+        }
+    
+    .user-info {
+        text-align: right;
+        }
+    
+    .username {
+        font-weight: bold;
+        font-size: 1.1rem;
+        }
+    
+    .user-role {
+        font-size: 0.8rem;
+        color: var(--dhvsu-gold);
+        }
+    
+    .logout-btn {
+        background-color: white;
+        color: var(--dhvsu-maroon);
+        border: none;
+        border-radius: 5px;
+        padding: 8px 16px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        }
+    
+    .logout-btn:hover {
+        background-color: var(--dhvsu-gold);
+        color: var(--dhvsu-maroon);
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+    
+
+        @media (max-width: 768px) {
+        header {
+            padding: 1rem;
+        }
+        
+        .university-name {
+            font-size: 1.1rem;
+        }
+        
+        .logo {
+            width: 45px;
+            height: 45px;
+        }
+        }
+    
+        @media (max-width: 576px) {
+        .logo {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .university-name {
+            font-size: 0.9rem;
+        }
+        
+        .tagline {
+            font-size: 0.7rem;
+        }
+        
+        .user-menu {
+            gap: 10px;
+            padding-left: 10px;
+        }
+        
+        .username {
+            font-size: 0.9rem;
+        }
+        
+        .logout-btn {
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+        }
+        
+        .logout-btn:hover {
+            background-color: #f0f0f0;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .chatbot-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background-color: var(--dhvsu-maroon);
+            color: white;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .chat-header-left {
+            display: flex;
+            align-items: center;
+        }
+        
+        .chat-header h2 {
+            margin-left: 10px;
+        }
+        
+        .connection-status {
+            font-size: 0.8rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .connection-status.offline {
+            background-color: #f44336;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+            max-height: 60vh;
+        }
+        
+        .message {
+            margin-bottom: 1rem;
+            max-width: 80%;
+            padding: 12px 15px;
+            border-radius: 15px;
+            position: relative;
+            white-space: pre-line;
+        }
+        
+        .bot-message {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+            color: #333;
+            border-top-left-radius: 0;
+        }
+        
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--dhvsu-maroon);
+            color: white;
+            border-top-right-radius: 0;
+        }
+        
+        .message-time {
+            font-size: 0.7rem;
+            opacity: 0.7;
+            margin-top: 5px;
+            text-align: right;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 0 auto;
+            max-width: 90%;
+        }
+        
+        .welcome-message h3 {
+            color: var(--dhvsu-maroon);
+            margin-bottom: 10px;
+        }
+        
+        .welcome-message p {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .chat-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .example-query {
+            background-color: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: center;
+            transition: background-color 0.3s;
+        }
+        
+        .example-query:hover {
+            background-color: #dee2e6;
+        }
+        
+        .chat-input {
+            display: flex;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .chat-input input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 30px;
+            font-size: 1rem;
+            margin-right: 10px;
+        }
+        
+        .chat-input input:focus {
+            outline: none;
+            border-color: var(--light-maroon);
+            box-shadow: 0 0 5px rgba(165, 42, 42, 0.3);
+        }
+        
+        .send-btn {
+            background-color: var(--dhvsu-maroon);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .send-btn:hover {
+            background-color: var(--light-maroon);
+        }
+        
+        .send-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .send-icon {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+        
+        footer {
+            background-color: var(--dhvsu-maroon);
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.8rem;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 10px 20px;
+            background-color: #f0f0f0;
+            border-radius: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .typing-animation {
+            display: flex;
+        }
+        
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #777;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+        
+        .dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+        
+        .list-item {
+            margin-left: 20px;
+            margin-bottom: 5px;
+        }
+        
+        .feedback-buttons {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 5px;
+            gap: 8px;
+        }
+        
+        .feedback-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #777;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            padding: 2px 5px;
+            border-radius: 3px;
+        }
+        
+        .feedback-btn:hover {
+            background-color: #eaeaea;
+        }
+        
+        .feedback-btn svg {
+            margin-right: 3px;
+            width: 14px;
+            height: 14px;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .university-name {
+                font-size: 1rem;
+            }
+            
+            main {
+                padding: 1rem;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .logo {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            
+            .university-name {
+                font-size: 0.9rem;
+            }
+            
+            .user-info {
+                margin-right: 10px;
+            }
+            
+            .logout-btn {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+            
+            .chat-examples {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo-container">
+            <div class="logo">
+                <img src="Don_Honorio_Ventura_State_University_logo.png" alt="DHVSU Logo">
+            </div>
+            <div class="university-info">
+                <div class="university-name">Don Honorio Ventura State University</div>
+                <div class="tagline">Honorian AskBot - Your DHVSU Interactive Assistant</div>
+            </div>
+        </div>
+
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="username" id="display-username">Username</div>
+                <div class="user-role" id="user-role">Student</div>
+            </div>
+            <button class="logout-btn" id="logout-btn">Logout</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="chatbot-container">
+            <div class="chat-header">
+                <div class="chat-header-left">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="2" y1="12" x2="22" y2="12"></line>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                    </svg>
+                    <h2>Honorian AskBot</h2>
+                </div>
+                <span class="connection-status" id="connection-status">Online</span>
+            </div>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="welcome-message">
+                    <h3>Welcome to Honorian AskBot! 👋</h3>
+                    <p>I'm here to help you with information about DHVSU. You can ask me about enrollment procedures, classroom locations, and other academic concerns.</p>
+                    <div class="chat-examples">
+                        <div class="example-query">Where is the Admissions Office?</div>
+                        <div class="example-query">How do I enroll as a freshman?</div>
+                        <div class="example-query">What documents do I need for enrollment?</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="typing-indicator" id="typing-indicator">
+                <div class="typing-animation">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </div>
+
+            <div class="chat-input">
+                <input type="text" id="user-input" placeholder="Type your question here..." autocomplete="off">
+                <button class="send-btn" id="send-btn">
+                    <svg class="send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        &copy; 2025 Don Honorio Ventura State University. All Rights Reserved.
+    </footer>
+
+    <script>
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
+        
+        // Set to 'true' to enable offline mode for testing without Apps Script
+        const OFFLINE_MODE = false;
+        // *******************************************
+        
+        // User authentication check
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            
+            if (!currentUser) {
+                // Redirect to login page if not logged in
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Display username
+            document.getElementById('display-username').textContent = currentUser.username;
+            
+            // Set user role based on username (admin or student)
+            if (currentUser.username === 'admin') {
+                document.getElementById('user-role').textContent = 'Administrator';
+            } else {
+                document.getElementById('user-role').textContent = 'Student';
+            }
+            
+            // Set connection status
+            checkConnection();
+            
+            // Focus on input field
+            document.getElementById('user-input').focus();
+        });
+        
+        // Connection checker
+        function checkConnection() {
+            const connectionStatus = document.getElementById('connection-status');
+            
+            if (OFFLINE_MODE) {
+                connectionStatus.textContent = 'Offline';
+                connectionStatus.classList.add('offline');
+                return;
+            }
+            
+            // Test connection to Apps Script
+            fetch(APPS_SCRIPT_URL, { method: 'HEAD', mode: 'no-cors' })
+                .then(() => {
+                    connectionStatus.textContent = 'Online';
+                    connectionStatus.classList.remove('offline');
+                })
+                .catch(() => {
+                    connectionStatus.textContent = 'Offline';
+                    connectionStatus.classList.add('offline');
+                    console.warn('Unable to connect to backend. Using fallback mode.');
+                });
+        }
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            // Clear session data
+            sessionStorage.removeItem('currentUser');
+            // Redirect to login page
+            window.location.href = 'index.html';
+        });
+        
+        // Chat functionality
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const typingIndicator = document.getElementById('typing-indicator');
+        
+        // Format text with bullet points
+        function formatText(text) {
+            // Check if text contains number lists (like "1. ", "2. ", etc.)
+            if (/\d+\.\s/.test(text)) {
+                // Split by line breaks
+                const lines = text.split('\n');
+                let formatted = '';
+                
+                // Process each line
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    // Check if line starts with a number followed by period
+                    if (/^\d+\.\s/.test(line)) {
+                        formatted += `<div class="list-item">• ${line.replace(/^\d+\.\s/, '')}</div>`;
+                    } else {
+                        formatted += `${line}\n`;
+                    }
+                }
+                return formatted;
+            }
+            return text;
+        }
+        
+        // Get formatted time
+        function getTime() {
+            const now = new Date();
+            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        
+        // Add user message to chat
+        function addUserMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'user-message');
+            messageElement.textContent = message;
+            
+            // Add time
+            const timeElement = document.createElement('div');
+            timeElement.classList.add('message-time');
+            timeElement.textContent = getTime();
+            messageElement.appendChild(timeElement);
+            
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Add bot message to chat
+        function addBotMessage(message) {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', 'bot-message');
+            messageElement.innerHTML = formatText(message);
+            
+            // Add time
+            const timeElement = document.createElement('div');
+            timeElement.classList.add('message-time');
+            timeElement.textContent = getTime();
+            messageElement.appendChild(timeElement);
+            
+            // Add feedback buttons
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.classList.add('feedback-buttons');
+            
+            const thumbsUpBtn = document.createElement('button');
+            thumbsUpBtn.classList.add('feedback-btn');
+            thumbsUpBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                </svg>
+                Helpful
+            `;
+            thumbsUpBtn.onclick = function() {
+                logFeedback('positive', message);
+                this.parentNode.style.display = 'none';
+            };
+            
+            const thumbsDownBtn = document.createElement('button');
+            thumbsDownBtn.classList.add('feedback-btn');
+            thumbsDownBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"></path>
+                </svg>
+                Not helpful
+            `;
+            thumbsDownBtn.onclick = function() {
+                logFeedback('negative', message);
+                this.parentNode.style.display = 'none';
+            };
+            
+            feedbackDiv.appendChild(thumbsUpBtn);
+            feedbackDiv.appendChild(thumbsDownBtn);
+            messageElement.appendChild(feedbackDiv);
+            
+            chatMessages.appendChild(messageElement);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Log feedback to improve bot responses (optional)
+        function logFeedback(type, message) {
+            try {
+                const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+                const username = currentUser ? currentUser.username : 'anonymous';
+                
+                if (OFFLINE_MODE) {
+                    console.log(`Feedback logged (${type}): ${message.substring(0, 20)}...`);
+                    return;
+                }
+                
+                // Prepare data for the POST request
+                const formData = new FormData();
+                formData.append('action', 'logFeedback');
+                formData.append('username', username);
+                formData.append('message', message);
+                formData.append('feedbackType', type);
+                
+                // Make the POST request to the Apps Script web app
+                fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Feedback logged:', data);
+                })
+                .catch(error => {
+                    console.error('Error logging feedback:', error);
+                });
+            } catch (error) {
+                console.error('Error in feedback function:', error);
+            }
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Process user input
+        async function processUserInput() {
+            const message = userInput.value.trim();
+            
+            if (message === '') return;
+            
+            // Disable input and button while processing
+            userInput.disabled = true;
+            sendBtn.disabled = true;
+            
+            // Clear input field
+            userInput.value = '';
+            
+            // Add user message to chat
+            addUserMessage(message);
+            
+            // Show typing indicator
+            showTypingIndicator();
+            
+            // Calculate dynamic typing time based on question complexity
+            const thinkingTime = Math.min(1000 + (message.length * 20), 3000);
+            
+            // Simulate thinking time and get response
+            setTimeout(async () => {
+                try {
+                    // Query the database for a response using Apps Script
+                    const response = await queryDatabaseViaAppsScript(message);
+                    
+                    // Hide typing indicator and add bot message
+                    hideTypingIndicator();
+                    addBotMessage(response);
+                    
+                } catch (error) {
+                    console.error('Error processing message:', error);
+                    hideTypingIndicator();
+                    addBotMessage("I'm having some technical difficulties. Please try again later.");
+                }
+                
+                // Re-enable input and focuses on it
+                userInput.disabled = false;
+                sendBtn.disabled = false;
+                userInput.focus();
+                
+            }, thinkingTime); // Dynamic typing delay
+        }
+        
+        // Function to query Google Sheets database via Apps Script
+        async function queryDatabaseViaAppsScript(question) {
+            try {
+                // If offline mode is enabled, use fallback
+                if (OFFLINE_MODE) {
+                    return getOfflineResponse(question);
+                }
+                
+                const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+                const username = currentUser ? currentUser.username : 'anonymous';
+                
+                // Prepare data for the POST request
+                const formData = new FormData();
+                formData.append('action', 'queryFAQ');
+                formData.append('question', question);
+                formData.append('username', username);
+                
+                // Make the POST request to the Apps Script web app
+                const response = await fetch(APPS_SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    return data.response;
+                } else {
+                    console.error('Error from Apps Script:', data.error);
+                    return getDefaultResponse();
+                }
+                
+            } catch (error) {
+                console.error('Error querying database via Apps Script:', error);
+                return getDefaultResponse();
+            }
+        }
+        
+        // Function to get response in offline mode
+        function getOfflineResponse(question) {
+            question = question.toLowerCase();
+            
+            // Enhanced offline responses
+            const offlineResponses = {
+                "admission": "For admission inquiries, please visit the Admissions Office on the first floor of the Administration Building. You can also contact them at admissions@dhvsu.edu.ph or call at (045) 123-4567.",
+                "Tuition": "Tuition fees are free for all students enrolled in DHVSU. However, there may be additional fees for laboratory courses, miscellaneous fees, and other services.",
+                "scholarship": "DHVSU offers various scholarship programs including:\n1. Academic Excellence Scholarship\n2. Athletic Scholarship\n3. Cultural Scholarship\n4. Financial Need-based Scholarship\n\nVisit the Scholarship Office or check the university website for application details.",
+                "enrollment": "The enrollment process involves:\n1. Online registration\n2. Subject selection\n3. Fee assessment\n4. Payment\n5. Validation\n\nRegular enrollment usually starts three weeks before classes begin.",
+                "schedule": "Class schedules are posted on the university portal and department bulletin boards two weeks before classes start. You can also check with your department secretary for the most updated schedule.",
+                "requirement": "General requirements include:\n1. Form 138 (Report Card)\n2. Certificate of Good Moral Character\n3. PSA Birth Certificate\n4. Medical clearance\n5. 2x2 ID pictures\n\nSpecific programs may have additional requirements.",
+                "uniform": "Students are required to wear the university uniform on specific days of the week. The standard uniform consists of maroon and white combinations with the university logo.",
+                "library": "The university library is open Monday to Friday from 8:00 AM to 7:00 PM, and Saturday from 8:00 AM to 5:00 PM. It's located at the second floor of the Academic Building."
+            };
+            
+            // Check if question contains any keywords
+            for (const [keyword, response] of Object.entries(offlineResponses)) {
+                if (question.includes(keyword)) {
+                    return response;
+                }
+            }
+            
+            // Check for specific example responses
+            if (question.includes("admissions office")) {
+                return "The Admissions Office is located on the first floor of the Administration Building, to the right of the main entrance. It's open Monday through Friday from 8:00 AM to 5:00 PM.";
+            } else if (question.includes("enroll") && question.includes("freshman")) {
+                return "To enroll as a freshman at DHVSU, you need to:\n1. Submit an online application through the university portal\n2. Take the entrance examination\n3. Submit required documents including Form 138, birth certificate, and good moral character certification\n4. Wait for acceptance letter\n5. Complete the enrollment process by paying the fees and selecting your courses";
+            } else if (question.includes("documents") && question.includes("enrollment")) {
+                return "For enrollment, you need:\n1. Original and photocopy of Form 138 (Report Card)\n2. Certificate of Good Moral Character\n3. NSO/PSA Birth Certificate\n4. 2x2 ID pictures (white background)\n5. Barangay Clearance\n6. Certificate of Residency";
+            }
+            
+            // Default fallback response
+            return getDefaultResponse();
+        }
+        
+        // Function to get a default response when no match is found
+        function getDefaultResponse() {
+            const defaultResponses = [
+                "I'm sorry, I don't have that information yet. Please try asking another question or visit the university website for more details.",
+                "I couldn't find an answer to that question. Would you like to ask something else?",
+                "That information isn't in my database yet. Please try rephrasing your question or ask about another topic.",
+                "I'm still learning! I don't have an answer for that yet. Can I help you with something else related to DHVSU?"
+            ];
+            
+            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+        
+        // Static responses for demo example queries
+        const exampleResponses = {
+            "Where is the Admissions Office?": "The Admissions Office is located on the first floor of the Administration Building, to the right of the main entrance. It's open Monday through Friday from 8:00 AM to 5:00 PM.",
+            "How do I enroll as a freshman?": "To enroll as a freshman at DHVSU, you need to:\n1. Submit an online application through the university portal\n2. Take the entrance examination\n3. Submit required documents including Form 138, birth certificate, and good moral character certification\n4. Wait for acceptance letter\n5. Complete the enrollment process by paying the fees and selecting your courses",
+            "What documents do I need for enrollment?": "For enrollment, you need:\n1. Original and photocopy of Form 138 (Report Card)\n2. Certificate of Good Moral Character\n3. NSO/PSA Birth Certificate\n4. 2x2 ID pictures (white background)\n5. Barangay Clearance\n6. Certificate of Residency",
+        };
+        
+        // Handle example query clicks
+        document.querySelectorAll('.example-query').forEach(example => {
+            example.addEventListener('click', function() {
+                const query = this.textContent;
+                userInput.value = query;
+                processUserInput();
+            });
+        });
+        
+        // Handle send button click
+        sendBtn.addEventListener('click', processUserInput);
+        
+        // Handle enter key press
+        userInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                processUserInput();
+            }
+        });
+        
+        // Handle input changes to enable/disable send button
+        userInput.addEventListener('input', function() {
+            if (this.value.trim() === '') {
+                sendBtn.disabled = true;
+            } else {
+                sendBtn.disabled = false;
+            }
+        });
+        
+        // Initial state of send button
+        sendBtn.disabled = true;
+    </script>
+</body>
+
+</html>
+
+<!-- Team Members:
+    Magat Ren Jay S.
+    Olaybar, Vlademiere
+    Dela Cruz, Eugene Mark
+    Kabiling Abegail
+    Matic, Britany
+    Hazel, Placer
+-->
