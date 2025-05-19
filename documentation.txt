@@ -1,0 +1,216 @@
+Honorian AskBot - Setup Documentation
+
+Project Overview
+
+The Honorian AskBot is a web-based FAQ assistant designed for Don Honorio Ventura State University (DHVSU) students. It provides immediate answers to common inquiries about classroom locations, enrollment procedures, and other academic concerns. The system includes a secure login/signup mechanism and a smart FAQ search functionality, with Google Sheets serving as the database.
+
+System Architecture
+
+The system consists of three main components:
+
+1. Frontend Interface: HTML/CSS/JavaScript web application
+2. Backend Script: Google Apps Script for authentication and data processing
+3. Database: Google Sheets for user data and FAQ storage
+
+Installation & Setup
+
+Step 1: Set Up Google Sheets Databases
+
+1. Create two Google Sheets in your Google Drive:
+   - User Database: For storing user credentials
+   - FAQ Database: For storing frequently asked questions and answers
+
+2. We get the Spreadsheet IDs of both documents from their URLs:
+   1eFy0MRxFpYraCJmV08MGA1OzOK-SRVFNg9JXzilUF6Q
+
+Step 2: Deploy the Google Apps Script
+
+1. Open [Google Apps Script](https://script.google.com)
+2. We Create a new project
+3. Copy and paste the provided Google Apps Script code
+4. We Replace `YOUR_USER_SPREADSHEET_ID` with the ID of the User Database sheet and FAQ Database Sheets
+6. Save the project (Ctrl+S or File > Save)
+7. Run the `initialize()` function once to set up the database structure:
+   - Select "initialize" from the function dropdown
+   - Click the "Run" button
+   - Authorize the script when prompted
+
+8. Deploy the script as a web app:
+   - Click Deploy > New deployment
+   - Select "Web app" as the deployment type
+   - Set "Execute as" to "Me"
+   - Set "Who has access" to "Anyone"
+   - Click "Deploy"
+   - Copy the web app URL provided
+
+Step 3: Configure the Frontend
+
+1. Open the HTML file in a text editor
+2. Replace `YOUR_GOOGLE_SCRIPT_WEB_APP_URL` with the URL from Step 2
+3. Save the file
+
+Honorian AskBot – DHVSU
+Project Documentation: Progress from Start to Finish
+1. Project Overview
+Honorian AskBot is a web-based FAQ and inquiry platform for Don Honorio Ventura State University (DHVSU). It provides students and staff with instant answers to common questions, a secure authentication system, and an admin panel for managing FAQs, users, and analytics. The system uses Google Apps Script and Google Sheets for the backend/database, and HTML/CSS/JavaScript for the frontend, hosted on GitHub Pages.
+2. Development Timeline & Feature Progress
+A. Initial Planning & Setup
+Defined project goals: Build a DHVSU-branded FAQ/chatbot system with user authentication and admin management.
+Chose technology stack:
+Frontend: HTML, CSS, JavaScript (vanilla, no frameworks), hosted on GitHub Pages.
+Backend: Google Apps Script (GAS) for logic, Google Sheets as the database.
+Created Google Sheets:
+User Database
+FAQ Database
+Feedback, Logs, Conversations sheets
+
+B. Midterm Milestone
+Core Features Implemented:
+User Authentication:
+Signup and login forms with validation.
+Passwords hashed client-side using SHA-256 before sending to backend.
+Custom CAPTCHA for bot/spam prevention.
+Google Sheets Integration:
+GAS backend for signup/login, storing user data securely.
+User roles (default: student; admin can be set manually).
+Basic FAQ Chatbot:
+Users can ask questions; bot matches queries to FAQ entries in Google Sheets.
+Sample FAQ data seeded for demonstration.
+Frontend UI:
+Responsive, DHVSU-themed design.
+Session management using sessionStorage.
+Security:
+No plain-text password storage.
+CAPTCHA on both signup and login.
+
+C. Finals Enhancements & Advanced Features
+Authentication & Security:
+Forgot Password:
+Users can request a password reset link via email.
+Secure, expiring tokens (1 hour) for password reset.
+Reset handled via a dedicated page (reset_password.html).
+Improved Data Management:
+All backend logic consolidated in appscript_backend.js for easier maintenance.
+Enhanced Google Sheets security (no direct access from frontend).
+Chatbot & FAQ:
+Dynamic FAQ Management:
+FAQs are now managed via the backend and can be updated in real-time.
+FAQ search and filtering on the frontend.
+Rate Limiting:
+Both frontend and backend rate limiting to prevent spam/abuse (5 seconds per message).
+Feedback Collection:
+After each bot answer, users can rate the response as "Helpful" or "Not Helpful".
+Feedback is stored in the Feedback sheet and viewable by admins.
+Admin Panel (admin.html):
+User Management:
+View, search, edit, and delete users.
+Change user roles (student/admin).
+FAQ Management:
+Add, edit, delete FAQs.
+Edit keywords for better matching.
+Feedback Viewer:
+View all feedback, filter/search by user or type.
+Activity Logs:
+View logs of user actions (login, FAQ queries, password resets, etc.).
+Analytics Dashboard:
+Visual charts (using Chart.js) for:
+User activity
+FAQ performance (most asked questions)
+Feedback ratings
+Security:
+Only users with the admin role can access the admin panel (checked on page load).
+User Profile:
+Profile Page:
+Users can view and update their email and profile picture.
+Profile pictures are stored as URLs (no Google Drive upload for privacy/security).
+UI/UX Improvements:
+Consistent DHVSU branding:
+Colors, logo, and responsive design across all pages.
+Accessibility:
+Improved color contrast, larger clickable areas, and keyboard navigation.
+Loader animations and success/error messages for all actions.
+
+D. Final Touches & Polish
+Documentation:
+Setup and usage instructions (documentation.txt).
+Inline code comments for maintainability.
+Testing:
+Manual testing of all user/admin flows.
+Edge case handling (invalid tokens, expired links, etc.).
+Deployment:
+Hosted frontend on GitHub Pages.
+Backend deployed as a Google Apps Script web app.
+
+E. Latest Updates (FAQ Database Enhancement)
+Comprehensive FAQ Database:
+Added 103 categorized FAQs covering various aspects of DHVSU:
+- Administration and Leadership
+- Academic Programs and Colleges
+- Campus Information (Main and Satellite Campuses)
+- Student Services
+- Registration and Enrollment
+- Certificates and Records
+- General Information
+- Contact Information
+Categories include:
+- Administration
+- Academics
+- Student Services
+- Registrar
+- General
+- Admissions
+Each FAQ entry includes:
+- Question
+- Detailed Answer
+- Keywords for better matching
+- Status (approved/pending)
+- Category
+- Priority level (1-5)
+Enhanced Search Capabilities:
+- Synonym support for common terms
+- Fuzzy matching for similar questions
+- Keyword-based matching
+- Category-based filtering
+- Priority-based sorting
+
+3. Development Process
+Methodology:
+Prototype-driven, iterative development.
+Regular feedback from group members and professor.
+Features added and improved in cycles, with testing after each major addition.
+Collaboration:
+Main development by one member, with input and review from the group.
+All code and documentation shared via GitHub.
+4. Key Features List (Chronological Order)
+User Signup/Login with CAPTCHA and password hashing
+Google Sheets as secure backend database
+Basic FAQ chatbot with sample data
+Session management and profile link in navbar
+Forgot Password (email reset with expiring token)
+Dynamic FAQ management (CRUD) via admin panel
+Feedback collection after each bot answer
+Admin panel:
+User management (view, edit, delete, role change)
+FAQ management (add, edit, delete, keyword editing)
+Feedback viewing and searching
+Activity logs
+Analytics dashboard (user activity, FAQ stats, feedback ratings)
+Profile page with editable email and profile picture
+Rate limiting on chat to prevent spam
+UI/UX improvements and accessibility
+Comprehensive documentation and deployment
+5. Future/Planned Enhancements
+Announcements module for admins
+FAQ approval workflow (pending/approved)
+User profile pages with chat history
+Data export (CSV/Excel)
+Further accessibility improvements
+6. How to Set Up & Use
+See documentation.txt in the project root for step-by-step setup instructions for Google Sheets, Apps Script, and frontend configuration.
+7. Team Members
+Magat Ren Jay S.
+Olaybar, Vlademiere
+Dela Cruz, Eugene Mark
+Kabiling Abegail
+Matic, Britany
+Hazel, Placer

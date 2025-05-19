@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Honorian AskBot - DHVSU</title>
+    <style>
+        :root {
+            --dhvsu-maroon: #800000;
+            --dhvsu-gold: #FFD700;
+            --light-maroon: #A52A2A;
+            --gray: #f2f2f2;
+            --card-radius: 18px;
+            --shadow: 0 8px 32px rgba(128,0,0,0.10);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Arial', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #fffbe6 0%, #f5f5f5 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--dhvsu-maroon) 0%, #5e0000 100%);
+            color: white;
+            padding: 2.2rem 1.2rem 1.2rem 1.2rem;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.13);
+            position: relative;
+        }
+        
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.13));
+            border-radius: 50%;
+            background: #fff;
+            padding: 8px;
+        }
+        
+        .title-container {
+            text-align: left;
+        }
+        
+        .university-name {
+            font-size: 2.1rem;
+            font-weight: bold;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.13);
+            margin-bottom: 5px;
+        }
+        
+        .tagline {
+            font-size: 1.1rem;
+            color: var(--dhvsu-gold);
+            letter-spacing: 1px;
+            font-style: italic;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.13);
+        }
+        
+        .profile-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: background-color 0.3s;
+        }
+        
+        .profile-link:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .navbar-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            background: #fff;
+        }
+        
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #fff 0%, #fffbe6 100%);
+        }
+        
+        .login-container {
+            background: #fff;
+            border-radius: var(--card-radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem 2.2rem 2.2rem 2.2rem;
+            border: 1px solid #f3e3e3;
+            margin-top: 1.5rem;
+            animation: fadeIn 0.7s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.2rem;
+        }
+        
+        .login-header h2 {
+            color: var(--dhvsu-maroon);
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .login-header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.7rem;
+            position: relative;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 16px 14px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1.08rem;
+            background: #fafafa;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--dhvsu-maroon);
+            box-shadow: 0 0 8px rgba(165, 42, 42, 0.13);
+            background: #fff;
+        }
+        
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.92rem;
+            margin-top: 5px;
+            display: none;
+            font-weight: 500;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.13rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s, box-shadow 0.3s;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, var(--dhvsu-maroon) 60%, var(--dhvsu-gold) 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(90deg, var(--light-maroon) 60%, var(--dhvsu-gold) 100%);
+            box-shadow: 0 4px 16px rgba(128,0,0,0.13);
+        }
+        
+        .toggle-form {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 1.05rem;
+            color: #666;
+        }
+        
+        .toggle-form a {
+            color: var(--dhvsu-maroon);
+            text-decoration: none;
+            font-weight: bold;
+            border-bottom: 1.5px solid transparent;
+            transition: border-color 0.3s;
+            padding-bottom: 2px;
+        }
+        
+        .toggle-form a:hover {
+            border-bottom-color: var(--dhvsu-maroon);
+        }
+        
+        footer {
+            background: linear-gradient(135deg, var(--dhvsu-maroon) 0%, #5e0000 100%);
+            color: white;
+            text-align: center;
+            padding: 1.2rem;
+            font-size: 0.9rem;
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.1);
+        }
+        
+        #login-form, #signup-form {
+            display: none;
+        }
+        
+        .active-form {
+            display: block !important;
+            animation: formFadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes formFadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--dhvsu-maroon);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            animation: spin 2s linear infinite;
+            margin: 10px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #message-container {
+            padding: 13px;
+            margin: 18px 0 10px 0;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            animation: slideDown 0.4s ease-out;
+            font-weight: 500;
+            font-size: 1.05rem;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        /* Custom Captcha Styles */
+        .captcha-container {
+            margin-bottom: 1.7rem;
+        }
+        
+        .captcha-box {
+            background-color: #f7f7f7;
+            border: 1.5px solid #ddd;
+            border-radius: 10px;
+            padding: 15px 10px;
+            font-size: 1.7rem;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 8px;
+            text-align: center;
+            user-select: none;
+            margin-bottom: 12px;
+            color: var(--dhvsu-maroon);
+            position: relative;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .captcha-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(0,0,0,0.03) 10px,
+                rgba(0,0,0,0.03) 20px
+            );
+        }
+        
+        .captcha-refresh {
+            background-color: #fffbe6;
+            border: 1.5px solid #FFD700;
+            border-radius: 8px;
+            padding: 8px 12px;
+            cursor: pointer;
+            font-size: 0.98rem;
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+            transition: background-color 0.3s;
+        }
+        
+        .captcha-refresh:hover {
+            background-color: #e0e0e0;
+        }
+        
+        /* Security indicator */
+        .password-strength {
+            height: 6px;
+            margin-top: 8px;
+            border-radius: 3px;
+            transition: all 0.3s;
+            background-color: #e0e0e0;
+        }
+        
+        .strength-weak {
+            background-color: #f44336;
+            width: 30%;
+        }
+        
+        .strength-medium {
+            background-color: #ff9800;
+            width: 60%;
+        }
+        
+        .strength-strong {
+            background-color: #4caf50;
+            width: 100%;
+        }
+        
+        .strength-text {
+            font-size: 0.9rem;
+            margin-top: 5px;
+            color: #777;
+        }
+
+        /* Show Password Feature Styles */
+        .password-container {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #777;
+            font-size: 0.98rem;
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .toggle-password:hover {
+            color: var(--dhvsu-maroon);
+        }
+        
+        .toggle-password:focus {
+            outline: none;
+        }
+
+        @media (max-width: 768px) {
+            .university-name {
+                font-size: 1.4rem;
+            }
+            
+            .tagline {
+                font-size: 0.95rem;
+            }
+            
+            .login-container {
+                width: 98%;
+                padding: 1.5rem;
+            }
+            
+            .logo {
+                width: 60px;
+                height: 60px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .logo-container {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+            
+            .title-container {
+                text-align: center;
+            }
+            
+            .university-name {
+                font-size: 1.1rem;
+            }
+            
+            .login-container {
+                padding: 1.1rem;
+            }
+            
+            input, .btn {
+                padding: 12px;
+            }
+        }
+    </style>
+
+</head>
+
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo-container">
+                <img src="Don_Honorio_Ventura_State_University_logo.png" alt="University Logo" class="logo">
+                <div class="title-container">
+                    <div class="university-name">Don Honorio Ventura State University</div>
+                    <div class="tagline">Honorian AskBot - Your DHVSU Interactive Assistant</div>
+                </div>
+            </div>
+            <a href="profile.html" class="profile-link" id="profile-link" style="display: none;">
+                <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar">
+                <span>Profile</span>
+            </a>
+        </div>
+    </header>
+    <main>
+        <!-- Login and Signup Forms -->
+
+        <div class="login-container">
+            <div class="login-header">
+                <h2>Honorian AskBot</h2>
+                <p>Your DHVSU Interactive Assistant</p>
+            </div>
+            <div id="message-container"></div>
+            <div class="loader" id="loader"></div>
+            <form id="login-form" class="active-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" placeholder="Enter your username" required>
+                    <div class="error-message" id="login-username-error">Please enter a valid username</div>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="login-password" placeholder="Enter your password" required>
+                        <button type="button" class="toggle-password" id="login-toggle-password">Show</button>
+                    </div>
+                    <div class="error-message" id="login-password-error">Please enter your password</div>
+                </div>
+
+                <!-- Custom Captcha Section -->
+                <div class="captcha-container">
+                    <label for="login-captcha">Captcha Verification</label>
+                    <div class="captcha-box" id="login-captcha-box">CAPTCHA</div>
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <button type="button" class="captcha-refresh" id="login-captcha-refresh">
+                            Refresh
+                        </button>
+                    </div>
+                    <input type="text" id="login-captcha-input" placeholder="Enter the code above" required>
+                    <div class="error-message" id="login-captcha-error">Incorrect captcha code</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+                <div class="toggle-form">
+                    Don't have an account? <a href="#" id="show-signup">Sign up</a>
+                </div>
+                <div class="toggle-form">
+                    <a href="forgot_password.html">Forgot Password?</a>
+                </div>
+            </form>
+
+            <form id="signup-form">
+                <div class="form-group">
+                    <label for="signup-username">Username</label>
+                    <input type="text" id="signup-username" placeholder="Choose a username (min. 5 characters)" required>
+                    <div class="error-message" id="signup-username-error">Username must be at least 5 characters</div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email">Email</label>
+                    <input type="email" id="signup-email" placeholder="Enter your email address" required>
+                    <div class="error-message" id="signup-email-error">Please enter a valid email address</div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password</label>
+                    <div class="password-container">
+                        <input type="password" id="signup-password" placeholder="Create a password (min. 8 characters)" required>
+                        <button type="button" class="toggle-password" id="signup-toggle-password">Show</button>
+                    </div>
+                    <div class="password-strength" id="password-strength"></div>
+                    <div class="strength-text" id="strength-text">Password strength</div>
+                    <div class="error-message" id="signup-password-error">Password must be at least 8 characters</div>
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm">Confirm Password</label>
+                    <div class="password-container">
+                        <input type="password" id="signup-confirm" placeholder="Re-enter your password" required>
+                        <button type="button" class="toggle-password" id="signup-confirm-toggle-password">Show</button>
+                    </div>
+                    <div class="error-message" id="signup-confirm-error">Passwords do not match</div>
+                </div>
+
+                <!-- Custom Captcha Section for Signup -->
+                <div class="captcha-container">
+                    <label for="signup-captcha">Captcha Verification</label>
+                    <div class="captcha-box" id="signup-captcha-box">CAPTCHA</div>
+                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <button type="button" class="captcha-refresh" id="signup-captcha-refresh">
+                            Refresh
+                        </button>
+                    </div>
+                    <input type="text" id="signup-captcha-input" placeholder="Enter the code above" required>
+                    <div class="error-message" id="signup-captcha-error">Incorrect captcha code</div>
+                </div>
+                <button type="submit" class="btn btn-primary">Sign Up</button>
+                <div class="toggle-form">
+                    Already have an account? <a href="#" id="show-login">Login</a>
+                </div>
+            </form>
+        </div>
+    </main>
+    <footer>
+        &copy; 2025 Don Honorio Ventura State University. All Rights Reserved.
+    </footer>
+    
+    <script>
+        // Toggle between login and signup forms
+          document.getElementById('show-signup').addEventListener('click', function(e) {
+              e.preventDefault();
+              document.getElementById('login-form').classList.remove('active-form');
+              document.getElementById('signup-form').classList.add('active-form');
+              generateCaptcha('signup-captcha-box');
+          });
+          
+          document.getElementById('show-login').addEventListener('click', function(e) {
+              e.preventDefault();
+              document.getElementById('signup-form').classList.remove('active-form');
+              document.getElementById('login-form').classList.add('active-form');
+              generateCaptcha('login-captcha-box');
+          });
+          
+          // Google Sheets API Script URL 
+          const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
+          
+          // SHA-256 hash function
+          async function sha256(message) {
+              const msgBuffer = new TextEncoder().encode(message);                    
+              const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+              const hashArray = Array.from(new Uint8Array(hashBuffer));
+              const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+              return hashHex;
+          }
+          
+          // Password strength indicator
+          function checkPasswordStrength(password) {
+              const strengthBar = document.getElementById('password-strength');
+              const strengthText = document.getElementById('strength-text');
+              
+              // Clear previous classes
+              strengthBar.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
+              
+              if (password.length === 0) {
+                  strengthBar.style.width = '0';
+                  strengthText.textContent = 'Password strength';
+                  return;
+              }
+              
+              // Check password strength
+              let strength = 0;
+              
+              // Length check
+              if (password.length >= 8) strength += 1;
+              if (password.length >= 12) strength += 1;
+              
+              // Character variety checks
+              if (/[A-Z]/.test(password)) strength += 1;
+              if (/[0-9]/.test(password)) strength += 1;
+              if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+              
+              // Update UI based on strength
+              if (strength <= 2) {
+                  strengthBar.classList.add('strength-weak');
+                  strengthText.textContent = 'Weak password';
+              } else if (strength <= 4) {
+                  strengthBar.classList.add('strength-medium');
+                  strengthText.textContent = 'Medium strength';
+              } else {
+                  strengthBar.classList.add('strength-strong');
+                  strengthText.textContent = 'Strong password';
+              }
+          }
+          
+          // Add event listener for password field
+          document.getElementById('signup-password').addEventListener('input', function() {
+              checkPasswordStrength(this.value);
+          });
+          
+          // Captcha functionality
+          function generateCaptcha(boxId) {
+              const captchaBox = document.getElementById(boxId);
+              const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+              let captchaValue = '';
+              
+              // Generate random 6-character captcha
+              for (let i = 0; i < 6; i++) {
+                  captchaValue += characters.charAt(Math.floor(Math.random() * characters.length));
+              }
+              
+              captchaBox.textContent = captchaValue;
+              captchaBox.dataset.value = captchaValue; // Store the captcha value as a data attribute
+          }
+          
+          // Toggle password visibility function
+          function setupPasswordToggles() {
+              const toggleButtons = document.querySelectorAll('.toggle-password');
+              
+              toggleButtons.forEach(button => {
+                  button.addEventListener('click', function() {
+                      const input = this.previousElementSibling;
+                      
+                      // Toggle the input type
+                      if (input.type === 'password') {
+                          input.type = 'text';
+                          this.textContent = 'Hide';
+                      } else {
+                          input.type = 'password';
+                          this.textContent = 'Show';
+                      }
+                  });
+              });
+          }
+          
+          // Initialize captchas and password toggles
+          document.addEventListener('DOMContentLoaded', function() {
+              const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+              const profileLink = document.getElementById('profile-link');
+              
+              if (currentUser) {
+                  profileLink.style.display = 'flex';
+                  fetchAndRenderUserProfilePicNavbar();
+              }
+              
+              generateCaptcha('login-captcha-box');
+              generateCaptcha('signup-captcha-box');
+              
+              // Setup captcha refresh buttons
+              document.getElementById('login-captcha-refresh').addEventListener('click', function() {
+                  generateCaptcha('login-captcha-box');
+              });
+              
+              document.getElementById('signup-captcha-refresh').addEventListener('click', function() {
+                  generateCaptcha('signup-captcha-box');
+              });
+              
+              // Setup password toggles
+              setupPasswordToggles();
+          });
+          
+          // Handle login form submission
+          document.getElementById('login-form').addEventListener('submit', async function(e) {
+              e.preventDefault();
+              
+              const username = document.getElementById('login-username').value.trim();
+              const password = document.getElementById('login-password').value;
+              const captchaInput = document.getElementById('login-captcha-input').value.trim();
+              const captchaValue = document.getElementById('login-captcha-box').dataset.value;
+              const messageContainer = document.getElementById('message-container');
+              const loader = document.getElementById('loader');
+              
+              // Clear previous messages
+              messageContainer.textContent = '';
+              messageContainer.className = '';
+              messageContainer.style.display = 'none';
+              
+              // Hide all error messages
+              document.getElementById('login-username-error').style.display = 'none';
+              document.getElementById('login-password-error').style.display = 'none';
+              document.getElementById('login-captcha-error').style.display = 'none';
+              
+              // Basic input validation
+              if (username.length < 3) {
+                  document.getElementById('login-username-error').style.display = 'block';
+                  return;
+              }
+              
+              if (password.length < 1) {
+                  document.getElementById('login-password-error').style.display = 'block';
+                  return;
+              }
+              
+              // Validate captcha
+              if (captchaInput !== captchaValue) {
+                  document.getElementById('login-captcha-error').style.display = 'block';
+                  generateCaptcha('login-captcha-box'); // Generate new captcha
+                  return;
+              }
+              
+              // Display loader
+              loader.style.display = 'block';
+              
+              try {
+                  // Hash the password
+                  const hashedPassword = await sha256(password);
+                  
+                  // Send login request to Google Sheets App Script
+                  const formData = new FormData();
+                  formData.append('action', 'login');
+                  formData.append('username', username);
+                  formData.append('password', hashedPassword);
+                  
+                  const response = await fetch(SCRIPT_URL, {
+                      method: 'POST',
+                      body: formData
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (result.success) {
+                      // Successful login
+                      messageContainer.textContent = 'Login successful! Redirecting...';
+                      messageContainer.className = 'success';
+                      messageContainer.style.display = 'block';
+                      
+                      // Store user data in sessionStorage, including role
+                      sessionStorage.setItem('currentUser', JSON.stringify({
+                          username: result.username,
+                          email: result.email,
+                          role: result.role || 'student'
+                      }));
+                      
+                      // Redirect to dashboard after 1 second
+                      setTimeout(() => {
+                          window.location.href = 'dashboard_page.html';
+                      }, 1000);
+                  } else {
+                      // Failed login
+                      messageContainer.textContent = result.message || 'Invalid username or password.';
+                      messageContainer.className = 'error';
+                      messageContainer.style.display = 'block';
+                      generateCaptcha('login-captcha-box'); // Generate new captcha
+                  }
+              } catch (error) {
+                  console.error('Login error:', error);
+                  messageContainer.textContent = 'An error occurred. Please try again.';
+                  messageContainer.className = 'error';
+                  messageContainer.style.display = 'block';
+                  generateCaptcha('login-captcha-box'); // Generate new captcha
+              } finally {
+                  loader.style.display = 'none';
+              }
+          });
+          
+          // Handle signup form submission
+          document.getElementById('signup-form').addEventListener('submit', async function(e) {
+              e.preventDefault();
+              
+              const username = document.getElementById('signup-username').value.trim();
+              const email = document.getElementById('signup-email').value.trim();
+              const password = document.getElementById('signup-password').value;
+              const confirmPassword = document.getElementById('signup-confirm').value;
+              const captchaInput = document.getElementById('signup-captcha-input').value.trim();
+              const captchaValue = document.getElementById('signup-captcha-box').dataset.value;
+              const messageContainer = document.getElementById('message-container');
+              const loader = document.getElementById('loader');
+              
+              // Clear previous messages
+              messageContainer.textContent = '';
+              messageContainer.className = '';
+              messageContainer.style.display = 'none';
+              
+              // Basic validation
+              let isValid = true;
+              
+              if (username.length < 5) {
+                  document.getElementById('signup-username-error').style.display = 'block';
+                  isValid = false;
+              } else {
+                  document.getElementById('signup-username-error').style.display = 'none';
+              }
+              
+              if (!/\S+@\S+\.\S+/.test(email)) {
+                  document.getElementById('signup-email-error').style.display = 'block';
+                  isValid = false;
+              } else {
+                  document.getElementById('signup-email-error').style.display = 'none';
+              }
+              
+              if (password.length < 8) {
+                  document.getElementById('signup-password-error').style.display = 'block';
+                  isValid = false;
+              } else {
+                  document.getElementById('signup-password-error').style.display = 'none';
+              }
+              
+              if (password !== confirmPassword) {
+                  document.getElementById('signup-confirm-error').style.display = 'block';
+                  isValid = false;
+              } else {
+                  document.getElementById('signup-confirm-error').style.display = 'none';
+              }
+              
+              // Validate captcha
+              if (captchaInput !== captchaValue) {
+                  document.getElementById('signup-captcha-error').style.display = 'block';
+                  generateCaptcha('signup-captcha-box'); // Generate new captcha
+                  isValid = false;
+              } else {
+                  document.getElementById('signup-captcha-error').style.display = 'none';
+              }
+              
+              if (!isValid) return;
+              
+              // Display loader
+              loader.style.display = 'block';
+              
+              try {
+                  // Hash the password
+                  const hashedPassword = await sha256(password);
+                  
+                  // Send signup request to Google Sheets App Script
+                  const formData = new FormData();
+                  formData.append('action', 'signup');
+                  formData.append('username', username);
+                  formData.append('email', email);
+                  formData.append('password', hashedPassword);
+                  
+                  const response = await fetch(SCRIPT_URL, {
+                      method: 'POST',
+                      body: formData
+                  });
+                  
+                  const result = await response.json();
+                  
+                  if (result.success) {
+                      // Successful signup
+                      messageContainer.textContent = 'Signup successful! You can now log in.';
+                      messageContainer.className = 'success';
+                      messageContainer.style.display = 'block';
+                      
+                      // Clear form fields
+                      document.getElementById('signup-form').reset();
+                      generateCaptcha('signup-captcha-box');
+                      
+                      // Switch to login form after successful signup
+                      setTimeout(() => {
+                          document.getElementById('show-login').click();
+                      }, 2000);
+                  } else {
+                      // Failed signup
+                      messageContainer.textContent = result.message || 'Username already exists. Please choose another one.';
+                      messageContainer.className = 'error';
+                      messageContainer.style.display = 'block';
+                      generateCaptcha('signup-captcha-box');
+                  }
+              } catch (error) {
+                  console.error('Signup error:', error);
+                  messageContainer.textContent = 'An error occurred. Please try again.';
+                  messageContainer.className = 'error';
+                  messageContainer.style.display = 'block';
+                  generateCaptcha('signup-captcha-box');
+              } finally {
+                  loader.style.display = 'none';
+              }
+          });
+
+        function fetchAndRenderUserProfilePicNavbar() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            const formData = new FormData();
+            formData.append('action', 'getUserProfile');
+            formData.append('username', currentUser.username);
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const avatar = document.getElementById('navbar-profile-avatar');
+                if (data.success && data.profile && data.profile.profilePic && data.profile.profilePic !== '') {
+                    avatar.src = data.profile.profilePic;
+                } else {
+                    avatar.src = 'default_profile.png';
+                }
+            })
+            .catch(() => {
+                const avatar = document.getElementById('navbar-profile-avatar');
+                avatar.src = 'default_profile.png';
+            });
+        }
+    </script>
+</body>
+
+</html>
+
+<!-- Team Members:
+    Magat Ren Jay S.
+    Olaybar, Vlademiere
+    Dela Cruz, Eugene Mark
+    Kabiling Abegail
+    Matic, Britany
+    Hazel, Placer
+-->

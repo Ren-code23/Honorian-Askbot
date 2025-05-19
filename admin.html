@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Honorian AskBot</title>
+    <style>
+        :root {
+            --dhvsu-maroon: #800000;
+            --dhvsu-gold: #FFD700;
+            --light-maroon: #A52A2A;
+            --gray: #f7f7f7;
+            --navbar-height: 60px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        }
+        
+        body {
+            background: var(--gray);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* NAVBAR */
+        .navbar {
+            width: 100%;
+            height: var(--navbar-height);
+            background: var(--dhvsu-maroon);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.2rem;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .navbar-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            padding: 3px;
+        }
+        .navbar-title {
+            font-size: 1.18rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+        .navbar-links {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            height: 100%;
+        }
+        .navbar-link {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 500;
+            padding: 6px 0 4px 0;
+            border-bottom: 2.5px solid transparent;
+            transition: border-color 0.2s, color 0.2s;
+            position: relative;
+            display: flex;
+            align-items: center;
+            height: var(--navbar-height);
+        }
+        .navbar-link.active,
+        .navbar-link:hover {
+            color: #fff;
+            border-bottom: 2.5px solid var(--dhvsu-gold);
+        }
+        .navbar-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #fff;
+            margin-left: 8px;
+            background: #fff;
+        }
+        .navbar-logout {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.05rem;
+            font-weight: 500;
+            padding: 6px 0 4px 0;
+            border-bottom: 2.5px solid transparent;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: border-color 0.2s, color 0.2s;
+            display: flex;
+            align-items: center;
+            height: var(--navbar-height);
+        }
+        .navbar-logout:hover {
+            color: var(--dhvsu-gold);
+            border-bottom: 2.5px solid var(--dhvsu-gold);
+        }
+        
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .admin-container {
+            background-color: white;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px rgba(128,0,0,0.08);
+            padding: 2.5rem;
+            border: 1px solid #f0e6e6;
+        }
+        
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2.5rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #f0e6e6;
+        }
+        
+        .admin-title {
+            font-size: 2.2rem;
+            color: var(--dhvsu-maroon);
+            font-weight: 700;
+        }
+        
+        .admin-stats {
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 1.2rem;
+            background: var(--gray);
+            border-radius: 12px;
+            min-width: 140px;
+            transition: transform 0.3s;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-5px);
+            border-color: var(--dhvsu-maroon);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--dhvsu-maroon);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.95rem;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .admin-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #f0e6e6;
+            padding-bottom: 1rem;
+        }
+        
+        .tab-button {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            background: none;
+            color: #666;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        .tab-button:hover {
+            color: var(--dhvsu-maroon);
+            background: var(--gray);
+        }
+        
+        .tab-button.active {
+            color: var(--dhvsu-maroon);
+            background: var(--gray);
+            font-weight: 600;
+        }
+        
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1rem;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--dhvsu-maroon);
+            border-radius: 3px;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+        }
+        
+        .data-table th {
+            background: var(--dhvsu-maroon);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        .data-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f0e6e6;
+            color: #444;
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .data-table tr:hover {
+            background: var(--gray);
+        }
+        
+        .action-button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .action-button.edit {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .action-button.delete {
+            background: #ffebee;
+            color: #d32f2f;
+        }
+        
+        .action-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.8rem;
+            color: #555;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 1rem;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            background: var(--gray);
+            transition: all 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--dhvsu-maroon);
+            box-shadow: 0 0 8px rgba(128,0,0,0.1);
+            background: #fff;
+        }
+        
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--dhvsu-maroon);
+            color: white;
+            box-shadow: 0 4px 12px rgba(128,0,0,0.15);
+        }
+        
+        .btn-primary:hover {
+            background: var(--light-maroon);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(128,0,0,0.2);
+        }
+        
+        .message {
+            padding: 1.2rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: none;
+            font-weight: 500;
+            animation: slideDown 0.4s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loader {
+            display: none;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--dhvsu-maroon);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            animation: spin 2s linear infinite;
+            margin: 1.5rem auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .search-bar {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            background: var(--gray);
+            transition: all 0.3s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--dhvsu-maroon);
+            box-shadow: 0 0 8px rgba(128,0,0,0.1);
+            background: #fff;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            border: 1px solid #f0e6e6;
+        }
+        
+        .chart-title {
+            font-size: 1.4rem;
+            color: var(--dhvsu-maroon);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+        
+        @media (max-width: 768px) {
+            .navbar { padding: 0 1rem; }
+            .navbar-title { font-size: 1rem; }
+            .navbar-links { gap: 14px; }
+            .admin-header { flex-direction: column; gap: 1.5rem; }
+            .admin-stats { flex-wrap: wrap; justify-content: center; }
+            .stat-item { min-width: 120px; }
+            main { padding: 1rem; }
+            .admin-container { padding: 1.5rem; }
+            .admin-tabs { flex-wrap: wrap; }
+            .tab-button { width: 100%; text-align: center; }
+            .tab-button.active::after { display: none; }
+        }
+        
+        @media (max-width: 480px) {
+            .navbar { flex-direction: column; height: auto; padding: 0.5rem; }
+            .navbar-left { margin-bottom: 6px; }
+            .navbar-links { gap: 8px; flex-wrap: wrap; }
+            .navbar-link, .navbar-logout { height: 44px; font-size: 0.98rem; }
+            .stat-item { min-width: 100px; }
+            .data-table { display: block; overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="DHVSU Logo" class="navbar-logo">
+            <span class="navbar-title">Don Honorio Ventura State University</span>
+        </div>
+        <div class="navbar-links">
+            <a href="dashboard_page.html" class="navbar-link">Dashboard</a>
+            <a href="profile.html" class="navbar-link">Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar"></a>
+            <a href="faq.html" class="navbar-link">FAQs</a>
+            <button class="navbar-logout" id="logout-btn">Logout</button>
+        </div>
+    </nav>
+
+    <main>
+        <div class="admin-container">
+            <div class="admin-header">
+                <h1 class="admin-title">Admin Panel</h1>
+                <div class="admin-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-users">0</div>
+                        <div class="stat-label">Total Users</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-faqs">0</div>
+                        <div class="stat-label">Total FAQs</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-chats">0</div>
+                        <div class="stat-label">Total Chats</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="admin-tabs">
+                <button class="tab-button active" data-tab="users">Users</button>
+                <button class="tab-button" data-tab="faqs">FAQs</button>
+                <button class="tab-button" data-tab="feedback">Feedback</button>
+                <button class="tab-button" data-tab="logs">Logs</button>
+                <button class="tab-button" data-tab="analytics">Analytics</button>
+            </div>
+
+            <div id="message" class="message"></div>
+            <div id="loader" class="loader"></div>
+
+            <!-- Users Tab -->
+            <div id="users-tab" class="tab-content active">
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="user-search" placeholder="Search users...">
+                    <button id="export-users-csv" class="btn" aria-label="Export Users to CSV" title="Export Users to CSV">Export CSV</button>
+                </div>
+                <button onclick="refreshUsers()" class="btn" style="margin-left:10px;">Refresh</button>
+                <table class="data-table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Date Joined</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-table-body">
+                        <!-- User data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- FAQs Tab -->
+            <div id="faqs-tab" class="tab-content">
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="faq-search" placeholder="Search FAQs...">
+                    <button id="export-faqs-csv" class="btn" aria-label="Export FAQs to CSV" title="Export FAQs to CSV">Export CSV</button>
+                    <label for="import-faqs-csv" class="btn" style="margin-left:10px;cursor:pointer;" aria-label="Import FAQs from CSV" title="Import FAQs from CSV">Import CSV<input type="file" id="import-faqs-csv" accept=".csv" style="display:none;"></label>
+                </div>
+                <button onclick="refreshFAQs()" class="btn" style="margin-left:10px;">Refresh</button>
+                <form id="faq-form" class="form-group">
+                    <div class="form-group">
+                        <label for="faq-question">Question</label>
+                        <input type="text" id="faq-question" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="faq-answer">Answer</label>
+                        <textarea id="faq-answer" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="faq-status">Status</label>
+                        <select id="faq-status">
+                            <option value="approved" selected>Approved (visible to users)</option>
+                            <option value="pending">Pending (not visible to users)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="add-faq-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Add FAQ
+                    </button>
+                </form>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Answer</th>
+                            <th>Keywords</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="faqs-table-body">
+                        <!-- FAQ data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Feedback Tab -->
+            <div id="feedback-tab" class="tab-content">
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="feedback-search" placeholder="Search feedback...">
+                    <button id="export-feedback-csv" class="btn" aria-label="Export Feedback to CSV" title="Export Feedback to CSV">Export CSV</button>
+                </div>
+                <button onclick="refreshFeedback()" class="btn" style="margin-left:10px;">Refresh</button>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Question</th>
+                            <th>Rating</th>
+                            <th>Comment</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="feedback-table-body">
+                        <!-- Feedback data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Logs Tab -->
+            <div id="logs-tab" class="tab-content">
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="log-search" placeholder="Search logs...">
+                    <button id="export-logs-csv" class="btn" aria-label="Export Logs to CSV" title="Export Logs to CSV">Export CSV</button>
+                </div>
+                <button onclick="refreshLogs()" class="btn" style="margin-left:10px;">Refresh</button>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Timestamp</th>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Details</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-table-body">
+                        <!-- Log data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div id="analytics-tab" class="tab-content">
+                <button onclick="refreshAnalytics()" class="btn" style="margin-left:10px;">Refresh</button>
+                <div class="chart-container">
+                    <h2 class="chart-title">User Activity</h2>
+                    <canvas id="user-activity-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h2 class="chart-title">FAQ Performance</h2>
+                    <canvas id="faq-performance-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h2 class="chart-title">Response Ratings</h2>
+                    <canvas id="ratings-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FAQ Edit Modal -->
+    <div id="faq-edit-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:14px; max-width:400px; width:95%; padding:2rem; box-shadow:0 8px 32px rgba(128,0,0,0.13); position:relative;">
+        <h3 style="color:#800000; margin-bottom:1rem;">Edit FAQ</h3>
+        <form id="faq-edit-form">
+          <input type="hidden" id="edit-faq-id">
+          <div class="form-group">
+            <label for="edit-faq-question">Question</label>
+            <input type="text" id="edit-faq-question" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-faq-answer">Answer</label>
+            <textarea id="edit-faq-answer" rows="3" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="edit-faq-keywords">Keywords (comma separated)</label>
+            <input type="text" id="edit-faq-keywords">
+          </div>
+          <div class="form-group">
+            <label for="edit-faq-status">Status</label>
+            <select id="edit-faq-status">
+              <option value="approved">Approved (visible to users)</option>
+              <option value="pending">Pending (not visible to users)</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:1rem; margin-top:1.2rem;">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn" style="background:#eee; color:#800000;" onclick="closeFaqEditModal()">Cancel</button>
+          </div>
+        </form>
+        <button onclick="closeFaqEditModal()" style="position:absolute;top:10px;right:16px;background:none;border:none;font-size:1.5rem;color:#800000;cursor:pointer;">&times;</button>
+      </div>
+    </div>
+
+    <!-- User Edit Modal -->
+    <div id="user-edit-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:9999; align-items:center; justify-content:center;">
+      <div style="background:#fff; border-radius:14px; max-width:400px; width:95%; padding:2rem; box-shadow:0 8px 32px rgba(128,0,0,0.13); position:relative;">
+        <h3 style="color:#800000; margin-bottom:1rem;">Edit User</h3>
+        <form id="user-edit-form">
+          <input type="hidden" id="edit-user-username">
+          <div class="form-group">
+            <label for="edit-user-email">Email</label>
+            <input type="email" id="edit-user-email" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-user-role">Role</label>
+            <select id="edit-user-role">
+              <option value="student">Student</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:1rem; margin-top:1.2rem;">
+            <button type="submit" class="btn btn-primary">Save</button>
+            <button type="button" class="btn" style="background:#eee; color:#800000;" onclick="closeUserEditModal()">Cancel</button>
+          </div>
+        </form>
+        <button onclick="closeUserEditModal()" style="position:absolute;top:10px;right:16px;background:none;border:none;font-size:1.5rem;color:#800000;cursor:pointer;">&times;</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
+        
+        // Cloudinary config (replace with your own values)
+        const CLOUDINARY_CLOUD_NAME = 'dmn9xqxgo'; // e.g. 'dhvsu-askbot'
+        const CLOUDINARY_UPLOAD_PRESET = 'Unsigned_preset'; // e.g. 'askbot_profile_upload'
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            alert('Current user: ' + JSON.stringify(currentUser));
+            if (!currentUser || currentUser.role !== 'admin') {
+                alert('Not admin! Redirecting...');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            showUsersLoading();
+            showFAQsLoading();
+            showFeedbackLoading();
+            showLogsLoading();
+            showAnalyticsLoading();
+            
+            loadAdminStats();
+            loadUsers();
+            loadFAQs();
+            loadFeedback();
+            loadLogs();
+            loadAnalytics();
+            
+            setupTabs();
+            setupSearch();
+            setupFAQForm();
+
+            if (currentUser && currentUser.role === 'admin') {
+                const adminLink = document.createElement('a');
+                adminLink.href = 'admin.html';
+                adminLink.className = 'navbar-link';
+                adminLink.textContent = 'Admin Panel';
+                document.querySelector('.navbar-links').prepend(adminLink);
+            }
+
+            fetchAndRenderUserProfilePicNavbar();
+        });
+        
+        function loadAdminStats() {
+            const formData = new FormData();
+            formData.append('action', 'getAdminStats');
+            
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('total-users').textContent = data.stats.totalUsers;
+                    document.getElementById('total-faqs').textContent = data.stats.totalFAQs;
+                    document.getElementById('total-chats').textContent = data.stats.totalChats;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading admin stats:', error);
+                showMessage('Error loading admin statistics', 'error');
+            });
+        }
+        
+        let usersList = [];
+        function loadUsers(filter = '') {
+            const formData = new FormData();
+            formData.append('action', 'getAllUsers');
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    usersList = data.users;
+                    renderUsersTable(filter);
+                }
+            })
+            .catch(error => {
+                showMessage('Error loading users', 'error');
+            });
+        }
+        
+        function renderUsersTable(filter = '') {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '';
+            let filtered = usersList;
+            if (filter) {
+                filtered = usersList.filter(user =>
+                    user.username.toLowerCase().includes(filter) ||
+                    user.email.toLowerCase().includes(filter) ||
+                    (user.role || '').toLowerCase().includes(filter)
+                );
+            }
+            if (filtered.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" style="text-align:center;">No users found.</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+            filtered.forEach(user => {
+                let dateStr = '-';
+                if (user.dateCreated) {
+                    let d = new Date(user.dateCreated);
+                    if (isNaN(d.getTime())) {
+                        // Try parsing as MM/DD/YYYY or DD/MM/YYYY
+                        const parts = user.dateCreated.split(/[\/-]/);
+                        if (parts.length === 3) {
+                            d = new Date(parts[2], parts[0]-1, parts[1]);
+                            if (isNaN(d.getTime())) d = new Date(parts[2], parts[1]-1, parts[0]);
+                        }
+                    }
+                    dateStr = isNaN(d.getTime()) ? '-' : d.toLocaleDateString();
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${user.username}</td>
+                    <td>${user.email}</td>
+                    <td>${dateStr}</td>
+                    <td>${user.role || ''}</td>
+                    <td>
+                        <button class="action-button edit" onclick="editUser('${user.username}')">Edit</button>
+                        <button class="action-button delete" onclick="deleteUser('${user.username}')">Delete</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        
+        document.getElementById('user-search').addEventListener('input', function(e) {
+            renderUsersTable(this.value.toLowerCase());
+        });
+        
+        function editUser(username) {
+            const user = usersList.find(u => u.username === username);
+            if (!user) return;
+            document.getElementById('edit-user-username').value = user.username;
+            document.getElementById('edit-user-email').value = user.email;
+            document.getElementById('edit-user-role').value = user.role || 'student';
+            document.getElementById('user-edit-modal').style.display = 'flex';
+        }
+        
+        function deleteUser(username) {
+            if (confirm(`Are you sure you want to delete user ${username}?`)) {
+                const formData = new FormData();
+                formData.append('action', 'deleteUser');
+                formData.append('username', username);
+                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('User deleted successfully', 'success');
+                        loadUsers();
+                        loadAdminStats();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting user:', error);
+                    showMessage('Error deleting user', 'error');
+                });
+            }
+        }
+        
+        function loadFAQs() {
+            const formData = new FormData();
+            formData.append('action', 'getFAQs');
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.faqsList = data.faqs;
+                    renderFAQsTable(data.faqs);
+                } else {
+                    renderFAQsTable([]);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading FAQs:', error);
+                showMessage('Error loading FAQs', 'error');
+                renderFAQsTable([]);
+            });
+        }
+        
+        function renderFAQsTable(faqs) {
+            const tbody = document.getElementById('faqs-table-body');
+            tbody.innerHTML = '';
+            if (!faqs || faqs.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td colspan="5" style="text-align:center;">No FAQs found.</td>`;
+                tbody.appendChild(tr);
+                return;
+            }
+            faqs.forEach(faq => {
+                let actions = '';
+                if ((faq.status || '').toLowerCase() === 'pending') {
+                    actions = `
+                        <button class="action-button" style="background:#FFD700;color:#800000;" aria-label="Approve FAQ" title="Approve FAQ" onclick="approveFAQ('${faq.id}')">Approve</button>
+                        <button class="action-button delete" aria-label="Reject FAQ" title="Reject FAQ" onclick="rejectFAQ('${faq.id}')">Reject</button>
+                    `;
+                } else {
+                    actions = `
+                        <button class="action-button edit" aria-label="Edit FAQ" title="Edit FAQ" onclick="editFAQ('${faq.id}')">Edit</button>
+                        <button class="action-button delete" aria-label="Delete FAQ" title="Delete FAQ" onclick="deleteFAQ('${faq.id}')">Delete</button>
+                    `;
+                }
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${faq.question}</td>
+                    <td>${faq.answer}</td>
+                    <td>${faq.keywords || ''}</td>
+                    <td>${faq.status || 'pending'}</td>
+                    <td>${actions}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+        window.renderFAQsTable = renderFAQsTable;
+        
+        function loadFeedback() {
+            const formData = new FormData();
+            formData.append('action', 'getFeedback');
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('feedback-table-body');
+                tbody.innerHTML = '';
+                if (data.success && data.feedbacks && data.feedbacks.length > 0) {
+                    data.feedbacks.forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${item.username || '-'}</td>
+                            <td>${item.message || '-'}</td>
+                            <td>${item.feedbackType === 'positive' ? 'Helpful' : (item.feedbackType === 'negative' ? 'Not Helpful' : '-')}</td>
+                            <td>-</td>
+                            <td>${item.timestamp ? new Date(item.timestamp).toLocaleString() : '-'}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                } else {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="5" style="text-align:center;">No feedback found.</td>`;
+                    tbody.appendChild(tr);
+                }
+            })
+            .catch(error => {
+                showMessage('Error loading feedback', 'error');
+            });
+        }
+        
+        function loadLogs() {
+            const formData = new FormData();
+            formData.append('action', 'getLogs');
+            
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const tbody = document.getElementById('logs-table-body');
+                    tbody.innerHTML = '';
+                    
+                    data.logs.forEach(log => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : '-'}</td>
+                            <td>${log.username || '-'}</td>
+                            <td>${log.action || '-'}</td>
+                            <td>-</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error loading logs:', error);
+                showMessage('Error loading logs', 'error');
+            });
+        }
+        
+        function loadAnalytics() {
+            const formData = new FormData();
+            formData.append('action', 'getAnalytics');
+            // Show loading state
+            document.getElementById('analytics-tab').innerHTML = '<div style="text-align:center;padding:2em;">Loading analytics...</div>';
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.analytics) {
+                    // Restore analytics tab content (re-render charts)
+                    document.getElementById('analytics-tab').innerHTML = `
+                        <div class="chart-container">
+                            <h2 class="chart-title">User Activity</h2>
+                            <canvas id="user-activity-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h2 class="chart-title">FAQ Performance</h2>
+                            <canvas id="faq-performance-chart"></canvas>
+                        </div>
+                        <div class="chart-container">
+                            <h2 class="chart-title">Response Ratings</h2>
+                            <canvas id="ratings-chart"></canvas>
+                        </div>
+                    `;
+                    // User Activity Chart
+                    new Chart(document.getElementById('user-activity-chart'), {
+                        type: 'line',
+                        data: {
+                            labels: data.analytics.userActivity.labels,
+                            datasets: [{
+                                label: 'Active Users',
+                                data: data.analytics.userActivity.data,
+                                borderColor: '#800000',
+                                tension: 0.4
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                    });
+                    // FAQ Performance Chart
+                    new Chart(document.getElementById('faq-performance-chart'), {
+                        type: 'bar',
+                        data: {
+                            labels: data.analytics.faqPerformance.labels,
+                            datasets: [{
+                                label: 'Times Asked',
+                                data: data.analytics.faqPerformance.data,
+                                backgroundColor: '#800000'
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                    });
+                    // Ratings Chart
+                    new Chart(document.getElementById('ratings-chart'), {
+                        type: 'pie',
+                        data: {
+                            labels: ['Helpful', 'Not Helpful', '3 Stars', '2 Stars', '1 Star'],
+                            datasets: [{
+                                data: data.analytics.ratings,
+                                backgroundColor: [
+                                    '#4CAF50',
+                                    '#F44336',
+                                    '#FFC107',
+                                    '#FF9800',
+                                    '#9E9E9E'
+                                ]
+                            }]
+                        },
+                        options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                    });
+                } else {
+                    document.getElementById('analytics-tab').innerHTML = '<div style="color:#721c24;background:#f8d7da;padding:1em;border-radius:8px;">No analytics data available.</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('analytics-tab').innerHTML = '<div style="color:#721c24;background:#f8d7da;padding:1em;border-radius:8px;">Error loading analytics.</div>';
+            });
+        }
+        
+        function setupTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    // Remove active class from all buttons and contents
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    
+                    // Add active class to clicked button and corresponding content
+                    button.classList.add('active');
+                    document.getElementById(`${button.dataset.tab}-tab`).classList.add('active');
+                });
+            });
+        }
+        
+        function setupSearch() {
+            const searchInputs = document.querySelectorAll('.search-input');
+            
+            searchInputs.forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const searchTerm = e.target.value.toLowerCase();
+                    const tableBody = document.getElementById(`${input.id.split('-')[0]}-table-body`);
+                    const rows = tableBody.getElementsByTagName('tr');
+                    
+                    Array.from(rows).forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(searchTerm) ? '' : 'none';
+                    });
+                });
+            });
+        }
+        
+        function setupFAQForm() {
+            const form = document.getElementById('faq-form');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const question = document.getElementById('faq-question').value.trim();
+                const answer = document.getElementById('faq-answer').value.trim();
+                const status = document.getElementById('faq-status').value;
+                document.getElementById('loader').style.display = 'block';
+                try {
+                    const formData = new FormData();
+                    formData.append('action', 'addFAQ');
+                    formData.append('question', question);
+                    formData.append('answer', answer);
+                    formData.append('status', status);
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await response.json();
+                    if (result.success) {
+                        showMessage('FAQ added successfully', 'success');
+                        form.reset();
+                        loadFAQs();
+                    } else {
+                        throw new Error(result.message);
+                    }
+                } catch (error) {
+                    console.error('Error adding FAQ:', error);
+                    showMessage('Error adding FAQ', 'error');
+                } finally {
+                    document.getElementById('loader').style.display = 'none';
+                }
+            });
+        }
+        
+        function editFAQ(id) {
+            const faqs = window.faqsList || [];
+            const faq = faqs.find(f => f.id === id);
+            if (!faq) return;
+            document.getElementById('edit-faq-id').value = faq.id;
+            document.getElementById('edit-faq-question').value = faq.question;
+            document.getElementById('edit-faq-answer').value = faq.answer;
+            document.getElementById('edit-faq-keywords').value = faq.keywords || '';
+            document.getElementById('edit-faq-status').value = faq.status || 'pending';
+            document.getElementById('faq-edit-modal').style.display = 'flex';
+        }
+        
+        function deleteFAQ(id) {
+            if (confirm('Are you sure you want to delete this FAQ?')) {
+                const formData = new FormData();
+                formData.append('action', 'deleteFAQ');
+                formData.append('id', id);
+                
+                fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('FAQ deleted successfully', 'success');
+                        loadFAQs();
+                        loadAdminStats();
+                    } else {
+                        throw new Error(data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting FAQ:', error);
+                    showMessage('Error deleting FAQ', 'error');
+                });
+            }
+        }
+        
+        function closeFaqEditModal() {
+            document.getElementById('faq-edit-modal').style.display = 'none';
+        }
+        
+        // Handle FAQ Edit Form Submission
+        document.getElementById('faq-edit-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('edit-faq-id').value;
+            const question = document.getElementById('edit-faq-question').value.trim();
+            const answer = document.getElementById('edit-faq-answer').value.trim();
+            const keywords = document.getElementById('edit-faq-keywords').value.trim();
+            const status = document.getElementById('edit-faq-status').value;
+            document.getElementById('loader').style.display = 'block';
+            try {
+                const formData = new FormData();
+                formData.append('action', 'editFAQ');
+                formData.append('id', id);
+                formData.append('question', question);
+                formData.append('answer', answer);
+                formData.append('keywords', keywords);
+                formData.append('status', status);
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('FAQ updated successfully', 'success');
+                    closeFaqEditModal();
+                    loadFAQs();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showMessage('Error updating FAQ', 'error');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        });
+        
+        function showMessage(message, type) {
+            const messageElement = document.getElementById('message');
+            messageElement.textContent = message;
+            messageElement.className = `message ${type}`;
+            messageElement.style.display = 'block';
+            
+            // Hide message after 3 seconds
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+        
+        function closeUserEditModal() {
+            document.getElementById('user-edit-modal').style.display = 'none';
+        }
+        
+        document.getElementById('user-edit-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('edit-user-username').value;
+            const email = document.getElementById('edit-user-email').value.trim();
+            const role = document.getElementById('edit-user-role').value;
+            document.getElementById('loader').style.display = 'block';
+            try {
+                const formData = new FormData();
+                formData.append('action', 'updateUser');
+                formData.append('username', username);
+                formData.append('email', email);
+                formData.append('role', role);
+                const response = await fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                const result = await response.json();
+                if (result.success) {
+                    showMessage('User updated successfully', 'success');
+                    closeUserEditModal();
+                    loadUsers(document.getElementById('user-search').value.toLowerCase());
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showMessage('Error updating user', 'error');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+            }
+        });
+
+        // Add loading indicators and refresh buttons to each tab
+        function showUsersLoading() {
+            const tbody = document.getElementById('users-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading users...</td></tr>';
+        }
+        function refreshUsers() {
+            showUsersLoading();
+            loadUsers(document.getElementById('user-search').value.toLowerCase());
+        }
+        function showFAQsLoading() {
+            const tbody = document.getElementById('faqs-table-body');
+            tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">Loading FAQs...</td></tr>';
+        }
+        function refreshFAQs() {
+            showFAQsLoading();
+            loadFAQs();
+        }
+        function showFeedbackLoading() {
+            const tbody = document.getElementById('feedback-table-body');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading feedback...</td></tr>';
+        }
+        function refreshFeedback() {
+            showFeedbackLoading();
+            loadFeedback();
+        }
+        function showLogsLoading() {
+            const tbody = document.getElementById('logs-table-body');
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;">Loading logs...</td></tr>';
+        }
+        function refreshLogs() {
+            showLogsLoading();
+            loadLogs();
+        }
+        function showAnalyticsLoading() {
+            document.getElementById('analytics-tab').innerHTML = '<div style="text-align:center;padding:2em;">Loading analytics...</div>';
+        }
+        function refreshAnalytics() {
+            showAnalyticsLoading();
+            loadAnalytics();
+        }
+
+        function setNavbarAvatarFromCache() {
+            const avatar = document.getElementById('navbar-profile-avatar');
+            const cachedPic = sessionStorage.getItem('profilePic');
+            avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png';
+            avatar.onerror = function() { this.src = 'default_profile.png'; };
+        }
+
+        function fetchAndRenderUserProfilePicNavbar() {
+            setNavbarAvatarFromCache(); // Show cached image instantly
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            const formData = new FormData();
+            formData.append('action', 'getUserProfile');
+            formData.append('username', currentUser.username);
+            fetch(SCRIPT_URL, { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.profile && data.profile.profilePic) {
+                        sessionStorage.setItem('profilePic', data.profile.profilePic);
+                        setNavbarAvatarFromCache();
+                    }
+                });
+        }
+
+        // --- CSV Export Utility ---
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+            for (let row of rows) {
+                let cols = Array.from(row.querySelectorAll('th,td')).map(cell => '"' + cell.innerText.replace(/"/g, '""') + '"');
+                csv.push(cols.join(','));
+            }
+            const csvContent = csv.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        document.getElementById('export-users-csv').addEventListener('click', function() {
+            exportTableToCSV('users-table', 'users.csv');
+            logAdminAction('export_users_csv');
+        });
+        document.getElementById('export-faqs-csv').addEventListener('click', function() {
+            exportTableToCSV('faqs-table', 'faqs.csv');
+            logAdminAction('export_faqs_csv');
+        });
+        document.getElementById('export-feedback-csv').addEventListener('click', function() {
+            exportTableToCSV('feedback-table', 'feedback.csv');
+            logAdminAction('export_feedback_csv');
+        });
+        document.getElementById('export-logs-csv').addEventListener('click', function() {
+            exportTableToCSV('logs-table', 'logs.csv');
+            logAdminAction('export_logs_csv');
+        });
+
+        // --- Bulk FAQ Import ---
+        document.getElementById('import-faqs-csv').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const lines = evt.target.result.split('\n');
+                for (let i = 1; i < lines.length; i++) {
+                    const [question, answer, keywords] = lines[i].split(',');
+                    if (question && answer) {
+                        const formData = new FormData();
+                        formData.append('action', 'addFAQ');
+                        formData.append('question', question.trim());
+                        formData.append('answer', answer.trim());
+                        formData.append('keywords', keywords ? keywords.trim() : '');
+                        fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                    }
+                }
+                showMessage('Bulk FAQ import started. Please refresh after a few seconds.', 'success');
+                logAdminAction('import_faqs_csv');
+                setTimeout(refreshFAQs, 2000);
+            };
+            reader.readAsText(file);
+        });
+
+        // --- FAQ Approval Workflow ---
+        function approveFAQ(id) {
+            if (!confirm('Approve this FAQ?')) return;
+            const formData = new FormData();
+            formData.append('action', 'editFAQ');
+            const faq = (window.faqsList || []).find(f => f.id === id);
+            if (!faq) return;
+            formData.append('id', id);
+            formData.append('question', faq.question);
+            formData.append('answer', faq.answer);
+            formData.append('keywords', faq.keywords || '');
+            formData.append('status', 'approved');
+            fetch(SCRIPT_URL, { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showMessage('FAQ approved.', 'success');
+                        logAdminAction('approve_faq', id);
+                        loadFAQs();
+                    } else {
+                        showMessage('Error approving FAQ', 'error');
+                    }
+                });
+        }
+        function rejectFAQ(id) {
+            if (!confirm('Reject and delete this FAQ?')) return;
+            deleteFAQ(id);
+            logAdminAction('reject_faq', id);
+        }
+
+        // --- Admin Action Logging ---
+        function logAdminAction(action, details = '') {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            const formData = new FormData();
+            formData.append('action', 'logActivity');
+            formData.append('username', currentUser.username);
+            formData.append('actionType', action);
+            formData.append('details', details);
+            fetch(SCRIPT_URL, { method: 'POST', body: formData });
+        }
+
+        // --- Accessibility: Focus trap for modals, ESC to close ---
+        function trapFocus(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (!focusable.length) return;
+            let first = focusable[0], last = focusable[focusable.length - 1];
+            modal.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    if (e.shiftKey) {
+                        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+                    } else {
+                        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+                    }
+                }
+                if (e.key === 'Escape') {
+                    if (modalId === 'faq-edit-modal') closeFaqEditModal();
+                    if (modalId === 'user-edit-modal') closeUserEditModal();
+                }
+            });
+        }
+        trapFocus('faq-edit-modal');
+        trapFocus('user-edit-modal');
+
+        // --- Toast Notification ---
+        function showToast(msg, type = 'success') {
+            let toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.position = 'fixed';
+            toast.style.bottom = '30px';
+            toast.style.right = '30px';
+            toast.style.background = type === 'success' ? '#4CAF50' : '#F44336';
+            toast.style.color = '#fff';
+            toast.style.padding = '1em 2em';
+            toast.style.borderRadius = '8px';
+            toast.style.zIndex = 99999;
+            toast.style.fontWeight = 'bold';
+            toast.style.boxShadow = '0 4px 16px rgba(0,0,0,0.13)';
+            document.body.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = 0; setTimeout(() => document.body.removeChild(toast), 700); }, 2500);
+        }
+        // Patch showMessage to also show toast
+        const origShowMessage = window.showMessage;
+        window.showMessage = function(msg, type) {
+            origShowMessage(msg, type);
+            showToast(msg, type);
+        };
+
+        // --- Prevent double submit ---
+        document.getElementById('faq-form').addEventListener('submit', function(e) {
+            document.getElementById('add-faq-btn').disabled = true;
+            setTimeout(() => { document.getElementById('add-faq-btn').disabled = false; }, 2000);
+        });
+
+        // Add a refresh button if missing
+        if (!document.getElementById('refresh-faqs-btn')) {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.id = 'refresh-faqs-btn';
+            refreshBtn.className = 'btn';
+            refreshBtn.textContent = 'Refresh';
+            refreshBtn.onclick = refreshFAQs;
+            document.querySelector('#faqs-tab .search-bar').appendChild(refreshBtn);
+        }
+    </script>
+</body>
+</html>
