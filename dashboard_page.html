@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Honorian AskBot Dashboard - DHVSU</title>
+    <title>Honorian AskBot Dashboard - Pampanga State University</title>
+    <link href="https://fonts.googleapis.com/css?family=Merriweather:700,900&display=swap" rel="stylesheet">
     <style>
         :root {
             --dhvsu-maroon: #800000;
@@ -13,6 +14,7 @@
             --gray: #f7f7f7;
             --bubble-radius: 22px;
             --navbar-height: 60px;
+            --chat-card-width: 500px;
         }
         
         * {
@@ -23,7 +25,7 @@
         }
         
         body {
-            background: #f7f7f7;
+            background: repeating-linear-gradient(135deg, #f7f7f7 0px, #f7f7f7 40px, #faf6f0 40px, #faf6f0 80px);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -141,194 +143,210 @@
         display: flex;
         justify-content: center;
         align-items: flex-start;
-        padding: 1.5rem 0 0.5rem 0;
-        background: #f7f7f7;
+        padding: 2.5rem 0 2rem 0;
+        background: transparent;
     }
     
-    .chatbot-container {
-        background: #fff;
-        border-radius: 18px;
-        box-shadow: 0 2px 12px rgba(128,0,0,0.06);
+    .chatbot-card {
+        background: linear-gradient(135deg, #fff 0%, #fffbe6 100%);
+        border-radius: 32px;
+        box-shadow: 0 8px 40px rgba(128,0,0,0.10), 0 1.5px 0 0 #FFD700;
+        max-width: var(--chat-card-width);
         width: 100%;
-        max-width: 480px;
+        margin: 0 auto;
+        padding: 0 0 2rem 0;
         display: flex;
         flex-direction: column;
-        overflow: hidden;
-        margin: 0 auto;
-        border: 1.5px solid #f0e6e6;
+        align-items: stretch;
+        position: relative;
+        border: 2px solid #FFD700;
+        padding-top: 3.5rem;
+    }
+    
+    .chatbot-logo {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        transform: translate(-50%, -50%);
+        z-index: 3;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        pointer-events: none;
+    }
+    .chatbot-logo-inner {
+        background: #fff;
+        border-radius: 50%;
+        box-shadow: 0 4px 24px rgba(128,0,0,0.13), 0 0 0 7px var(--dhvsu-gold), 0 0 18px 4px #FFD70044;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 110px;
+        height: 110px;
+        margin-bottom: 10px;
+    }
+    .chatbot-logo img {
+        width: 86px;
+        height: 86px;
+        border-radius: 50%;
+        display: block;
     }
     
     .chat-header {
-        background: #fff;
+        background: linear-gradient(135deg, #fffbe6 0%, #fff 100%);
+        border-radius: 24px;
+        box-shadow: 0 2px 12px rgba(128,0,0,0.04);
+        border: 1.5px solid #FFD700;
+        text-align: center;
+        margin: 3.5rem 1.2rem 1.2rem 1.2rem;
+        padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+        position: relative;
+    }
+    
+    .chat-header h1 {
         color: var(--dhvsu-maroon);
-        padding: 1rem 1.2rem 0.7rem 1.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        border-bottom: 1.5px solid #f3e3e3;
-    }
-    
-    .chat-header-left {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    .chat-header-left svg {
+        margin-bottom: 0.5rem;
+        font-size: 2.2rem;
+        font-family: 'Merriweather', 'Georgia', serif;
+        font-weight: 900;
+        letter-spacing: 0.5px;
+        position: relative;
         display: inline-block;
-        vertical-align: middle;
-        margin-bottom: 2px;
-        width: 26px;
-        height: 26px;
+    }
+    .chat-header h1::after {
+        content: '';
+        display: block;
+        width: 70%;
+        height: 4px;
+        background: linear-gradient(90deg, var(--dhvsu-gold) 60%, #fffbe6 100%);
+        border-radius: 2px;
+        margin: 0.7rem auto 0 auto;
     }
     
-    .chat-header h2 {
-        margin-left: 0;
-        font-size: 1.18rem;
-        font-weight: 700;
-        display: inline-block;
-        vertical-align: middle;
+    .chat-header p {
+        color: #444;
+        font-size: 1.13rem;
+        margin-top: 1.2rem;
+        margin-bottom: 1.2rem;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        font-weight: 500;
     }
     
     .connection-status {
-        font-size: 0.9rem;
-        padding: 4px 12px;
-        border-radius: 12px;
-        background: #4CAF50;
-        color: white;
+        display: inline-flex;
+        align-items: center;
+        background: #43b047;
+        color: #fff;
+        padding: 0.6rem 2.2rem;
+        border-radius: 999px;
+        font-size: 1.13rem;
+        font-weight: 700;
+        box-shadow: 0 2px 12px 0 #43b04733;
+        margin: 0 auto;
+        letter-spacing: 0.5px;
+        border: none;
+        transition: box-shadow 0.2s;
+    }
+    .connection-status:hover, .connection-status:focus {
+        box-shadow: 0 4px 18px 0 #43b04755;
+    }
+    .pulsing-dot {
+        display: none;
     }
     
-    .connection-status.offline {
-        background: #f44336;
+    .section-divider {
+        width: 90%;
+        margin: 1.2rem auto 1.2rem auto;
+        border: none;
+        border-top: 1.5px solid #f0e6e6;
     }
     
     .chat-messages {
-        flex: 1;
-        padding: 1.2rem 0.7rem 0.7rem 0.7rem;
+        background: #fff;
+        border-radius: 18px;
+        padding: 1.2rem 1rem 1.2rem 1rem;
+        margin: 0 1.2rem 1.2rem 1.2rem;
+        min-height: 220px;
+        max-height: 340px;
         overflow-y: auto;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    
+    .chat-message {
         display: flex;
-        flex-direction: column;
-        min-height: 350px;
-        max-height: 60vh;
-        background: #f7f7f7;
+        align-items: flex-end;
+        gap: 0.7rem;
+        margin-bottom: 1.2rem;
+        animation: fadeInMsg 0.5s;
     }
-    
-    .message {
-        margin-bottom: 1.1rem;
-        max-width: 85%;
-        padding: 13px 16px;
-        border-radius: var(--bubble-radius);
+    .chat-message.user-message {
+        flex-direction: row-reverse;
+    }
+    .chat-avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.08);
+        object-fit: cover;
+        border: 2px solid var(--dhvsu-gold);
+    }
+    .chat-avatar.bot {
+        border: 2px solid var(--dhvsu-maroon);
+    }
+    .chat-bubble {
+        max-width: 75vw;
+        padding: 1.05rem 1.2rem;
+        border-radius: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        font-size: 1.07rem;
+        line-height: 1.6;
         position: relative;
-        white-space: pre-line;
-        font-size: 1.05rem;
-        box-shadow: 0 1px 4px rgba(128,0,0,0.04);
-        animation: chatBubbleIn 0.4s;
+        word-break: break-word;
+        transition: background 0.2s;
     }
-    
-    @keyframes chatBubbleIn {
-        from { opacity: 0; transform: translateY(20px); }
-        to { opacity: 1; transform: translateY(0); }
+    .user-message .chat-bubble {
+        background: linear-gradient(90deg, #fff 60%, #f5e9e9 100%);
+        color: #800000;
+        border-bottom-right-radius: 8px;
     }
-    
-    .bot-message {
-        align-self: flex-start;
-        background: #f0f0f0;
+    .bot-message .chat-bubble {
+        background: linear-gradient(90deg, #fffbe6 60%, #f7f7f7 100%);
         color: #333;
-        border-top-left-radius: 6px;
-        border-bottom-right-radius: 22px;
-        border: 1.5px solid #eee;
+        border-bottom-left-radius: 8px;
     }
-    
-    .user-message {
-        align-self: flex-end;
-        background: var(--dhvsu-maroon);
-        color: white;
-        border-top-right-radius: 6px;
-        border-bottom-left-radius: 22px;
-        border: 1.5px solid var(--dhvsu-maroon);
-    }
-    
-    .message-time {
-        font-size: 0.85rem;
-        opacity: 0.7;
-        margin-top: 7px;
+    .message-timestamp {
+        font-size: 0.78rem;
+        opacity: 0.5;
+        margin-top: 0.18rem;
         text-align: right;
     }
     
-    .welcome-message {
-        text-align: center;
-        background: #fff;
-        padding: 18px;
-        border-radius: 12px;
-        margin: 0 auto 12px auto;
-        max-width: 98%;
-        box-shadow: 0 1px 4px rgba(128,0,0,0.04);
-    }
-    
-    .welcome-message h3 {
-        color: var(--dhvsu-maroon);
-        margin-bottom: 8px;
-        font-size: 1.08rem;
-    }
-    
-    .welcome-message p {
-        color: #666;
-        margin-bottom: 12px;
-    }
-    
-    .chat-examples {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 8px;
-        margin-top: 10px;
-    }
-    
-    .example-query {
-        background: #f7f7f7;
-        padding: 8px;
-        border-radius: 7px;
-        cursor: pointer;
-        text-align: center;
-        transition: background 0.3s;
-        border: 1.5px solid #eee;
-    }
-    
-    .example-query:hover {
-        background: #FFD700;
-        color: var(--dhvsu-maroon);
-    }
-    
-    .chat-input {
+    .chat-form {
         display: flex;
+        gap: 0.7rem;
+        background: #fff;
+        border-radius: 30px;
+        box-shadow: 0 2px 12px rgba(128,0,0,0.07);
+        padding: 0.5rem 1rem;
+        margin: 0.5rem 1.2rem 0 1.2rem;
         align-items: center;
-        padding: 0.7rem 0.7rem 0.7rem 0.7rem;
-        background: transparent;
-        border-top: none;
         position: relative;
     }
     
-    .chat-input input {
-        flex: 1;
-        padding: 15px 18px;
-        border: 1.5px solid #e0e0e0;
-        border-radius: 30px;
-        font-size: 1.08rem;
-        margin-right: 10px;
-        background: #fff;
-        transition: border-color 0.3s, box-shadow 0.3s;
-        box-shadow: 0 1px 4px rgba(128,0,0,0.04);
-    }
-    
-    .chat-input input:focus {
+    .chat-input {
+        border: none;
         outline: none;
-        border-color: var(--dhvsu-maroon);
-        box-shadow: 0 0 8px rgba(165, 42, 42, 0.13);
-        background: #fff;
+        flex: 1;
+        font-size: 1.12rem;
+        background: transparent;
+        padding: 0.7rem 0.5rem;
     }
     
-    .send-btn {
+    .send-button {
         background: var(--dhvsu-maroon);
-        color: white;
+        color: #fff;
         border: none;
         border-radius: 50%;
         width: 48px;
@@ -336,106 +354,103 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        cursor: pointer;
-        transition: background 0.3s, box-shadow 0.3s;
-        box-shadow: 0 1px 4px rgba(128,0,0,0.07);
+        font-size: 1.3rem;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.08);
+        transition: background 0.2s, transform 0.2s;
     }
     
-    .send-btn:hover {
+    .send-button:hover, .send-button:focus {
         background: var(--dhvsu-gold);
         color: var(--dhvsu-maroon);
-        box-shadow: 0 2px 8px rgba(128,0,0,0.13);
+        transform: scale(1.08);
     }
     
-    .send-btn:disabled {
-        background: #cccccc;
-        color: #fff;
-        cursor: not-allowed;
+    .chat-suggestions, .chat-categories, .quick-links {
+        margin: 0 1.2rem 0.7rem 1.2rem;
     }
     
-    .send-icon {
-        width: 20px;
-        height: 20px;
-        fill: white;
+    .chat-suggestions h3, .chat-categories h3, .quick-links h3 {
+        color: var(--dhvsu-maroon);
+        margin-bottom: 0.7rem;
+        font-size: 1.13rem;
+        font-family: 'Merriweather', 'Georgia', serif;
+        font-weight: 700;
     }
     
-    .typing-indicator {
-        display: none;
-        align-self: flex-start;
-        padding: 8px 16px;
-        background: #f0f0f0;
-        border-radius: 20px;
-        margin-bottom: 10px;
-    }
-    
-    .typing-animation {
+    .suggestion-buttons, .category-buttons {
         display: flex;
+        flex-wrap: wrap;
+        gap: 0.7rem;
     }
     
-    .dot {
-        width: 8px;
-        height: 8px;
-        background: #777;
-        border-radius: 50%;
-        margin: 0 2px;
-        animation: bounce 1.5s infinite ease-in-out;
-    }
-    
-    .dot:nth-child(1) { animation-delay: 0s; }
-    .dot:nth-child(2) { animation-delay: 0.2s; }
-    .dot:nth-child(3) { animation-delay: 0.4s; }
-    
-    @keyframes bounce {
-        0%, 60%, 100% { transform: translateY(0); }
-        30% { transform: translateY(-5px); }
-    }
-    
-    .feedback-buttons {
-        display: flex;
-        justify-content: flex-end;
-        margin-top: 5px;
-        gap: 8px;
-    }
-    
-    .feedback-btn {
-        background: none;
-        border: none;
+    .suggestion-btn, .category-btn {
+        background: #fff;
+        border: 2px solid var(--dhvsu-maroon);
+        color: var(--dhvsu-maroon);
+        padding: 0.6rem 1.3rem;
+        border-radius: 22px;
         cursor: pointer;
-        color: #777;
-        font-size: 0.98rem;
+        font-size: 1.01rem;
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s;
         display: flex;
         align-items: center;
-        padding: 2px 7px;
-        border-radius: 5px;
-        transition: background 0.2s;
+        gap: 0.5em;
+        box-shadow: 0 1px 4px rgba(128,0,0,0.04);
     }
     
-    .feedback-btn:hover {
-        background: #FFD700;
+    .suggestion-btn i, .category-btn i {
+        font-size: 1.1em;
+    }
+    
+    .suggestion-btn:hover, .category-btn:hover, .suggestion-btn:focus, .category-btn:focus {
+        background: var(--dhvsu-maroon);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.10);
+    }
+    
+    .quick-links-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.2rem;
+    }
+    
+    .quick-links-grid a {
+        background: #fff;
         color: var(--dhvsu-maroon);
+        padding: 1.1rem 0.5rem;
+        border-radius: 18px;
+        text-decoration: none;
+        text-align: center;
+        font-weight: 700;
+        font-size: 1.07rem;
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+        border: 2px solid #eee;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+        box-shadow: 0 1px 4px rgba(128,0,0,0.04);
     }
     
-    .feedback-btn svg {
-        margin-right: 3px;
-        width: 15px;
-        height: 15px;
+    .quick-links-grid a:hover, .quick-links-grid a:focus {
+        background: var(--dhvsu-maroon);
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.10);
     }
     
-    @media (max-width: 768px) {
-        .university-name { font-size: 1rem; }
-        main { padding: 0.5rem 0; }
-        .chatbot-container { max-width: 99%; }
-        .message { max-width: 98%; }
-        .chat-messages { padding: 0.7rem 0.2rem 0.2rem 0.2rem; }
+    @media (max-width: 700px) {
+        :root { --chat-card-width: 99vw; }
+        .chatbot-card { border-radius: 0; }
+        .chatbot-logo-inner { width: 70px; height: 70px; padding: 5px; }
+        .chatbot-logo img { width: 54px; height: 54px; }
+        .chat-header h1 { font-size: 1.2rem; }
+        .chat-header { padding: 1.2rem 0.5rem 1rem 0.5rem; }
     }
-    
-    @media (max-width: 576px) {
-        .logo { width: 32px; height: 32px; font-size: 14px; }
-        .university-name { font-size: 0.9rem; }
-        .user-info { margin-right: 6px; }
-        .logout-btn { padding: 5px 8px; font-size: 0.95rem; }
-        .chat-examples { grid-template-columns: 1fr; }
-        .chatbot-container { padding: 0; }
+    @media (max-width: 480px) {
+        .chatbot-logo-inner { width: 48px; height: 48px; padding: 2px; }
+        .chatbot-logo img { width: 36px; height: 36px; }
+        .chat-header { margin: 1.2rem 0.2rem 0.7rem 0.2rem; padding: 0.7rem 0.2rem 0.7rem 0.2rem; }
     }
 
     .welcome-admin-card { display: none; }
@@ -452,7 +467,396 @@
         margin-bottom: 0.5rem;
     }
     @media (max-width: 900px) {
-        .chatbot-container { margin: 0 auto; }
+        .chat-container { margin: 0 auto; }
+    }
+    /* Add/Update CSS for accessibility, mobile, and UX polish */
+    .chat-suggestion-btn, .chat-send-btn, .chat-input {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1rem;
+    }
+    .chat-suggestion-btn:focus, .chat-send-btn:focus, .chat-input:focus {
+        outline: 2px solid #FFD700;
+        box-shadow: 0 0 0 3px rgba(255,215,0,0.13);
+    }
+    .chat-suggestion-btn:hover, .chat-send-btn:hover {
+        background: #fffbe6;
+        color: #800000;
+        border-color: #FFD700;
+    }
+    .chat-message {
+        animation: fadeInMsg 0.5s;
+    }
+    @keyframes fadeInMsg {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-bot-typing {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #800000;
+        font-size: 1.05rem;
+        margin: 0.7em 0 0.2em 0;
+    }
+    .spinner {
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #800000;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        vertical-align: middle;
+    }
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .connection-status {
+        font-size: 0.95rem;
+        padding: 4px 16px;
+        border-radius: 16px;
+        background: #4CAF50;
+        color: white;
+        font-weight: 600;
+        box-shadow: 0 1px 4px rgba(76,175,80,0.08);
+        display: inline-block;
+        margin-left: 8px;
+    }
+    .connection-status[aria-label]::after {
+        content: attr(aria-label);
+        position: absolute;
+        left: -9999px;
+        /* for screen readers */
+    }
+    @media (max-width: 600px) {
+        .chat-container { max-width: 99vw; }
+        .chat-header h1 { font-size: 1rem; }
+        .chat-suggestion-btn, .chat-send-btn, .chat-input {
+            font-size: 0.98rem;
+            min-width: 44px;
+            min-height: 44px;
+        }
+    }
+    /* Gold accent bar under navbar */
+    .gold-accent-bar {
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, #FFD700 0%, #fffbe6 100%);
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.04);
+    }
+    /* Pulsing green dot for Online status */
+    .pulsing-dot {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        background: #4CAF50;
+        border-radius: 50%;
+        margin-right: 6px;
+        box-shadow: 0 0 0 0 #4CAF50;
+        animation: pulseDot 1.2s infinite;
+        vertical-align: middle;
+    }
+    @keyframes pulseDot {
+        0% { box-shadow: 0 0 0 0 #4CAF50; }
+        70% { box-shadow: 0 0 0 8px rgba(76,175,80,0.0); }
+        100% { box-shadow: 0 0 0 0 #4CAF50; }
+    }
+    /* Category filter dropdown */
+    #faq-category-filter {
+        margin-bottom: 0.7em;
+        padding: 7px 12px;
+        border-radius: 7px;
+        border: 1.5px solid #FFD700;
+        font-size: 1em;
+        color: #800000;
+        background: #fffbe6;
+        font-weight: 500;
+        outline: none;
+        min-width: 160px;
+    }
+    #faq-category-filter:focus {
+        border-color: #800000;
+    }
+    /* Responsive FAQ example grid */
+    #faq-examples {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5em;
+        justify-content: center;
+        margin-bottom: 0.5em;
+    }
+    /* User avatar in welcome card */
+    .welcome-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 2px solid #FFD700;
+        margin-right: 0.8em;
+        vertical-align: middle;
+        object-fit: cover;
+    }
+    /* Recently asked section */
+    #recently-asked {
+        margin-bottom: 0.7em;
+        color: #555;
+        font-size: 0.98em;
+        text-align: center;
+    }
+    /* Thumbs up/down for FAQ feedback */
+    .faq-feedback-btn {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        margin-left: 8px;
+        cursor: pointer;
+        color: #888;
+        transition: color 0.2s;
+        vertical-align: middle;
+    }
+    .faq-feedback-btn:hover, .faq-feedback-btn:focus {
+        color: #4CAF50;
+    }
+    @media (max-width: 600px) {
+        .chat-container { max-width: 99vw; }
+        .example-query { font-size: 0.98em; padding: 10px 8px; }
+        #faq-category-filter { font-size: 0.98em; min-width: 120px; }
+        .welcome-avatar { width: 38px; height: 38px; }
+    }
+    /* Add typing indicator styles */
+    .typing-indicator {
+        background-color: #f0f0f0 !important;
+        padding: 1rem !important;
+    }
+
+    .typing-indicator .dots {
+        display: flex;
+        gap: 4px;
+    }
+
+    .typing-indicator .dots span {
+        width: 8px;
+        height: 8px;
+        background: var(--dhvsu-maroon);
+        border-radius: 50%;
+        animation: bounce 1.4s infinite ease-in-out;
+    }
+
+    .typing-indicator .dots span:nth-child(1) { animation-delay: -0.32s; }
+    .typing-indicator .dots span:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+        0%, 80%, 100% { transform: scale(0); }
+        40% { transform: scale(1); }
+    }
+
+    /* Add hover effects for buttons */
+    .suggestion-btn, .category-btn {
+        position: relative;
+        overflow: hidden;
+    }
+
+    .suggestion-btn::after, .category-btn::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transform: translate(-50%, -50%) scale(0);
+        border-radius: inherit;
+        transition: transform 0.3s;
+    }
+
+    .suggestion-btn:hover::after, .category-btn:hover::after {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    /* Add focus styles for accessibility */
+    .suggestion-btn:focus, .category-btn:focus, .chat-input:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(128, 0, 0, 0.2);
+    }
+
+    /* Add smooth transitions */
+    .chat-message {
+        transition: transform 0.3s, opacity 0.3s;
+    }
+
+    .chat-message:hover {
+        transform: translateX(0);
+    }
+
+    .user-message:hover {
+        transform: translateX(-4px);
+    }
+
+    .bot-message:hover {
+        transform: translateX(4px);
+    }
+
+    .feedback-widget {
+        background: #fff;
+        border: 1.2px solid #FFD700;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.04);
+        padding: 1.1rem 1rem 1rem 1rem;
+        margin: 1.2rem 0 0.5rem 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.1rem;
+    }
+    .feedback-row {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        margin-bottom: 0.1rem;
+    }
+    .feedback-title {
+        font-size: 1.01rem;
+        font-weight: 500;
+        color: var(--dhvsu-maroon);
+        margin-bottom: 0;
+        letter-spacing: 0.1px;
+    }
+    .feedback-btn {
+        border: none;
+        outline: none;
+        font-size: 1.15rem;
+        border-radius: 999px;
+        padding: 0.45em 1.3em;
+        margin-right: 0.2em;
+        background: #f6f6f6;
+        color: #555;
+        cursor: pointer;
+        transition: background 0.16s, color 0.16s;
+        box-shadow: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+    }
+    .feedback-btn svg {
+        margin-right: 0.3em;
+        font-size: 1.1em;
+    }
+    #feedback-yes {
+        background: #eaf8ef;
+        color: #2e7d32;
+        border: 1.2px solid #b6e2c6;
+    }
+    #feedback-yes:hover, #feedback-yes:focus {
+        background: #d2f5dd;
+        color: #1b5e20;
+    }
+    #feedback-no {
+        background: #fffbe6;
+        color: #bfa100;
+        border: 1.2px solid #ffe066;
+    }
+    #feedback-no:hover, #feedback-no:focus {
+        background: #fff7c2;
+        color: #a68b00;
+    }
+    .feedback-comment-group {
+        margin-top: 0.1em;
+    }
+    .feedback-comment {
+        border: 1.2px solid #FFD700;
+        border-radius: 10px;
+        padding: 0.7em 1em;
+        font-size: 0.98rem;
+        width: 100%;
+        box-shadow: none;
+        outline: none;
+        background: #fff;
+        color: #444;
+        margin-top: 0.1em;
+        transition: border-color 0.18s;
+    }
+    .feedback-comment:focus {
+        border-color: var(--dhvsu-maroon);
+    }
+    .feedback-label {
+        display: none;
+    }
+    @media (max-width: 600px) {
+        .feedback-widget { padding: 0.7rem 0.4rem; }
+        .feedback-row { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        .feedback-btn { font-size: 1rem; padding: 0.4em 0.9em; }
+        .feedback-comment { font-size: 0.96rem; }
+    }
+    .feedback-thankyou {
+        background: #e8f5e9;
+        color: #2e7d32;
+        font-size: 1rem;
+        font-weight: 600;
+        border-radius: 12px;
+        padding: 0.7em 1.2em;
+        margin: 1.1em 0 0.2em 0;
+        box-shadow: 0 1px 6px rgba(76,175,80,0.07);
+        text-align: center;
+        opacity: 1;
+        transition: opacity 0.7s;
+        z-index: 2;
+    }
+    .feedback-thankyou.fade-out {
+        opacity: 0;
+    }
+    .clarification-container,
+    .follow-up-container {
+        background: #fff;
+        border: 1.2px solid #FFD700;
+        border-radius: 16px;
+        padding: 1.1rem;
+        margin: 1rem 0;
+        box-shadow: 0 2px 8px rgba(128,0,0,0.04);
+    }
+
+    .clarification-title,
+    .follow-up-title {
+        color: var(--dhvsu-maroon);
+        font-weight: 600;
+        margin-bottom: 0.8rem;
+        font-size: 1.01rem;
+    }
+
+    .clarification-btn,
+    .follow-up-btn {
+        background: #fff;
+        border: 1.2px solid var(--dhvsu-maroon);
+        color: var(--dhvsu-maroon);
+        padding: 0.6rem 1.2rem;
+        border-radius: 20px;
+        margin: 0.4rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 0.98rem;
+    }
+
+    .clarification-btn:hover,
+    .follow-up-btn:hover {
+        background: var(--dhvsu-maroon);
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    .chat-bubble a {
+        color: var(--dhvsu-maroon);
+        text-decoration: underline;
+        font-weight: 500;
+    }
+
+    .chat-bubble a:hover {
+        color: var(--dhvsu-gold);
+    }
+
+    .typing-indicator {
+        opacity: 0.7;
     }
     </style>
 </head>
@@ -460,14 +864,15 @@
 <body>
     <nav class="navbar">
         <div class="navbar-left">
-            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="DHVSU Logo" class="navbar-logo">
-            <span class="navbar-title">Don Honorio Ventura State University</span>
+            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Logo" class="navbar-logo">
+            <span class="navbar-title">Pampanga State University</span>
         </div>
-        <div class="navbar-links" id="navbar-links">
-            <a href="dashboard_page.html" class="navbar-link active">Dashboard</a>
-            <a href="profile.html" class="navbar-link" id="profile-link-navbar">Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar"></a>
+        <div class="navbar-links">
+            <a href="dashboard_page.html" class="navbar-link">Dashboard</a>
             <a href="faq.html" class="navbar-link">FAQs</a>
-            <span id="admin-panel-navbar-link"></span>
+            <a href="profile.html" class="navbar-link">
+                Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar">
+            </a>
             <button class="navbar-logout" id="logout-btn">Logout</button>
         </div>
     </nav>
@@ -481,63 +886,68 @@
       </div>
     </div>
 
-    <div id="student-welcome" style="background:#fff; border-radius:12px; box-shadow:0 2px 8px rgba(128,0,0,0.07); margin:1.5em auto 1em auto; max-width:480px; padding:1.2em 1.5em; display:flex; align-items:center; gap:1.5em;">
-      <img id="student-avatar" src="default_profile.png" style="width:56px;height:56px;border-radius:50%;border:2px solid #FFD700;">
-      <div>
-        <div style="font-size:1.2em;font-weight:600;color:#800000;" id="student-greeting"></div>
-        <div style="font-size:0.98em;color:#555;" id="student-stats"></div>
-      </div>
-    </div>
-
     <main>
-        <div class="chatbot-container">
+        <div class="chatbot-card">
+            <div class="chatbot-logo">
+                <div class="chatbot-logo-inner">
+                    <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Don Honorio Ventura State University Logo">
+                </div>
+            </div>
             <div class="chat-header">
-                <div class="chat-header-left">
+                <h1>Ask me anything about Pampanga State University!</h1>
+                <p>I can help you with admissions, enrollment, academic procedures, and more.</p>
+                <div class="connection-status">
+                    Online
+                </div>
+            </div>
+            <hr class="section-divider">
+            <div class="chat-categories">
+                <h3>Browse by Category</h3>
+                <div class="category-buttons">
+                    <button onclick="filterByCategory('admissions')" class="category-btn"><i class="fas fa-user-graduate"></i>Admissions</button>
+                    <button onclick="filterByCategory('registrar')" class="category-btn"><i class="fas fa-university"></i>Registrar</button>
+                    <button onclick="filterByCategory('academics')" class="category-btn"><i class="fas fa-book"></i>Academics</button>
+                    <button onclick="filterByCategory('student-services')" class="category-btn"><i class="fas fa-hands-helping"></i>Student Services</button>
+                </div>
+            </div>
+            <hr class="section-divider">
+            <div class="chat-suggestions" id="chatSuggestions">
+                <h3>Popular Questions</h3>
+                <div class="suggestion-buttons">
+                    <button onclick="sendMessage('How do I get my TOR?')" class="suggestion-btn"><i class="fas fa-file-alt"></i>How to get TOR?</button>
+                    <button onclick="sendMessage('What are the enrollment requirements?')" class="suggestion-btn"><i class="fas fa-list-alt"></i>Enrollment Requirements</button>
+                    <button onclick="sendMessage('How to validate my ID?')" class="suggestion-btn"><i class="fas fa-id-card"></i>ID Validation</button>
+                    <button onclick="sendMessage('How to get Certificate of Grades?')" class="suggestion-btn"><i class="fas fa-certificate"></i>Get Certificate of Grades</button>
+                </div>
+            </div>
+            <hr class="section-divider">
+            <div class="chat-messages" id="chatMessages">
+                <!-- Chat messages will appear here -->
+            </div>
+            <form class="chat-form">
+                <input type="text" class="chat-input" placeholder="Type your question here..." autocomplete="off">
+                <button type="submit" class="send-button" aria-label="Send message">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="2" y1="12" x2="22" y2="12"></line>
-                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-                    </svg>
-                    <h2>Honorian AskBot</h2>
-                </div>
-                <span class="connection-status" id="connection-status">Online</span>
-            </div>
-            <div class="chat-welcome-bar" id="chat-welcome-bar" style="display:none;"></div>
-            <div class="chat-messages" id="chat-messages">
-                <div class="welcome-message">
-                    <h3>Welcome to Honorian AskBot! 👋</h3>
-                    <p>I'm here to help you with information about DHVSU. You can ask me about enrollment procedures, classroom locations, and other academic concerns.</p>
-                    <div class="chat-examples">
-                        <div class="example-query">Where is the Admissions Office?</div>
-                        <div class="example-query">How do I enroll as a freshman?</div>
-                        <div class="example-query">What documents do I need for enrollment?</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="typing-indicator" id="typing-indicator">
-                <div class="typing-animation">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
-            </div>
-
-            <div class="chat-input">
-                <input type="text" id="user-input" placeholder="Type your question here..." autocomplete="off">
-                <button class="send-btn" id="send-btn">
-                    <svg class="send-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                     </svg>
                 </button>
+            </form>
+            <hr class="section-divider">
+            <div class="quick-links">
+                <h3>Quick Links</h3>
+                <div class="quick-links-grid">
+                    <a href="#" onclick="sendMessage('What are the requirements for enrollment?'); return false;"><i class="fas fa-list-alt"></i>Enrollment Requirements</a>
+                    <a href="#" onclick="sendMessage('How can I get a Certificate of Registration?'); return false;"><i class="fas fa-certificate"></i>Get COR</a>
+                    <a href="#" onclick="sendMessage('What is the process for transferring campuses?'); return false;"><i class="fas fa-exchange-alt"></i>Campus Transfer</a>
+                    <a href="#" onclick="sendMessage('How can I apply for a scholarship?'); return false;"><i class="fas fa-graduation-cap"></i>Scholarships</a>
+                </div>
             </div>
-
-            <div id="faq-suggestions" style="margin-top:0.5em;"></div>
         </div>
     </main>
 
     <footer>
-        &copy; 2025 Don Honorio Ventura State University. All Rights Reserved.
+        &copy; 2025 Pampanga State University. All Rights Reserved.
     </footer>
 
     <div id="chat-history-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;align-items:center;justify-content:center;">
@@ -548,594 +958,485 @@
       </div>
     </div>
 
+    <script src="https://kit.fontawesome.com/7b2b2c7e2a.js" crossorigin="anonymous"></script>
     <script>
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
         
-        // Set to 'true' to enable offline mode for testing without Apps Script
-        const OFFLINE_MODE = false;
-        // *******************************************
-        
-        // User authentication check
         document.addEventListener('DOMContentLoaded', function() {
-            // Check if user is logged in
-            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            setupEventListeners();
+            fetchAndRenderUserProfilePicNavbar();
+            loadChatHistory();
             
+            // Add welcome message
+            setTimeout(() => {
+                addMessageToChat('bot', 'Hello! 👋 I\'m your Pampanga State University Assistant. How can I help you today?');
+            }, 1000);
+        });
+
+        function setupEventListeners() {
+            const chatForm = document.querySelector('.chat-form');
+            const chatInput = document.querySelector('.chat-input');
+            const sendButton = document.querySelector('.send-button');
+
+            chatForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const question = chatInput.value.trim();
+                if (question) {
+                    sendMessage(question);
+                    chatInput.value = '';
+                }
+            });
+
+            // Logout button
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                sessionStorage.removeItem('currentUser');
+                window.location.href = 'index.html';
+            });
+        }
+
+        function sendMessage(question) {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) {
-                // Redirect to login page if not logged in
                 window.location.href = 'index.html';
                 return;
             }
-            
-            // Display username
-            const displayUsername = document.getElementById('display-username');
-            if (displayUsername) {
-                displayUsername.textContent = currentUser.username;
-            }
-            
-            // Move Admin Panel button to navbar if admin
-            if (currentUser && currentUser.role === 'admin') {
-                const adminPanelNavbar = document.getElementById('admin-panel-navbar-link');
-                if (adminPanelNavbar) {
-                    adminPanelNavbar.innerHTML = `<a href="admin.html" class="btn" style="margin-left:12px; background:#FFD700; color:#800000; font-weight:bold; border-radius:5px; padding:8px 14px; text-decoration:none;">Admin Panel</a>`;
-                }
-            }
-            
-            // Show welcome bar in chat header
-            const chatWelcomeBar = document.getElementById('chat-welcome-bar');
-            if (chatWelcomeBar && currentUser) {
-                chatWelcomeBar.style.display = 'block';
-                chatWelcomeBar.textContent = `Welcome, ${currentUser.username}${currentUser.role === 'admin' ? ' (Administrator)' : ''}`;
-            }
-            
-            // Set connection status
-            checkConnection();
-            
-            // Focus on input field
-            document.getElementById('user-input').focus();
 
-            // --- NEW: Load and show profile picture in dashboard header ---
-            fetchAndRenderUserProfilePicNavbar();
-        });
-        
-        // Connection checker
-        function checkConnection() {
-            const connectionStatus = document.getElementById('connection-status');
-            
-            if (OFFLINE_MODE) {
-                connectionStatus.textContent = 'Offline';
-                connectionStatus.classList.add('offline');
-                return;
+            // Add user message to chat immediately
+            addMessageToChat('user', question);
+
+            // Disable input and button while waiting for bot response
+            const chatInput = document.querySelector('.chat-input');
+            const sendButton = document.querySelector('.send-button');
+            chatInput.disabled = true;
+            sendButton.disabled = true;
+            function enableInput() {
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
             }
-            
-            // Test connection to Apps Script
-            fetch(APPS_SCRIPT_URL, { method: 'HEAD', mode: 'no-cors' })
-                .then(() => {
-                    connectionStatus.textContent = 'Online';
-                    connectionStatus.classList.remove('offline');
-                })
-                .catch(() => {
-                    connectionStatus.textContent = 'Offline';
-                    connectionStatus.classList.add('offline');
-                    console.warn('Unable to connect to backend. Using fallback mode.');
-                });
-        }
-        
-        // Logout functionality
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            // Clear session data
-            sessionStorage.removeItem('currentUser');
-            // Redirect to login page
-            window.location.href = 'index.html';
-        });
-        
-        // Chat functionality
-        const chatMessages = document.getElementById('chat-messages');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const typingIndicator = document.getElementById('typing-indicator');
-        
-        // Format text with bullet points
-        function formatText(text) {
-            // Check if text contains number lists (like "1. ", "2. ", etc.)
-            if (/\d+\.\s/.test(text)) {
-                // Split by line breaks
-                const lines = text.split('\n');
-                let formatted = '';
-                
-                // Process each line
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i];
-                    // Check if line starts with a number followed by period
-                    if (/^\d+\.\s/.test(line)) {
-                        formatted += `<div class="list-item">• ${line.replace(/^\d+\.\s/, '')}</div>`;
-                    } else {
-                        formatted += `${line}\n`;
-                    }
-                }
-                return formatted;
-            }
-            return text;
-        }
-        
-        // Get formatted time
-        function getTime() {
-            const now = new Date();
-            return now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        
-        // Add user message to chat
-        function addUserMessage(message) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', 'user-message');
-            messageElement.textContent = message;
-            
-            // Add time
-            const timeElement = document.createElement('div');
-            timeElement.classList.add('message-time');
-            timeElement.textContent = getTime();
-            messageElement.appendChild(timeElement);
-            
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Add bot message to chat
-        function addBotMessage(message, suggestions) {
-            const messageElement = document.createElement('div');
-            messageElement.classList.add('message', 'bot-message');
-            messageElement.innerHTML = formatText(message);
-            // Add time
-            const timeElement = document.createElement('div');
-            timeElement.classList.add('message-time');
-            timeElement.textContent = getTime();
-            messageElement.appendChild(timeElement);
-            // Add suggestions if present
-            if (Array.isArray(suggestions) && suggestions.length > 0) {
-                const suggDiv = document.createElement('div');
-                suggDiv.style.marginTop = '10px';
-                suggDiv.innerHTML = '<span style="color:#800000;font-weight:600;">Did you mean:</span> ';
-                suggestions.forEach(s => {
-                    const btn = document.createElement('button');
-                    btn.textContent = s;
-                    btn.className = 'btn';
-                    btn.style.margin = '4px 6px 4px 0';
-                    btn.style.background = '#FFD700';
-                    btn.style.color = '#800000';
-                    btn.style.fontWeight = 'bold';
-                    btn.style.borderRadius = '6px';
-                    btn.style.padding = '4px 10px';
-                    btn.style.fontSize = '0.98em';
-                    btn.setAttribute('aria-label', 'Ask about ' + s);
-                    btn.onclick = () => {
-                        userInput.value = s;
-                        processUserInput();
-                    };
-                    suggDiv.appendChild(btn);
-                });
-                messageElement.appendChild(suggDiv);
-            }
-            // Add feedback buttons
-            const feedbackDiv = document.createElement('div');
-            feedbackDiv.classList.add('feedback-buttons');
-            feedbackDiv.innerHTML = `
-                <span style="margin-right:8px;">Was this helpful?</span>
-                <button class="feedback-btn" aria-label="Helpful" title="Helpful" style="font-size:1.2em;">👍</button>
-                <button class="feedback-btn" aria-label="Not Helpful" title="Not Helpful" style="font-size:1.2em;">👎</button>
-                <input type="text" class="feedback-comment" placeholder="Optional comment..." style="margin-left:8px; padding:2px 6px; border-radius:5px; border:1px solid #eee; font-size:0.95em; width:120px;">
-            `;
-            feedbackDiv.querySelectorAll('button')[0].onclick = function() {
-                const comment = feedbackDiv.querySelector('.feedback-comment').value;
-                logFeedback('positive', message, comment);
-                feedbackDiv.style.display = 'none';
-                showFeedbackThankYou(messageElement);
+
+            // Show typing indicator
+            const typingIndicator = showTypingIndicator();
+
+            // Store conversation context
+            const conversationContext = {
+                lastQuestion: question,
+                timestamp: new Date().toISOString(),
+                user: currentUser.username
             };
-            feedbackDiv.querySelectorAll('button')[1].onclick = function() {
-                const comment = feedbackDiv.querySelector('.feedback-comment').value;
-                logFeedback('negative', message, comment);
-                feedbackDiv.style.display = 'none';
-                showFeedbackThankYou(messageElement);
-            };
-            messageElement.appendChild(feedbackDiv);
-            chatMessages.appendChild(messageElement);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Log feedback to improve bot responses (optional)
-        function logFeedback(type, message, comment) {
-            try {
-                const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-                const username = currentUser ? currentUser.username : 'anonymous';
-                const formData = new FormData();
-                formData.append('action', 'logFeedback');
-                formData.append('username', username);
-                formData.append('message', message);
-                formData.append('feedbackType', type);
-                formData.append('comment', comment);
+            sessionStorage.setItem('lastConversationContext', JSON.stringify(conversationContext));
+
+            const formData = new FormData();
+            formData.append('action', 'chatMessage');
+            formData.append('username', currentUser.username);
+            formData.append('email', currentUser.email);
+            formData.append('question', question);
+            // Add context from previous conversation if available
+            const lastContext = sessionStorage.getItem('lastConversationContext');
+            if (lastContext) {
+                formData.append('context', lastContext);
+            }
+
+            setTimeout(() => {
                 fetch(APPS_SCRIPT_URL, {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // handle success/error
+                    typingIndicator.remove();
+                    if (data.success) {
+                        // Always show the bot's answer
+                        addMessageToChat('bot', data.answer || '');
+                        // Show clarification options if present
+                        if (data.type === 'clarification' && data.clarificationOptions && Array.isArray(data.clarificationOptions)) {
+                            showClarificationOptions(data.clarificationOptions);
+                        }
+                        // Show follow-up questions if present
+                        if ((data.type === 'follow_up' || data.type === 'direct_answer') && data.followUpQuestions && Array.isArray(data.followUpQuestions) && data.followUpQuestions.length > 0) {
+                            showFollowUpQuestions(data.followUpQuestions);
+                        }
+                        // Show feedback widget for direct answers
+                        if (data.type === 'direct_answer') {
+                            showFeedbackWidget(question, data.answer);
+                        }
+                        // Re-enable input immediately after bot answers
+                        enableInput();
+                    } else {
+                        handleErrorResponse(data);
+                        // Re-enable input immediately after error
+                        enableInput();
+                    }
                 })
                 .catch(error => {
-                    // handle error
+                    typingIndicator.remove();
+                    handleErrorResponse({ message: 'An error occurred. Please try again later.' });
+                    enableInput();
                 });
-            } catch (error) {
-                // handle error
-            }
+            }, Math.random() * 1000 + 500); // Artificial delay for natural feel
         }
-        
-        // Show typing indicator
-        function showTypingIndicator() {
-            typingIndicator.style.display = 'block';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
-        
-        // Hide typing indicator
-        function hideTypingIndicator() {
-            typingIndicator.style.display = 'none';
-        }
-        
-        let chatCooldown = false;
 
-        async function processUserInput() {
-            if (chatCooldown) return; // Prevent sending if in cooldown
-            const message = userInput.value.trim();
-            if (message === '') return;
-            userInput.disabled = true;
-            sendBtn.disabled = true;
-            chatCooldown = true;
-            setTimeout(() => {
-                chatCooldown = false;
-                userInput.disabled = false;
-                sendBtn.disabled = false;
-            }, 5000);
-            userInput.value = '';
-            addUserMessage(message);
-            showTypingIndicator();
-            const thinkingTime = Math.min(1000 + (message.length * 20), 3000);
-            setTimeout(async () => {
-                try {
-                    // Query the database for a response using Apps Script
-                    const responseObj = await queryDatabaseViaAppsScript(message, true);
-                    hideTypingIndicator();
-                    if (typeof responseObj === 'object' && responseObj !== null && 'response' in responseObj) {
-                        addBotMessage(responseObj.response, responseObj.suggestions);
-                    } else {
-                        addBotMessage(responseObj);
-                    }
-                } catch (error) {
-                    console.error('Error processing message:', error);
-                    hideTypingIndicator();
-                    addBotMessage("I'm having some technical difficulties. Please try again later.");
-                }
-            }, thinkingTime);
-        }
-        
-        // Function to query Google Sheets database via Apps Script
-        async function queryDatabaseViaAppsScript(question, wantSuggestions) {
-            try {
-                if (OFFLINE_MODE) {
-                    return getOfflineResponse(question);
-                }
-                const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-                const username = currentUser ? currentUser.username : 'anonymous';
-                const formData = new FormData();
-                formData.append('action', 'queryFAQ');
-                formData.append('question', question);
-                formData.append('username', username);
-                const response = await fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (data.success) {
-                    if (wantSuggestions && ('suggestions' in data)) {
-                        return data;
-                    }
-                    return data.response;
-                } else {
-                    console.error('Error from Apps Script:', data.error);
-                    return getDefaultResponse();
-                }
-            } catch (error) {
-                console.error('Error querying database via Apps Script:', error);
-                return getDefaultResponse();
+        function handleErrorResponse(data) {
+            let errorMessage = 'Sorry, I encountered an error. Please try again.';
+            if (data.message) {
+                errorMessage = data.message;
             }
+            addMessageToChat('bot', errorMessage);
+            showErrorSuggestions();
         }
-        
-        // Function to get response in offline mode
-        function getOfflineResponse(question) {
-            question = question.toLowerCase();
-            
-            // Enhanced offline responses
-            const offlineResponses = {
-                "admission": "For admission inquiries, please visit the Admissions Office on the first floor of the Administration Building. You can also contact them at admissions@dhvsu.edu.ph or call at (045) 123-4567.",
-                "Tuition": "Tuition fees are free for all students enrolled in DHVSU. However, there may be additional fees for laboratory courses, miscellaneous fees, and other services.",
-                "scholarship": "DHVSU offers various scholarship programs including:\n1. Academic Excellence Scholarship\n2. Athletic Scholarship\n3. Cultural Scholarship\n4. Financial Need-based Scholarship\n\nVisit the Scholarship Office or check the university website for application details.",
-                "enrollment": "The enrollment process involves:\n1. Online registration\n2. Subject selection\n3. Fee assessment\n4. Payment\n5. Validation\n\nRegular enrollment usually starts three weeks before classes begin.",
-                "schedule": "Class schedules are posted on the university portal and department bulletin boards two weeks before classes start. You can also check with your department secretary for the most updated schedule.",
-                "requirement": "General requirements include:\n1. Form 138 (Report Card)\n2. Certificate of Good Moral Character\n3. PSA Birth Certificate\n4. Medical clearance\n5. 2x2 ID pictures\n\nSpecific programs may have additional requirements.",
-                "uniform": "Students are required to wear the university uniform on specific days of the week. The standard uniform consists of maroon and white combinations with the university logo.",
-                "library": "The university library is open Monday to Friday from 8:00 AM to 7:00 PM, and Saturday from 8:00 AM to 5:00 PM. It's located at the second floor of the Academic Building."
-            };
-            
-            // Check if question contains any keywords
-            for (const [keyword, response] of Object.entries(offlineResponses)) {
-                if (question.includes(keyword)) {
-                    return response;
-                }
-            }
-            
-            // Check for specific example responses
-            if (question.includes("admissions office")) {
-                return "The Admissions Office is located on the first floor of the Administration Building, to the right of the main entrance. It's open Monday through Friday from 8:00 AM to 5:00 PM.";
-            } else if (question.includes("enroll") && question.includes("freshman")) {
-                return "To enroll as a freshman at DHVSU, you need to:\n1. Submit an online application through the university portal\n2. Take the entrance examination\n3. Submit required documents including Form 138, birth certificate, and good moral character certification\n4. Wait for acceptance letter\n5. Complete the enrollment process by paying the fees and selecting your courses";
-            } else if (question.includes("documents") && question.includes("enrollment")) {
-                return "For enrollment, you need:\n1. Original and photocopy of Form 138 (Report Card)\n2. Certificate of Good Moral Character\n3. NSO/PSA Birth Certificate\n4. 2x2 ID pictures (white background)\n5. Barangay Clearance\n6. Certificate of Residency";
-            }
-            
-            // Default fallback response
-            return getDefaultResponse();
-        }
-        
-        // Function to get a default response when no match is found
-        function getDefaultResponse() {
-            const defaultResponses = [
-                "I'm sorry, I don't have that information yet. Please try asking another question or visit the university website for more details.",
-                "I couldn't find an answer to that question. Would you like to ask something else?",
-                "That information isn't in my database yet. Please try rephrasing your question or ask about another topic.",
-                "I'm still learning! I don't have an answer for that yet. Can I help you with something else related to DHVSU?"
+
+        function showErrorSuggestions() {
+            const suggestions = [
+                'Try rephrasing your question',
+                'Check your internet connection',
+                'Contact support if the issue persists'
             ];
-            
-            return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+            showSuggestions(suggestions.map(s => ({ question: s })));
         }
-        
-        // Static responses for demo example queries
-        const exampleResponses = {
-            "Where is the Admissions Office?": "The Admissions Office is located on the first floor of the Administration Building, to the right of the main entrance. It's open Monday through Friday from 8:00 AM to 5:00 PM.",
-            "How do I enroll as a freshman?": "To enroll as a freshman at DHVSU, you need to:\n1. Submit an online application through the university portal\n2. Take the entrance examination\n3. Submit required documents including Form 138, birth certificate, and good moral character certification\n4. Wait for acceptance letter\n5. Complete the enrollment process by paying the fees and selecting your courses",
-            "What documents do I need for enrollment?": "For enrollment, you need:\n1. Original and photocopy of Form 138 (Report Card)\n2. Certificate of Good Moral Character\n3. NSO/PSA Birth Certificate\n4. 2x2 ID pictures (white background)\n5. Barangay Clearance\n6. Certificate of Residency",
-        };
-        
-        // Handle example query clicks
-        document.querySelectorAll('.example-query').forEach(example => {
-            example.addEventListener('click', function() {
-                const query = this.textContent;
-                userInput.value = query;
-                processUserInput();
-            });
-        });
-        
-        // Handle send button click
-        sendBtn.addEventListener('click', processUserInput);
-        
-        // Handle enter key press
-        userInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                processUserInput();
-            }
-        });
-        
-        // Handle input changes to enable/disable send button
-        userInput.addEventListener('input', function() {
-            if (this.value.trim() === '') {
-                sendBtn.disabled = true;
-            } else {
-                sendBtn.disabled = false;
-            }
-        });
-        
-        // Initial state of send button
-        sendBtn.disabled = true;
 
-        function fetchAndRenderUserProfile() {
+        function showClarificationOptions(options) {
+            const chatMessages = document.querySelector('.chat-messages');
+            const clarificationDiv = document.createElement('div');
+            clarificationDiv.className = 'clarification-container';
+            
+            const title = document.createElement('div');
+            title.className = 'clarification-title';
+            title.textContent = 'Please clarify:';
+            clarificationDiv.appendChild(title);
+
+            options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'clarification-btn';
+                btn.textContent = option.text;
+                btn.onclick = () => {
+                    sendMessage(option.question);
+                    clarificationDiv.remove();
+                };
+                clarificationDiv.appendChild(btn);
+            });
+
+            chatMessages.appendChild(clarificationDiv);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        function showFollowUpQuestions(questions) {
+            const chatMessages = document.querySelector('.chat-messages');
+            const followUpDiv = document.createElement('div');
+            followUpDiv.className = 'follow-up-container';
+            
+            const title = document.createElement('div');
+            title.className = 'follow-up-title';
+            title.textContent = 'You might also want to know:';
+            followUpDiv.appendChild(title);
+
+            questions.forEach(q => {
+                const btn = document.createElement('button');
+                btn.className = 'follow-up-btn';
+                btn.textContent = q;
+                btn.onclick = () => {
+                    sendMessage(q);
+                    followUpDiv.remove();
+                };
+                followUpDiv.appendChild(btn);
+            });
+
+            chatMessages.appendChild(followUpDiv);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        function addMessageToChat(type, message) {
+            const chatMessages = document.querySelector('.chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${type}-message`;
+
+            // Avatar
+            const avatar = document.createElement('img');
+            avatar.className = `chat-avatar ${type}`;
+            if (type === 'bot') {
+                avatar.src = 'bot_avatar.png'; // Bot avatar
+                avatar.alt = 'Bot';
+                avatar.onerror = function() { this.src = 'https://img.icons8.com/fluency/48/robot-2.png'; };
+            } else {
+                // Use a user icon or profile picture
+                const cachedPic = sessionStorage.getItem('profilePic');
+                avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png'; // Use a generic user icon
+                avatar.alt = 'You';
+                avatar.onerror = function() { this.src = 'default_profile.png'; };
+            }
+
+            // Bubble
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'chat-bubble';
+            // Convert URLs to clickable links
+            const messageWithLinks = message.replace(
+                /(https?:\/\/[^\s]+)/g, 
+                '<a href="$1" target="_blank" style="color: inherit; text-decoration: underline;">$1</a>'
+            );
+            bubbleDiv.innerHTML = messageWithLinks;
+
+            // Timestamp
+            const timestampDiv = document.createElement('div');
+            timestampDiv.className = 'message-timestamp';
+            timestampDiv.textContent = new Date().toLocaleTimeString();
+
+            // Structure
+            if (type === 'user') {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(bubbleDiv);
+            } else {
+                messageDiv.appendChild(avatar);
+                messageDiv.appendChild(bubbleDiv);
+            }
+            bubbleDiv.appendChild(timestampDiv);
+            chatMessages.appendChild(messageDiv);
+
+            // Scroll to bottom with smooth animation
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+            return messageDiv;
+        }
+
+        function loadChatHistory() {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
+
             const formData = new FormData();
-            formData.append('action', 'getUserProfile');
+            formData.append('action', 'getUserChatHistory');
             formData.append('username', currentUser.username);
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.profile) {
-                        const avatar = document.getElementById('navbar-profile-avatar');
-                        avatar.src = data.profile.profilePic || 'default_profile.png';
-                        avatar.onerror = function() { this.src = 'default_profile.png'; };
-                        // Optionally update other profile info in the dashboard
-                    }
-                });
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.history) {
+                    data.history.forEach(msg => {
+                        addMessageToChat('user', msg.question);
+                        addMessageToChat('bot', msg.answer);
+                    });
+                }
+            })
+            .catch(error => console.error('Error loading chat history:', error));
         }
 
-        // Show a thank you message after feedback
-        function showFeedbackThankYou(parent) {
-            const thankYou = document.createElement('div');
-            thankYou.textContent = 'Thank you for your feedback!';
-            thankYou.style.color = '#155724';
-            thankYou.style.background = '#d4edda';
-            thankYou.style.borderRadius = '6px';
-            thankYou.style.padding = '6px 12px';
-            thankYou.style.marginTop = '8px';
-            thankYou.style.fontSize = '0.95rem';
-            thankYou.style.textAlign = 'center';
-            thankYou.style.opacity = '1';
-            parent.appendChild(thankYou);
-            setTimeout(() => {
-                thankYou.style.transition = 'opacity 0.7s';
-                thankYou.style.opacity = '0';
-                setTimeout(() => parent.removeChild(thankYou), 700);
-            }, 2000);
-        }
-
-        // Show a notification to the user
-        function showUserNotification(msg, isError) {
-            const notif = document.getElementById('user-notification');
-            notif.textContent = msg;
-            notif.style.display = 'block';
-            notif.style.background = isError ? '#f8d7da' : '#d4edda';
-            notif.style.color = isError ? '#721c24' : '#155724';
-            setTimeout(() => { notif.style.display = 'none'; }, 3500);
-        }
-
-        // Cloudinary config (replace with your own values)
-        const CLOUDINARY_CLOUD_NAME = 'YOUR_CLOUD_NAME'; // e.g. 'dhvsu-askbot'
-        const CLOUDINARY_UPLOAD_PRESET = 'YOUR_UNSIGNED_PRESET'; // e.g. 'askbot_profile_upload'
-
-        // Add this function to fetch and set the navbar profile picture
         function setNavbarAvatarFromCache() {
             const avatar = document.getElementById('navbar-profile-avatar');
             const cachedPic = sessionStorage.getItem('profilePic');
-            avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png';
-            avatar.onerror = function() { this.src = 'default_profile.png'; };
+            avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'Don_Honorio_Ventura_State_University_logo.png';
+            avatar.onerror = function() { this.src = 'Don_Honorio_Ventura_State_University_logo.png'; };
         }
 
         function fetchAndRenderUserProfilePicNavbar() {
-            setNavbarAvatarFromCache(); // Show cached image instantly
+            setNavbarAvatarFromCache();
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
+
             const formData = new FormData();
             formData.append('action', 'getUserProfile');
-            formData.append('username', currentUser.username);
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.profile && data.profile.profilePic) {
-                        sessionStorage.setItem('profilePic', data.profile.profilePic);
-                        setNavbarAvatarFromCache();
-                    }
-                });
+            formData.append('identifier', currentUser.username);
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.profile && data.profile.profilePic) {
+                    sessionStorage.setItem('profilePic', data.profile.profilePic);
+                    setNavbarAvatarFromCache();
+                }
+            })
+            .catch(error => console.error('Error fetching profile:', error));
         }
 
-        function fetchAnnouncements() {
-            const formData = new FormData();
-            formData.append('action', 'getAnnouncements');
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.announcements && data.announcements.length > 0) {
-                        const section = document.getElementById('announcements-section');
-                        const list = document.getElementById('announcements-list');
-                        list.innerHTML = '';
-                        data.announcements.forEach(a => {
-                            const li = document.createElement('li');
-                            li.textContent = a.message + (a.date ? ` (${new Date(a.date).toLocaleDateString()})` : '');
-                            list.appendChild(li);
-                        });
-                        section.style.display = 'block';
-                    }
-                });
+        function filterByCategory(category) {
+            const suggestions = {
+                'admissions': [
+                    'What are the enrollment requirements?',
+                    'How to apply for admission?',
+                    'What documents do I need for enrollment?'
+                ],
+                'registrar': [
+                    'How to get TOR?',
+                    'How to get Certificate of Grades?',
+                    'How to request for Good Moral Certificate?'
+                ],
+                'academics': [
+                    'What courses are offered?',
+                    'How to shift courses?',
+                    'What is the grading system?'
+                ],
+                'student-services': [
+                    'How to validate ID?',
+                    'How to access the library?',
+                    'What student organizations can I join?'
+                ]
+            };
+            const chatSuggestions = document.querySelector('.suggestion-buttons');
+            chatSuggestions.innerHTML = '';
+            suggestions[category].forEach(question => {
+                const button = document.createElement('button');
+                button.className = 'suggestion-btn';
+                button.textContent = question;
+                button.onclick = () => sendMessage(question);
+                chatSuggestions.appendChild(button);
+            });
         }
-        document.addEventListener('DOMContentLoaded', fetchAnnouncements);
 
-        function renderStudentWelcome() {
-            const user = JSON.parse(sessionStorage.getItem('currentUser'));
-            if (!user) return;
-            document.getElementById('student-greeting').textContent = `Welcome back, ${user.username}!`;
-            // Fetch stats (total chats, helpful feedback, days as member)
-            const formData = new FormData();
-            formData.append('action', 'getUserProfile');
-            formData.append('username', user.username);
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.profile) {
-                        document.getElementById('student-avatar').src = data.profile.profilePic || 'default_profile.png';
-                        const dateCreated = new Date(data.profile.dateCreated);
-                        const days = Math.ceil((Date.now() - dateCreated.getTime()) / (1000*60*60*24));
-                        // Fetch helpful feedback count
-                        fetchUserHelpfulFeedback(user.username, function(helpfulCount, chatCount) {
-                            document.getElementById('student-stats').textContent =
-                                `Chats: ${chatCount} | Helpful feedback: ${helpfulCount} | Member for ${days} days`;
-                        });
-                    }
-                });
+        // Add typing indicator
+        function showTypingIndicator() {
+            const chatMessages = document.querySelector('.chat-messages');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message bot-message typing-indicator';
+            typingDiv.innerHTML = '<div class="dots"><span></span><span></span><span></span></div>';
+            chatMessages.appendChild(typingDiv);
+            chatMessages.scrollTo({
+                top: chatMessages.scrollHeight,
+                behavior: 'smooth'
+            });
+            return typingDiv;
         }
-        function fetchUserHelpfulFeedback(username, cb) {
-            const formData = new FormData();
-            formData.append('action', 'getFeedback');
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    let helpful = 0, chats = 0;
-                    if (data.success && data.feedbacks) {
-                        helpful = data.feedbacks.filter(f => f.username === username && f.feedbackType === 'positive').length;
-                        chats = data.feedbacks.filter(f => f.username === username).length;
-                    }
-                    cb(helpful, chats);
-                });
-        }
-        document.addEventListener('DOMContentLoaded', renderStudentWelcome);
 
-        document.getElementById('view-chat-history').addEventListener('click', function() {
-            const user = JSON.parse(sessionStorage.getItem('currentUser'));
-            if (!user) return;
-            const formData = new FormData();
-            formData.append('action', 'getUserChatHistory');
-            formData.append('username', user.username);
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    const list = document.getElementById('chat-history-list');
-                    list.innerHTML = '';
-                    if (data.success && data.history && data.history.length > 0) {
-                        data.history.slice(-10).reverse().forEach(chat => {
-                            const div = document.createElement('div');
-                            div.style.marginBottom = '1em';
-                            div.innerHTML = `<b>Q:</b> ${chat.question}<br><b>A:</b> ${chat.answer}<br><small>${new Date(chat.timestamp).toLocaleString()}</small>`;
-                            div.style.cursor = 'pointer';
-                            div.onclick = () => {
-                                document.getElementById('user-input').value = chat.question;
-                                document.getElementById('chat-history-modal').style.display = 'none';
-                            };
-                            list.appendChild(div);
-                        });
-                    } else {
-                        list.textContent = 'No chat history yet.';
-                    }
-                    document.getElementById('chat-history-modal').style.display = 'flex';
-                });
-        });
+        // --- FEEDBACK & SUGGESTIONS LOGIC ---
+        function showFeedbackWidget(question, answer) {
+            removeFeedbackWidget();
+            // Remove any existing thank you message
+            document.querySelectorAll('.feedback-thankyou').forEach(el => el.remove());
+            const chatMessages = document.querySelector('.chat-messages');
+            const feedbackDiv = document.createElement('div');
+            feedbackDiv.className = 'feedback-widget';
+            feedbackDiv.innerHTML = `
+                <div class="feedback-row">
+                    <span class="feedback-title">Was this answer helpful?</span>
+                    <button class="feedback-btn" id="feedback-yes" title="Helpful">
+                        <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="10" cy="10" r="9" stroke="#2e7d32" stroke-width="2" fill="#eaf8ef"/><path d="M7.5 14.5L3.5 10.5L4.91 9.09L7.5 11.67L15.09 4.09L16.5 5.5L7.5 14.5Z" fill="#2e7d32"/></svg>
+                        Yes
+                    </button>
+                    <button class="feedback-btn" id="feedback-no" title="Not Helpful">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13.41 8.59L12 7.17L10 9.17L8 7.17L6.59 8.59L8.59 10.59L6.59 12.59L8 14L10 12L12 14L13.41 12.59L11.41 10.59L13.41 8.59Z" fill="currentColor"/></svg>
+                        No
+                    </button>
+                </div>
+                <div class="feedback-comment-group">
+                    <input type="text" class="feedback-comment" id="feedback-comment" placeholder=" " maxlength="200" />
+                    <label class="feedback-label" for="feedback-comment">Optional comment...</label>
+                </div>
+            `;
+            chatMessages.appendChild(feedbackDiv);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
 
-        let allFAQs = [];
-        function fetchAllFAQsForSuggestions() {
-            const formData = new FormData();
-            formData.append('action', 'getFAQs');
-            formData.append('admin', 'true');
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => { if (data.success) allFAQs = data.faqs; });
-        }
-        document.addEventListener('DOMContentLoaded', fetchAllFAQsForSuggestions);
+            // Track if feedback has been submitted
+            let feedbackSubmitted = false;
 
-        document.getElementById('user-input').addEventListener('input', function() {
-            const val = this.value.toLowerCase();
-            const suggestions = allFAQs.filter(faq => faq.question.toLowerCase().includes(val) && val.length > 2).slice(0,5);
-            const container = document.getElementById('faq-suggestions');
-            container.innerHTML = '';
-            if (suggestions.length > 0) {
-                suggestions.forEach(faq => {
-                    const div = document.createElement('div');
-                    div.textContent = faq.question;
-                    div.style.cursor = 'pointer';
-                    div.style.background = '#fffbe6';
-                    div.style.border = '1px solid #FFD700';
-                    div.style.borderRadius = '6px';
-                    div.style.padding = '6px 10px';
-                    div.style.marginBottom = '4px';
-                    div.onclick = () => {
-                        document.getElementById('user-input').value = faq.question;
-                        container.innerHTML = '';
-                    };
-                    container.appendChild(div);
-                });
+            function handleFeedbackClick(type) {
+                if (feedbackSubmitted) return;
+                feedbackSubmitted = true;
+
+                // Disable buttons and input immediately
+                const yesBtn = document.getElementById('feedback-yes');
+                const noBtn = document.getElementById('feedback-no');
+                const commentInput = document.getElementById('feedback-comment');
+                
+                if (yesBtn) yesBtn.disabled = true;
+                if (noBtn) noBtn.disabled = true;
+                if (commentInput) commentInput.disabled = true;
+
+                // Show thank you message immediately
+                removeFeedbackWidget();
+                showThankYouFeedback();
+
+                // Get comment value before removing the widget
+                const comment = commentInput ? commentInput.value.trim() : '';
+
+                // Submit feedback asynchronously
+                submitFeedback(type, question, answer, comment);
             }
-        });
+
+            // Add click handlers
+            const yesBtn = document.getElementById('feedback-yes');
+            const noBtn = document.getElementById('feedback-no');
+            if (yesBtn) yesBtn.onclick = () => handleFeedbackClick('positive');
+            if (noBtn) noBtn.onclick = () => handleFeedbackClick('negative');
+        }
+
+        function removeFeedbackWidget() {
+            document.querySelectorAll('.feedback-widget').forEach(el => el.remove());
+        }
+
+        function submitFeedback(type, question, answer, comment) {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            const formData = new FormData();
+            formData.append('action', 'logFeedback');
+            formData.append('username', currentUser.username);
+            formData.append('message', question);
+            formData.append('feedbackType', type);
+            formData.append('comment', comment || '');
+
+            // Submit feedback asynchronously without waiting for response
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            }).catch(error => console.error('Error submitting feedback:', error));
+        }
+
+        function showThankYouFeedback() {
+            // Remove any existing thank you messages first
+            document.querySelectorAll('.feedback-thankyou').forEach(el => el.remove());
+            
+            const chatMessages = document.querySelector('.chat-messages');
+            const thankYouDiv = document.createElement('div');
+            thankYouDiv.className = 'feedback-thankyou';
+            thankYouDiv.textContent = 'Thank you for your feedback!';
+            
+            chatMessages.appendChild(thankYouDiv);
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+            
+            // Fade out and remove after 2 seconds
+            setTimeout(() => {
+                thankYouDiv.classList.add('fade-out');
+                setTimeout(() => thankYouDiv.remove(), 700);
+            }, 2000);
+        }
+
+        // --- SUGGESTIONS ---
+        function showSuggestions(suggestions) {
+            removeSuggestions();
+            const chatMessages = document.querySelector('.chat-messages');
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.className = 'suggestions-container';
+            const title = document.createElement('div');
+            title.className = 'suggestions-title';
+            title.textContent = 'Did you mean:';
+            suggestionsDiv.appendChild(title);
+            suggestions.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = 'suggestion-btn';
+                btn.textContent = s.question;
+                btn.onclick = () => {
+                    sendMessage(s.question);
+                    removeSuggestions();
+                };
+                suggestionsDiv.appendChild(btn);
+            });
+            // Insert suggestions before the feedback widget if it exists, else at the end
+            const chatMessagesChildren = Array.from(chatMessages.children);
+            const feedbackWidget = chatMessagesChildren.find(el => el.classList && el.classList.contains('feedback-widget'));
+            if (feedbackWidget) {
+                chatMessages.insertBefore(suggestionsDiv, feedbackWidget);
+            } else {
+                chatMessages.appendChild(suggestionsDiv);
+            }
+            chatMessages.scrollTo({ top: chatMessages.scrollHeight, behavior: 'smooth' });
+        }
+
+        function removeSuggestions() {
+            document.querySelectorAll('.suggestions-container').forEach(el => el.remove());
+        }
     </script>
 </body>
 

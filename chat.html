@@ -1,0 +1,506 @@
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
+
+function sendMessage(messageOverride) {
+  const messageInput = document.getElementById('message-input');
+  const message = messageOverride !== undefined ? messageOverride : messageInput.value.trim();
+  
+  if (!message) return;
+  
+  const username = localStorage.getItem('username');
+  const email = localStorage.getItem('email');
+  
+  if (!username || !email) {
+    showError('Please log in to send messages');
+    return;
+  }
+  
+  // Enhanced rate limiting with visual feedback
+  const now = Date.now();
+  const lastChatTime = window.lastChatTime || 0;
+  const timeSinceLastMessage = now - lastChatTime;
+  
+  if (timeSinceLastMessage < 5000) {
+    const remainingTime = Math.ceil((5000 - timeSinceLastMessage) / 1000);
+    showError(`Please wait ${remainingTime} second${remainingTime !== 1 ? 's' : ''} before sending another message.`);
+    return;
+  }
+  
+  // Disable input and show loading state
+  messageInput.disabled = true;
+  const sendButton = document.querySelector('.send-button');
+  if (sendButton) sendButton.disabled = true;
+  showLoadingState(true);
+  
+  // Add message to chat UI
+  addMessageToChat('user', message);
+  if (messageOverride === undefined) messageInput.value = '';
+  
+  // Remove previous suggestions and feedback
+  removeSuggestions();
+  removeFeedbackWidget();
+  
+  // Send to backend with enhanced error handling
+  const formData = new FormData();
+  formData.append('action', 'chatMessage');
+  formData.append('question', message);
+  formData.append('username', username);
+  formData.append('email', email);
+  
+  // Add context if available
+  const context = window.lastQuestion ? { lastQuestion: window.lastQuestion } : null;
+  if (context) {
+    formData.append('context', JSON.stringify(context));
+  }
+  
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    if (data.success) {
+      // Store last question for context
+      window.lastQuestion = message;
+      window.lastChatTime = Date.now();
+      
+      // Add bot response
+      addMessageToChat('bot', data.answer);
+      
+      // Show feedback widget
+      showFeedbackWidget(message, data.answer);
+      
+      // Show suggestions if available
+      if (data.suggestions && data.suggestions.length > 0) {
+        showSuggestions(data.suggestions);
+      }
+    } else {
+      // Handle specific error types
+      if (data.error) {
+        switch (data.error) {
+          case 'RATE_LIMIT':
+            window.lastChatTime = Date.now();
+            showError('You are sending messages too quickly. Please wait 5 seconds.');
+            break;
+          case 'INVALID_USER':
+            showError('Your session has expired. Please log in again.');
+            break;
+          case 'DATABASE_ERROR':
+            showError('A database error occurred. Please try again later.');
+            break;
+          case 'MISSING_PARAMETERS':
+            showError('Missing required parameters. Please try again.');
+            break;
+          case 'EMPTY_REQUEST':
+            showError('Empty request received. Please try again.');
+            break;
+          default:
+            showError(data.message || 'An error occurred. Please try again.');
+        }
+      } else {
+        showError(data.message || 'An error occurred. Please try again.');
+      }
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showError('Network error. Please check your connection and try again.');
+  })
+  .finally(() => {
+    // Re-enable input and hide loading state
+    messageInput.disabled = false;
+    if (sendButton) sendButton.disabled = false;
+    showLoadingState(false);
+    messageInput.focus();
+  });
+}
+
+function loadChatHistory() {
+  const username = localStorage.getItem('username');
+  const email = localStorage.getItem('email');
+  
+  if (!username || !email) {
+    showError('Please log in to view chat history');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('action', 'getUserChatHistory');
+  formData.append('username', username);
+  formData.append('email', email);
+  
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    const chatContainer = document.getElementById('chat-container');
+    chatContainer.innerHTML = '';
+    if (data.success && data.history && data.history.length > 0) {
+      data.history.forEach(chat => {
+        addMessageToChat('user', chat.question, chat.timestamp);
+        addMessageToChat('bot', chat.answer, chat.timestamp);
+      });
+      // Scroll to bottom
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    } else {
+      // No chat history
+      const noHistoryDiv = document.createElement('div');
+      noHistoryDiv.className = 'no-history-message';
+      noHistoryDiv.textContent = 'No chat history yet.';
+      chatContainer.appendChild(noHistoryDiv);
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showError('An error occurred while loading chat history');
+  });
+}
+
+function addMessageToChat(sender, message, timestamp) {
+  const chatContainer = document.getElementById('chat-container');
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `message ${sender}-message`;
+  
+  const messageContent = document.createElement('div');
+  messageContent.className = 'message-content';
+  messageContent.textContent = message;
+  
+  // Add timestamp if available
+  if (timestamp) {
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'message-timestamp';
+    const dateObj = new Date(timestamp);
+    timeDiv.textContent = dateObj.toLocaleString();
+    messageContent.appendChild(document.createElement('br'));
+    messageContent.appendChild(timeDiv);
+  }
+  
+  messageDiv.appendChild(messageContent);
+  chatContainer.appendChild(messageDiv);
+  
+  // Scroll to bottom
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function showError(message) {
+  const errorDiv = document.getElementById('error-message');
+  if (!errorDiv) {
+    const newErrorDiv = document.createElement('div');
+    newErrorDiv.id = 'error-message';
+    newErrorDiv.className = 'error-message';
+    document.querySelector('.chat-container').appendChild(newErrorDiv);
+  }
+  
+  errorDiv.textContent = message;
+  errorDiv.style.display = 'block';
+  
+  // Auto-hide after 5 seconds
+  setTimeout(() => {
+    errorDiv.style.display = 'none';
+  }, 5000);
+}
+
+function showSuggestions(suggestions) {
+  if (!suggestions || suggestions.length === 0) return;
+  
+  const suggestionsDiv = document.createElement('div');
+  suggestionsDiv.className = 'suggestions-container';
+  
+  const title = document.createElement('div');
+  title.className = 'suggestions-title';
+  title.textContent = 'You might also want to know:';
+  suggestionsDiv.appendChild(title);
+  
+  const list = document.createElement('div');
+  list.className = 'suggestions-list';
+  
+  suggestions.forEach(suggestion => {
+    const item = document.createElement('div');
+    item.className = 'suggestion-item';
+    item.textContent = suggestion;
+    item.onclick = () => sendMessage(suggestion);
+    list.appendChild(item);
+  });
+  
+  suggestionsDiv.appendChild(list);
+  document.getElementById('chat-container').appendChild(suggestionsDiv);
+  
+  // Scroll to bottom
+  const chatContainer = document.getElementById('chat-container');
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function removeSuggestions() {
+  const suggestions = document.querySelector('.suggestions-container');
+  if (suggestions) {
+    suggestions.remove();
+  }
+}
+
+function showFeedbackWidget(question, answer) {
+  const feedbackDiv = document.createElement('div');
+  feedbackDiv.className = 'feedback-widget';
+  
+  const text = document.createElement('span');
+  text.textContent = 'Was this answer helpful?';
+  feedbackDiv.appendChild(text);
+  
+  const buttonsDiv = document.createElement('div');
+  buttonsDiv.className = 'feedback-buttons';
+  
+  const helpfulBtn = document.createElement('button');
+  helpfulBtn.textContent = 'Yes';
+  helpfulBtn.onclick = () => submitFeedback(question, answer, 'helpful');
+  
+  const notHelpfulBtn = document.createElement('button');
+  notHelpfulBtn.textContent = 'No';
+  notHelpfulBtn.onclick = () => submitFeedback(question, answer, 'not_helpful');
+  
+  buttonsDiv.appendChild(helpfulBtn);
+  buttonsDiv.appendChild(notHelpfulBtn);
+  feedbackDiv.appendChild(buttonsDiv);
+  
+  document.getElementById('chat-container').appendChild(feedbackDiv);
+  
+  // Scroll to bottom
+  const chatContainer = document.getElementById('chat-container');
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function removeFeedbackWidget() {
+  const feedback = document.querySelector('.feedback-widget');
+  if (feedback) {
+    feedback.remove();
+  }
+}
+
+function submitFeedback(question, answer, feedbackType) {
+  const username = localStorage.getItem('username');
+  if (!username) {
+    showError('Please log in to submit feedback');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('action', 'logFeedback');
+  formData.append('username', username);
+  formData.append('message', question);
+  formData.append('feedbackType', feedbackType);
+  
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    body: formData,
+    headers: {
+      'Accept': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      // Remove feedback widget
+      const feedbackWidget = document.querySelector('.feedback-widget');
+      if (feedbackWidget) {
+        feedbackWidget.remove();
+      }
+      
+      // Show thank you message
+      const thankYouDiv = document.createElement('div');
+      thankYouDiv.className = 'feedback-thank-you';
+      thankYouDiv.textContent = 'Thank you for your feedback!';
+      document.getElementById('chat-container').appendChild(thankYouDiv);
+      
+      // Remove thank you message after 3 seconds
+      setTimeout(() => {
+        thankYouDiv.remove();
+      }, 3000);
+    } else {
+      showError(data.message || 'Error submitting feedback');
+    }
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    showError('Error submitting feedback');
+  });
+}
+
+function showLoadingState(show) {
+  const loadingDiv = document.getElementById('loading-indicator');
+  if (show) {
+    if (!loadingDiv) {
+      const newLoadingDiv = document.createElement('div');
+      newLoadingDiv.id = 'loading-indicator';
+      newLoadingDiv.className = 'loading-indicator';
+      newLoadingDiv.innerHTML = '<div class="spinner"></div><span>Thinking...</span>';
+      document.getElementById('chat-container').appendChild(newLoadingDiv);
+    }
+  } else {
+    if (loadingDiv) {
+      loadingDiv.remove();
+    }
+  }
+}
+
+// Load chat history when page loads
+document.addEventListener('DOMContentLoaded', loadChatHistory);
+
+// Handle message input
+document.getElementById('message-input').addEventListener('keypress', function(e) {
+  if (e.key === 'Enter') {
+    sendMessage();
+  }
+});
+
+// Add some basic styles for timestamp and no-history-message
+const style = document.createElement('style');
+style.innerHTML = `
+  .message-timestamp {
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 0.2em;
+    text-align: right;
+  }
+  .no-history-message {
+    text-align: center;
+    color: #888;
+    margin-top: 2em;
+    font-size: 1.1em;
+  }
+`;
+document.head.appendChild(style);
+
+// Add styles for suggestions
+const suggestionStyle = document.createElement('style');
+suggestionStyle.innerHTML = `
+  .suggestions-container {
+    margin: 10px 0;
+    padding: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+  }
+  
+  .suggestions-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #333;
+  }
+  
+  .suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .suggestion-item {
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .suggestion-item:hover {
+    background: #e9ecef;
+  }
+`;
+document.head.appendChild(suggestionStyle);
+
+// Add styles for feedback widget
+const feedbackStyle = document.createElement('style');
+feedbackStyle.innerHTML = `
+  .feedback-widget {
+    margin: 10px 0;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .feedback-buttons {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .feedback-buttons button {
+    padding: 4px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .feedback-buttons button:hover {
+    background: #e9ecef;
+  }
+  
+  .feedback-thank-you {
+    margin: 10px 0;
+    padding: 8px;
+    background: #d4edda;
+    color: #155724;
+    border-radius: 4px;
+    text-align: center;
+  }
+`;
+document.head.appendChild(feedbackStyle);
+
+// Add loading state indicator
+function showLoadingState(show) {
+  let loadingDiv = document.getElementById('loading-indicator');
+  if (!loadingDiv) {
+    loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-indicator';
+    loadingDiv.className = 'loading-indicator';
+    loadingDiv.innerHTML = '<div class="spinner"></div>';
+    document.querySelector('.chat-container').appendChild(loadingDiv);
+  }
+  loadingDiv.style.display = show ? 'flex' : 'none';
+}
+
+// Add CSS for loading indicator
+const style = document.createElement('style');
+style.textContent = `
+  .loading-indicator {
+    display: none;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+  }
+  
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .error-message {
+    background-color: #ffebee;
+    color: #c62828;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+    border: 1px solid #ef9a9a;
+    display: none;
+  }
+`;
+document.head.appendChild(style); 

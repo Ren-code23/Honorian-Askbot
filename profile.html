@@ -21,7 +21,7 @@
         }
         
         body {
-            background: var(--gray);
+            background: var(--gray) !important;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -115,426 +115,556 @@
         
         main {
             flex: 1;
-            padding: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2.5rem 0 1.5rem 0;
+            background: var(--gray);
+            overflow-x: auto;
         }
         
         .profile-container {
-            background-color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #fff;
             border-radius: 18px;
-            box-shadow: 0 8px 32px rgba(128,0,0,0.08);
-            padding: 2.5rem;
+            box-shadow: 0 8px 32px rgba(128,0,0,0.10);
+            max-width: 420px;
+            width: 100%;
+            min-width: 0;
+            margin: 2rem auto 1.5rem auto;
+            padding: 2.2rem 1.5rem 1.5rem 1.5rem;
             border: 1px solid #f0e6e6;
+            box-sizing: border-box;
         }
-        
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 2.5rem;
-            margin-bottom: 2.5rem;
-            padding-bottom: 2rem;
-            border-bottom: 1px solid #f0e6e6;
-        }
-        
-        .profile-pic-row {
-            display: flex;
-            align-items: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-        
         .profile-pic {
-            width: 140px;
-            height: 140px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid #FFD700;
             background: #fff;
+            margin: 0 auto 1.2em auto;
+            display: block;
         }
-        
-        .profile-pic-upload-group {
+        .profile-card {
+            width: 100%;
             display: flex;
             flex-direction: column;
-            gap: 0.7rem;
+            align-items: center;
+            gap: 1.2rem;
         }
-        
-        .profile-pic-instructions {
-            font-size: 0.95em;
-            color: #555;
+        .profile-label {
+            font-weight: 600;
+            color: #800000;
+            margin-bottom: 0.3em;
+            align-self: flex-start;
         }
-        
-        @media (max-width: 600px) {
-            .profile-pic-row {
-                flex-direction: column;
-                align-items: center;
-                gap: 1rem;
-            }
-            .profile-pic-upload-group {
-                align-items: center;
-            }
-        }
-        
-        .profile-info {
-            flex: 1;
-        }
-        
-        .profile-name {
-            font-size: 2.2rem;
-            color: var(--dhvsu-maroon);
-            margin-bottom: 0.8rem;
-            font-weight: 700;
-        }
-        
         .profile-email {
             color: #666;
-            margin-bottom: 1.5rem;
-            font-size: 1.1rem;
+            font-size: 1.08rem;
+            margin-bottom: 0.7em;
+            align-self: flex-start;
         }
-        
         .profile-stats {
             display: flex;
-            gap: 3rem;
+            gap: 1.2rem;
+            margin-top: 1.2em;
+            width: 100%;
+            justify-content: center;
         }
-        
         .stat-item {
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 1px 4px rgba(128,0,0,0.04);
+            padding: 1.1rem 1.5rem;
+            min-width: 90px;
             text-align: center;
-            padding: 1rem;
-            background: var(--gray);
-            border-radius: 12px;
-            min-width: 120px;
-            transition: transform 0.3s;
         }
-        
-        .stat-item:hover {
-            transform: translateY(-5px);
-        }
-        
         .stat-value {
-            font-size: 1.8rem;
+            font-size: 1.3rem;
             font-weight: bold;
             color: var(--dhvsu-maroon);
-            margin-bottom: 0.5rem;
         }
-        
         .stat-label {
-            font-size: 0.95rem;
+            font-size: 0.98rem;
             color: #666;
             font-weight: 500;
         }
-        
-        .profile-section {
-            margin-top: 2.5rem;
-            padding-top: 2.5rem;
-            border-top: 1px solid #f0e6e6;
-        }
-        
-        .section-title {
-            font-size: 1.4rem;
-            color: var(--dhvsu-maroon);
-            margin-bottom: 1.5rem;
-            font-weight: 700;
-        }
-        
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        label {
-            display: block;
-            margin-bottom: 0.8rem;
-            color: #555;
-            font-weight: 600;
-            font-size: 1.05rem;
-        }
-        
-        input, textarea {
+        #username-form {
             width: 100%;
-            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.7em;
+            align-items: stretch;
+        }
+        #profile-username {
+            font-size: 1.1em;
+            padding: 0.7em;
+            border-radius: 8px;
             border: 1.5px solid #e0e0e0;
-            border-radius: 12px;
-            font-size: 1.05rem;
-            background: var(--gray);
-            transition: all 0.3s;
-        }
-        
-        input:focus, textarea:focus {
-            outline: none;
-            border-color: var(--dhvsu-maroon);
-            box-shadow: 0 0 8px rgba(128,0,0,0.1);
             background: #fff;
+            transition: border-color 0.2s;
         }
-        
-        .btn {
-            padding: 1rem 2rem;
-            border: none;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
+        #profile-username:focus {
+            border-color: var(--dhvsu-maroon);
+            outline: none;
         }
-        
-        .btn-primary {
+        #username-form button {
+            width: 100%;
             background: var(--dhvsu-maroon);
-            color: white;
-            box-shadow: 0 4px 12px rgba(128,0,0,0.15);
+            color: #fff;
+            border-radius: 8px;
+            padding: 0.7em 1.5em;
+            font-size: 1.05em;
+            font-weight: 600;
+            border: none;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+            transition: background 0.2s, box-shadow 0.2s;
+            margin-top: 0.2em;
         }
-        
-        .btn-primary:hover {
-            background: var(--light-maroon);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(128,0,0,0.2);
+        #username-form button:hover {
+            background: #A52A2A;
+            box-shadow: 0 4px 12px rgba(128,0,0,0.13);
         }
-        
         .message {
-            padding: 1.2rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            display: none;
+            margin-top: 0.2em;
+            padding: 1em 1.2em;
+            border-radius: 8px;
+            font-size: 1.02em;
             font-weight: 500;
-            animation: slideDown 0.4s ease-out;
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
         }
-        
-        @keyframes slideDown {
-            from { transform: translateY(-20px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
         .message.success {
-            background-color: #d4edda;
+            background: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
-        
         .message.error {
-            background-color: #f8d7da;
+            background: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        
-        .loader {
-            display: none;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid var(--dhvsu-maroon);
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            animation: spin 2s linear infinite;
-            margin: 1.5rem auto;
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 37%, #f0f0f0 63%);
+            background-size: 400% 100%;
+            animation: skeleton-loading 1.2s ease-in-out infinite;
+            border-radius: 8px;
+            min-height: 1.5em;
+            width: 100%;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        @keyframes skeleton-loading {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
         }
-
+        .profile-section {
+            width: 100%;
+            margin-top: 2.2em;
+            border-top: 1px solid #eee;
+            padding-top: 1.5em;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            color: var(--dhvsu-maroon);
+            margin-bottom: 1.2rem;
+            font-weight: 700;
+            text-align: left;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .view-all-btn {
+            font-size: 0.9rem;
+            color: var(--dhvsu-maroon);
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.3em 0.8em;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        .view-all-btn:hover {
+            background: rgba(128, 0, 0, 0.1);
+        }
         .chat-history {
-            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-top: 1rem;
         }
-
         .chat-item {
-            background: var(--gray);
+            background: #fff;
             border-radius: 12px;
             padding: 1.2rem;
-            margin-bottom: 1rem;
-            border: 1px solid #e0e0e0;
-            transition: transform 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eee;
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
         }
-
         .chat-item:hover {
-            transform: translateX(5px);
-            border-color: var(--dhvsu-maroon);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-
         .chat-question {
-            color: var(--dhvsu-maroon);
             font-weight: 600;
+            color: var(--dhvsu-maroon);
             margin-bottom: 0.5rem;
+            font-size: 1.05rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
         }
-
-        .chat-answer {
+        .chat-question i {
             color: #666;
-            margin-bottom: 0.8rem;
-        }
-
-        .chat-time {
             font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .chat-answer {
+            color: #444;
+            line-height: 1.5;
+            margin-bottom: 0.8rem;
+            font-size: 0.98rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+        .chat-answer::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #eee;
+        }
+        .chat-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
             color: #888;
+            padding-top: 0.8rem;
+            border-top: 1px solid #f0f0f0;
         }
-
-        @media (max-width: 768px) {
-            .navbar { padding: 0 1rem; }
-            .navbar-title { font-size: 1rem; }
-            .navbar-links { gap: 14px; }
-            .profile-header { flex-direction: column; text-align: center; }
-            .profile-stats { flex-wrap: wrap; justify-content: center; }
-            .stat-item { min-width: 100px; }
-            main { padding: 1rem; }
-            .profile-container { padding: 1.5rem; }
+        .chat-time {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
         }
-
-        @media (max-width: 480px) {
-            .navbar { flex-direction: column; height: auto; padding: 0.5rem; }
-            .navbar-left { margin-bottom: 6px; }
-            .navbar-links { gap: 8px; flex-wrap: wrap; }
-            .navbar-link, .navbar-logout { height: 44px; font-size: 0.98rem; }
-            .profile-pic-row { flex-direction: column; align-items: center; gap: 1rem; }
-            .profile-pic-upload-group { align-items: center; }
+        .chat-time i {
+            font-size: 0.9rem;
+        }
+        .chat-category {
+            padding: 0.2em 0.6em;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .category-academics {
+            background: rgba(76, 175, 80, 0.1);
+            color: #2e7d32;
+        }
+        .category-administration {
+            background: rgba(33, 150, 243, 0.1);
+            color: #1565c0;
+        }
+        .category-student-services {
+            background: rgba(156, 39, 176, 0.1);
+            color: #7b1fa2;
+        }
+        .category-registrar {
+            background: rgba(255, 152, 0, 0.1);
+            color: #ef6c00;
+        }
+        .category-admissions {
+            background: rgba(244, 67, 54, 0.1);
+            color: #c62828;
+        }
+        .category-general {
+            background: rgba(128, 0, 0, 0.1);
+            color: var(--dhvsu-maroon);
+        }
+        .chat-feedback {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            gap: 0.3rem;
+        }
+        .feedback-icon {
+            font-size: 0.9rem;
+            color: #ccc;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .feedback-icon.positive {
+            color: #4caf50;
+        }
+        .feedback-icon.negative {
+            color: #f44336;
+        }
+        .chat-date-divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+        .chat-date-divider::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 1px;
+            background: #eee;
+        }
+        .chat-date-label {
+            background: #fff;
+            padding: 0 1rem;
+            color: #666;
+            font-size: 0.9rem;
+            position: relative;
+            display: inline-block;
+        }
+        .chat-history-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #888;
+            font-size: 1.1rem;
+            background: #fafafa;
+            border-radius: 12px;
+            border: 1px dashed #ddd;
+        }
+        .chat-history-loading {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .chat-item-skeleton {
+            background: #fff;
+            border-radius: 12px;
+            padding: 1.2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid #eee;
+        }
+        .skeleton-line {
+            height: 1.2em;
+            margin-bottom: 0.8rem;
+            border-radius: 4px;
+        }
+        .skeleton-line:last-child {
+            width: 60%;
+            margin-bottom: 0;
+        }
+        @media (max-width: 600px) {
+            .profile-container { padding: 1rem 0.2rem; max-width: 99vw; }
+            .profile-card { padding: 0.5rem 0.2rem; }
+            .profile-stats { gap: 0.5rem; }
+            .chat-item { padding: 1rem; }
         }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="navbar-left">
-            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="DHVSU Logo" class="navbar-logo">
-            <span class="navbar-title">Don Honorio Ventura State University</span>
+            <!-- Temporary: Using DHVSU logo until Pampanga State University branding is finalized -->
+            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="University Logo" class="navbar-logo">
+            <span class="navbar-title">Pampanga State University</span>
         </div>
         <div class="navbar-links">
             <a href="dashboard_page.html" class="navbar-link">Dashboard</a>
-            <a href="profile.html" class="navbar-link active">Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar"></a>
             <a href="faq.html" class="navbar-link">FAQs</a>
+            <a href="profile.html" class="navbar-link">
+                Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar">
+            </a>
             <button class="navbar-logout" id="logout-btn">Logout</button>
         </div>
     </nav>
 
     <main>
         <div class="profile-container">
-            <div class="profile-header">
-                <div class="profile-pic-row">
-                    <img id="profile-pic" src="default_profile.png" alt="Profile Picture" class="profile-pic">
-                    <div>
-                        <input type="file" id="profile-pic-file" accept="image/*">
-                        <div style="font-size:0.95em;color:#555;margin-top:0.5em;">Choose an image to upload as your profile picture (JPG, PNG, GIF, WEBP).</div>
-                    </div>
-                </div>
-                <div class="profile-info">
-                    <h1 class="profile-name" id="profile-name">Loading...</h1>
-                    <div class="profile-email" id="profile-email">Loading...</div>
-                    <div class="profile-stats">
-                        <div class="stat-item">
-                            <div class="stat-value" id="total-chats">0</div>
-                            <div class="stat-label">Total Chats</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value" id="helpful-responses">0</div>
-                            <div class="stat-label">Helpful Responses</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value" id="member-since">0</div>
-                            <div class="stat-label">Days as Member</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="profile-section">
-                <h2 class="section-title">Update Profile</h2>
-                <div id="message" class="message"></div>
-                <div id="loader" class="loader"></div>
-                <form id="update-form">
-                    <div class="form-group">
-                        <label for="email">Email Address</label>
-                        <input type="email" id="email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="faq-keywords">Keywords (comma separated)</label>
-                        <input type="text" id="faq-keywords" placeholder="e.g. admission, office, location">
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <button type="submit" class="btn btn-primary">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                <polyline points="7 3 7 8 15 8"></polyline>
-                            </svg>
-                            Save Changes
-                        </button>
-                    </div>
+            <div class="profile-card">
+                <img id="profile-pic" src="default_profile.png" alt="Profile Picture" class="profile-pic">
+                <input type="file" id="profile-pic-file" accept="image/*" style="margin-bottom:0.7em;">
+                <div style="font-size:0.95em;color:#555;margin-bottom:0.7em;">Change your profile picture (JPG, PNG, GIF, WEBP).</div>
+                <form id="username-form">
+                    <label for="profile-username" class="profile-label">Username</label>
+                    <input type="text" id="profile-username" minlength="5" required autocomplete="off">
+                    <div id="username-message" class="message" style="display:none;"></div>
+                    <button type="submit">Save Username</button>
                 </form>
+                <div class="profile-label">Email</div>
+                <div class="profile-email" id="profile-email">Loading...</div>
+                <div class="profile-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="total-chats">0</div>
+                        <div class="stat-label">Total Chats</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="member-since">0</div>
+                        <div class="stat-label">Days as Member</div>
+                    </div>
+                </div>
             </div>
-
             <div class="profile-section">
-                <h2 class="section-title">Recent Chat History</h2>
+                <h2 class="section-title">
+                    Recent Chat History
+                    <button class="view-all-btn" id="view-all-chats">View All</button>
+                </h2>
                 <div id="chat-history" class="chat-history">
-                    <!-- Chat history will be loaded here -->
+                    <div class="chat-history-loading">
+                        <div class="chat-item-skeleton">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                        <div class="chat-item-skeleton">
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                            <div class="skeleton-line"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
-        // Cloudinary config (replace with your own values)
-        const CLOUDINARY_CLOUD_NAME = 'dmn9xqxgo'; // e.g. 'dhvsu-askbot'
-        const CLOUDINARY_UPLOAD_PRESET = 'Unsigned_preset'; // e.g. 'askbot_profile_upload'
-        
-        // Check if user is logged in
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
+        const CLOUDINARY_CLOUD_NAME = 'dmn9xqxgo';
+        const CLOUDINARY_UPLOAD_PRESET = 'Unsigned_preset';
+        let currentUsername = null;
         document.addEventListener('DOMContentLoaded', function() {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) {
                 window.location.href = 'index.html';
                 return;
             }
-            
-            // Load profile data
+            // Always set profile pic from cache first
+            setProfilePicFromCache();
             fetchAndRenderUserProfile();
             loadChatHistory(currentUser.username);
-            
-            // Setup form submission
-            setupUpdateForm();
             setNavbarAvatarFromCache();
             fetchAndRenderUserProfilePicNavbar();
+            setupUsernameForm();
         });
-        
-        // Fetch and render the user's profile (including image) from the backend
+        function setProfilePicFromCache() {
+            const profilePic = document.getElementById('profile-pic');
+            const cachedPic = sessionStorage.getItem('profilePic');
+            profilePic.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png';
+            profilePic.onerror = function() { this.src = 'default_profile.png'; };
+        }
         function fetchAndRenderUserProfile() {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
             const formData = new FormData();
             formData.append('action', 'getUserProfile');
-            formData.append('username', currentUser.username);
+            formData.append('identifier', currentUser.username);
             fetch(SCRIPT_URL, { method: 'POST', body: formData })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.profile) {
-                        document.getElementById('profile-name').textContent = data.profile.username;
+                        document.getElementById('profile-username').value = data.profile.username;
+                        currentUsername = data.profile.username;
                         document.getElementById('profile-email').textContent = data.profile.email;
-                        document.getElementById('email').value = data.profile.email;
-                        // Update profile image
+                        // Profile image
                         const profilePic = document.getElementById('profile-pic');
                         const navbarAvatar = document.getElementById('navbar-profile-avatar');
                         if (data.profile.profilePic && data.profile.profilePic !== '') {
                             profilePic.src = data.profile.profilePic;
                             navbarAvatar.src = data.profile.profilePic;
+                            sessionStorage.setItem('profilePic', data.profile.profilePic);
                         } else {
-                            profilePic.src = 'default_profile.png';
+                            setProfilePicFromCache();
                             navbarAvatar.src = 'default_profile.png';
                         }
-                        // Update stats, etc. as before
+                        // Stats
                         const dateCreated = new Date(data.profile.dateCreated);
                         const now = new Date();
                         const diffTime = Math.abs(now - dateCreated);
                         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                         document.getElementById('member-since').textContent = diffDays;
                     } else {
-                        showMessage('Failed to load profile.', 'error');
+                        setProfilePicFromCache();
+                        showUsernameMessage('Failed to load profile.', 'error');
                     }
                 })
                 .catch(() => {
-                    showMessage('Error loading profile.', 'error');
+                    setProfilePicFromCache();
+                    showUsernameMessage('Error loading profile.', 'error');
                 });
         }
-        
+        function setupUsernameForm() {
+            const form = document.getElementById('username-form');
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const newUsername = document.getElementById('profile-username').value.trim();
+                if (newUsername.length < 5) {
+                    showUsernameMessage('Username must be at least 5 characters.', 'error');
+                    return;
+                }
+                if (newUsername === currentUsername) {
+                    showUsernameMessage('No changes to save.', 'error');
+                    return;
+                }
+                if (!confirm(`Are you sure you want to change your username to "${newUsername}"? This will update your profile everywhere in the system.`)) {
+                    return;
+                }
+                showUsernameMessage('Saving...', '');
+                // Call backend to update username
+                const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+                const formData = new FormData();
+                formData.append('action', 'updateUsername');
+                formData.append('oldUsername', currentUsername);
+                formData.append('newUsername', newUsername);
+                fetch(SCRIPT_URL, { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update session and UI
+                            currentUsername = newUsername;
+                            const user = JSON.parse(sessionStorage.getItem('currentUser'));
+                            user.username = newUsername;
+                            sessionStorage.setItem('currentUser', JSON.stringify(user));
+                            showUsernameMessage('Username updated successfully!', 'success');
+                        } else {
+                            showUsernameMessage(data.message || 'Failed to update username.', 'error');
+                        }
+                    })
+                    .catch(() => {
+                        showUsernameMessage('Error updating username.', 'error');
+                    });
+            });
+        }
+        function showUsernameMessage(message, type) {
+            const msg = document.getElementById('username-message');
+            msg.textContent = message;
+            msg.className = 'message ' + (type || '');
+            msg.style.display = message ? 'block' : 'none';
+            if (type === 'success') setTimeout(() => { msg.style.display = 'none'; }, 2000);
+        }
         function loadChatHistory(username) {
+            const chatHistory = document.getElementById('chat-history');
+            chatHistory.innerHTML = `
+                <div class="chat-history-loading">
+                    <div class="chat-item-skeleton">
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                    <div class="chat-item-skeleton">
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                </div>
+            `;
+
             const formData = new FormData();
             formData.append('action', 'getUserChatHistory');
-            formData.append('username', username);
+            formData.append('identifier', username);
             
             fetch(SCRIPT_URL, {
                 method: 'POST',
@@ -543,105 +673,114 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success && data.history) {
-                    const chatHistory = document.getElementById('chat-history');
                     chatHistory.innerHTML = '';
                     
                     // Update total chats
                     document.getElementById('total-chats').textContent = data.history.length;
                     
+                    if (data.history.length === 0) {
+                        chatHistory.innerHTML = `
+                            <div class="chat-history-empty">
+                                No chat history yet. Start asking questions in the dashboard!
+                            </div>
+                        `;
+                        return;
+                    }
+                    
                     // Display recent chats (last 5)
                     const recentChats = data.history.slice(-5).reverse();
+                    let currentDate = null;
+                    
                     recentChats.forEach(chat => {
                         const chatItem = document.createElement('div');
                         chatItem.className = 'chat-item';
+                        
+                        // Format timestamp
+                        let date = chat.timestamp ? new Date(chat.timestamp) : null;
+                        let isValidDate = date && !isNaN(date.getTime());
+                        const timeString = isValidDate ? date.toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                        }) : '—';
+                        const dateString = isValidDate ? date.toLocaleDateString([], { 
+                            weekday: 'short',
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                        }) : '';
+                        
+                        // Add date divider if date changes
+                        if (currentDate !== dateString) {
+                            const divider = document.createElement('div');
+                            divider.className = 'chat-date-divider';
+                            divider.innerHTML = `<span class="chat-date-label">${dateString}</span>`;
+                            chatHistory.appendChild(divider);
+                            currentDate = dateString;
+                        }
+                        
+                        // Determine category and its class
+                        const category = chat.category || 'General';
+                        const categoryClass = `category-${category.toLowerCase().replace(/\s+/g, '-')}`;
+                        
+                        // Get feedback status if available
+                        const feedbackStatus = chat.feedback || '';
+                        const feedbackClass = feedbackStatus === 'positive' ? 'positive' : 
+                                            feedbackStatus === 'negative' ? 'negative' : '';
+                        
                         chatItem.innerHTML = `
-                            <div class="chat-question">${chat.question}</div>
-                            <div class="chat-answer">${chat.answer}</div>
-                            <div class="chat-time">${new Date(chat.timestamp).toLocaleString()}</div>
+                            <div class="chat-feedback">
+                                <i class="fas fa-thumbs-up feedback-icon ${feedbackStatus === 'positive' ? 'positive' : ''}" 
+                                   title="Helpful"></i>
+                                <i class="fas fa-thumbs-down feedback-icon ${feedbackStatus === 'negative' ? 'negative' : ''}" 
+                                   title="Not Helpful"></i>
+                            </div>
+                            <div class="chat-question">
+                                <i class="fas fa-question-circle"></i>
+                                ${chat.question}
+                            </div>
+                            <div class="chat-answer">
+                                ${chat.answer}
+                            </div>
+                            <div class="chat-meta">
+                                <div class="chat-time">
+                                    <i class="far fa-clock"></i>
+                                    ${timeString}
+                                </div>
+                                <div class="chat-category ${categoryClass}">${category}</div>
+                            </div>
                         `;
                         chatHistory.appendChild(chatItem);
                     });
+                } else {
+                    chatHistory.innerHTML = `
+                        <div class="chat-history-empty">
+                            Failed to load chat history. Please try again later.
+                        </div>
+                    `;
                 }
             })
             .catch(error => {
                 console.error('Error loading chat history:', error);
-                showMessage('Error loading chat history', 'error');
+                chatHistory.innerHTML = `
+                    <div class="chat-history-empty">
+                        Error loading chat history. Please try again later.
+                    </div>
+                `;
             });
         }
-        
-        function setupUpdateForm() {
-            const form = document.getElementById('update-form');
-            
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                const email = document.getElementById('email').value.trim();
-                const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-                
-                // Show loader
-                document.getElementById('loader').style.display = 'block';
-                
-                try {
-                    const formData = new FormData();
-                    formData.append('action', 'updateUserProfile');
-                    formData.append('username', currentUser.username);
-                    formData.append('email', email);
-                    
-                    const response = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showMessage('Profile updated successfully', 'success');
-                    } else {
-                        throw new Error(result.message);
-                    }
-                } catch (error) {
-                    console.error('Error updating profile:', error);
-                    showMessage('Error updating profile', 'error');
-                } finally {
-                    // Hide loader
-                    document.getElementById('loader').style.display = 'none';
-                }
-            });
-        }
-        
-        function showMessage(message, type) {
-            const messageElement = document.getElementById('message');
-            messageElement.textContent = message;
-            messageElement.className = `message ${type}`;
-            messageElement.style.display = 'block';
-            
-            // Hide message after 3 seconds
-            setTimeout(() => {
-                messageElement.style.display = 'none';
-            }, 3000);
-        }
-        
-        // Logout functionality
-        document.getElementById('logout-btn').addEventListener('click', function() {
-            sessionStorage.removeItem('currentUser');
-            window.location.href = 'index.html';
-        });
-
         function setNavbarAvatarFromCache() {
             const avatar = document.getElementById('navbar-profile-avatar');
             const cachedPic = sessionStorage.getItem('profilePic');
             avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png';
             avatar.onerror = function() { this.src = 'default_profile.png'; };
         }
-
         document.getElementById('profile-pic-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
                 uploadProfilePicToCloudinaryAndSave(file);
             }
         });
-
-        // Uploads image to Cloudinary and saves the URL to backend
         function uploadProfilePicToCloudinaryAndSave(file) {
             const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
             const formData = new FormData();
@@ -663,13 +802,12 @@
             })
             .catch(() => alert('Failed to upload image. Please try again.'));
         }
-
         function saveProfilePicUrlToBackend(url) {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
             const formData = new FormData();
             formData.append('action', 'updateUserProfile');
-            formData.append('username', currentUser.username);
+            formData.append('identifier', currentUser.username);
             formData.append('profilePic', url);
             fetch(SCRIPT_URL, { method: 'POST', body: formData })
                 .then(res => res.json())
@@ -682,14 +820,13 @@
                     }
                 });
         }
-
         function fetchAndRenderUserProfilePicNavbar() {
             setNavbarAvatarFromCache(); // Show cached image instantly
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
             const formData = new FormData();
             formData.append('action', 'getUserProfile');
-            formData.append('username', currentUser.username);
+            formData.append('identifier', currentUser.username);
             fetch(SCRIPT_URL, { method: 'POST', body: formData })
                 .then(res => res.json())
                 .then(data => {
@@ -699,6 +836,144 @@
                     }
                 });
         }
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', function() {
+            sessionStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        });
+
+        // Add Font Awesome for icons
+        const fontAwesome = document.createElement('link');
+        fontAwesome.rel = 'stylesheet';
+        fontAwesome.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css';
+        document.head.appendChild(fontAwesome);
+
+        // View All Chats functionality
+        document.getElementById('view-all-chats').addEventListener('click', function() {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+            
+            // Store current scroll position
+            const scrollPos = window.scrollY;
+            
+            // Load all chats
+            const formData = new FormData();
+            formData.append('action', 'getUserChatHistory');
+            formData.append('identifier', currentUser.username);
+            
+            const chatHistory = document.getElementById('chat-history');
+            chatHistory.innerHTML = `
+                <div class="chat-history-loading">
+                    <div class="chat-item-skeleton">
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                    <div class="chat-item-skeleton">
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                        <div class="skeleton-line"></div>
+                    </div>
+                </div>
+            `;
+            
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.history) {
+                    chatHistory.innerHTML = '';
+                    
+                    if (data.history.length === 0) {
+                        chatHistory.innerHTML = `
+                            <div class="chat-history-empty">
+                                No chat history yet. Start asking questions in the dashboard!
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Display all chats in reverse chronological order
+                    const allChats = [...data.history].reverse();
+                    let currentDate = null;
+                    
+                    allChats.forEach(chat => {
+                        const chatItem = document.createElement('div');
+                        chatItem.className = 'chat-item';
+                        
+                        // Format timestamp
+                        let date = chat.timestamp ? new Date(chat.timestamp) : null;
+                        let isValidDate = date && !isNaN(date.getTime());
+                        const timeString = isValidDate ? date.toLocaleTimeString([], { 
+                            hour: '2-digit', 
+                            minute: '2-digit',
+                            hour12: true 
+                        }) : '—';
+                        const dateString = isValidDate ? date.toLocaleDateString([], { 
+                            weekday: 'short',
+                            month: 'short', 
+                            day: 'numeric',
+                            year: 'numeric'
+                        }) : '';
+                        
+                        // Add date divider if date changes
+                        if (currentDate !== dateString) {
+                            const divider = document.createElement('div');
+                            divider.className = 'chat-date-divider';
+                            divider.innerHTML = `<span class="chat-date-label">${dateString}</span>`;
+                            chatHistory.appendChild(divider);
+                            currentDate = dateString;
+                        }
+                        
+                        // Determine category and its class
+                        const category = chat.category || 'General';
+                        const categoryClass = `category-${category.toLowerCase().replace(/\s+/g, '-')}`;
+                        
+                        // Get feedback status if available
+                        const feedbackStatus = chat.feedback || '';
+                        const feedbackClass = feedbackStatus === 'positive' ? 'positive' : 
+                                            feedbackStatus === 'negative' ? 'negative' : '';
+                        
+                        chatItem.innerHTML = `
+                            <div class="chat-feedback">
+                                <i class="fas fa-thumbs-up feedback-icon ${feedbackStatus === 'positive' ? 'positive' : ''}" 
+                                   title="Helpful"></i>
+                                <i class="fas fa-thumbs-down feedback-icon ${feedbackStatus === 'negative' ? 'negative' : ''}" 
+                                   title="Not Helpful"></i>
+                            </div>
+                            <div class="chat-question">
+                                <i class="fas fa-question-circle"></i>
+                                ${chat.question}
+                            </div>
+                            <div class="chat-answer">
+                                ${chat.answer}
+                            </div>
+                            <div class="chat-meta">
+                                <div class="chat-time">
+                                    <i class="far fa-clock"></i>
+                                    ${timeString}
+                                </div>
+                                <div class="chat-category ${categoryClass}">${category}</div>
+                            </div>
+                        `;
+                        chatHistory.appendChild(chatItem);
+                    });
+                    
+                    // Restore scroll position
+                    window.scrollTo(0, scrollPos);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading chat history:', error);
+                chatHistory.innerHTML = `
+                    <div class="chat-history-empty">
+                        Error loading chat history. Please try again later.
+                    </div>
+                `;
+            });
+        });
     </script>
 </body>
 </html> 

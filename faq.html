@@ -24,7 +24,7 @@
             display: flex;
             flex-direction: column;
         }
-        /* NAVBAR */
+        /* NAVBAR (Unified) */
         .navbar {
             width: 100%;
             height: var(--navbar-height);
@@ -34,7 +34,7 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 2.2rem;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 16px rgba(128,0,0,0.10);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -42,72 +42,77 @@
         .navbar-left {
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 18px;
         }
         .navbar-logo {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: #fff;
-            padding: 3px;
+            padding: 4px;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.08);
         }
         .navbar-title {
-            font-size: 1.18rem;
-            font-weight: 700;
+            font-size: 1.25rem;
+            font-weight: 800;
             letter-spacing: 0.5px;
             white-space: nowrap;
         }
         .navbar-links {
             display: flex;
             align-items: center;
-            gap: 28px;
+            gap: 32px;
             height: 100%;
         }
         .navbar-link {
             color: #fff;
             text-decoration: none;
-            font-size: 1.05rem;
-            font-weight: 500;
-            padding: 6px 0 4px 0;
+            font-size: 1.08rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
             border-bottom: 2.5px solid transparent;
-            transition: border-color 0.2s, color 0.2s;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
             position: relative;
             display: flex;
             align-items: center;
             height: var(--navbar-height);
         }
-        .navbar-link.active,
-        .navbar-link:hover {
+        .navbar-link.active, .navbar-link:hover {
+            background: none !important;
             color: #fff;
-            border-bottom: 2.5px solid var(--dhvsu-gold);
+            border-bottom: 3px solid #FFD700;
+            border-radius: 0 !important;
         }
         .navbar-avatar {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #fff;
+            border: 2px solid #FFD700;
             margin-left: 8px;
             background: #fff;
         }
         .navbar-logout {
             color: #fff;
             text-decoration: none;
-            font-size: 1.05rem;
-            font-weight: 500;
-            padding: 6px 0 4px 0;
+            font-size: 1.08rem;
+            font-weight: 600;
+            padding: 8px 18px;
+            border-radius: 8px;
             border-bottom: 2.5px solid transparent;
             background: none;
             border: none;
             cursor: pointer;
-            transition: border-color 0.2s, color 0.2s;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
             display: flex;
             align-items: center;
             height: var(--navbar-height);
         }
         .navbar-logout:hover {
-            color: var(--dhvsu-gold);
-            border-bottom: 2.5px solid var(--dhvsu-gold);
+            background: #FFD700;
+            color: #800000;
+            border-bottom: 3px solid #FFD700;
         }
         main {
             flex: 1;
@@ -205,20 +210,30 @@
             font-weight: 600;
             font-size: 1.1rem;
         }
-        @media (max-width: 768px) {
-            .navbar { padding: 0 1rem; }
-            .navbar-title { font-size: 1rem; }
-            .navbar-links { gap: 14px; }
-            .faq-header { flex-direction: column; gap: 1rem; align-items: flex-start; }
-            .faq-container { padding: 1.2rem; }
-            .faq-title { font-size: 1.3rem; }
+        @media (max-width: 900px) {
+            .navbar { padding: 0 0.7rem; }
+            .navbar-title { font-size: 1.08rem; }
+            .navbar-links { gap: 16px; }
         }
-        @media (max-width: 480px) {
-            .navbar { flex-direction: column; height: auto; padding: 0.5rem; }
-            .navbar-left { margin-bottom: 6px; }
-            .navbar-links { gap: 8px; flex-wrap: wrap; }
-            .navbar-link, .navbar-logout { height: 44px; font-size: 0.98rem; }
-            .faq-container { padding: 0.7rem; }
+        @media (max-width: 700px) {
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 0.5rem 1rem;
+                height: auto;
+            }
+            .navbar-links {
+                flex-direction: column;
+                gap: 10px;
+                width: 100%;
+                align-items: flex-start;
+            }
+            .navbar-link, .navbar-logout {
+                width: 100%;
+                height: 44px;
+                font-size: 1rem;
+                justify-content: flex-start;
+            }
         }
         /* Add category styles */
         .category-tabs {
@@ -260,18 +275,28 @@
         .priority-3 { background: #ffbb33; color: black; }
         .priority-4 { background: #00C851; color: white; }
         .priority-5 { background: #33b5e5; color: white; }
+        /* Force override for navbar active/hover link: no background, no border-radius, only gold underline */
+        .navbar-link.active, .navbar-link:hover {
+            background: none !important;
+            border-radius: 0 !important;
+            color: #fff !important;
+            border-bottom: 3px solid #FFD700 !important;
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <div class="navbar-left">
-            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="DHVSU Logo" class="navbar-logo">
-            <span class="navbar-title">Don Honorio Ventura State University</span>
+            <!-- Temporary: Using DHVSU logo until Pampanga State University branding is finalized -->
+            <img src="Don_Honorio_Ventura_State_University_logo.png" alt="University Logo" class="navbar-logo">
+            <span class="navbar-title">Pampanga State University</span>
         </div>
         <div class="navbar-links">
             <a href="dashboard_page.html" class="navbar-link">Dashboard</a>
-            <a href="profile.html" class="navbar-link">Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar"></a>
             <a href="faq.html" class="navbar-link active">FAQs</a>
+            <a href="profile.html" class="navbar-link">
+                Profile <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar">
+            </a>
             <button class="navbar-logout" id="logout-btn">Logout</button>
         </div>
     </nav>
@@ -293,6 +318,11 @@
                 <div class="category-tab" data-category="administration">Administration</div>
                 <div class="category-tab" data-category="general">General Information</div>
             </div>
+            <hr class="section-divider">
+            <div id="popular-questions-section">
+                <h3 style="color: var(--dhvsu-maroon); margin-bottom: 0.7em;">Popular Questions</h3>
+                <div id="popular-questions-list" style="margin-bottom: 1.5em; color: #444;">(Popular questions will appear here.)</div>
+            </div>
             
             <div class="faq-list" id="faqList">
                 <!-- FAQs will be populated here -->
@@ -300,26 +330,49 @@
         </div>
     </main>
     <footer style="background: linear-gradient(135deg, var(--dhvsu-maroon) 0%, #5e0000 100%); color: white; text-align: center; padding: 1.2rem; font-size: 0.9rem;">
-        &copy; 2025 Don Honorio Ventura State University. All Rights Reserved.
+        &copy; 2025 Pampanga State University. All Rights Reserved.
     </footer>
     <script>
-        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
-        let faqs = [];
-        // Cloudinary config (replace with your own values)
-        const CLOUDINARY_CLOUD_NAME = 'dmn9xqxgo'; // e.g. 'dhvsu-askbot'
-        const CLOUDINARY_UPLOAD_PRESET = 'Unsigned_preset'; // e.g. 'askbot_profile_upload'
+        const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
+        let allFAQs = [];
+        let currentCategory = 'all';
+
         document.addEventListener('DOMContentLoaded', function() {
             fetchFAQs();
-            document.getElementById('faq-search').addEventListener('input', filterFAQs);
+            setupEventListeners();
             fetchAndRenderUserProfilePicNavbar();
+        });
+
+        function setupEventListeners() {
+            // Search input
+            document.getElementById('faqSearch').addEventListener('input', () => {
+                filterAndDisplayFAQs();
+            });
+
+            // Category tabs
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    // Map UI label to actual category value
+                    let cat = tab.dataset.category;
+                    if (cat.toLowerCase() === 'general information') cat = 'general';
+                    currentCategory = cat.toLowerCase();
+                    filterAndDisplayFAQs();
+                });
+            });
+
+            // Logout button
             document.getElementById('logout-btn').addEventListener('click', function() {
                 sessionStorage.removeItem('currentUser');
                 window.location.href = 'index.html';
             });
-        });
+        }
+
         function fetchFAQs() {
             const formData = new FormData();
             formData.append('action', 'getFAQs');
+            
             fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
                 body: formData
@@ -327,115 +380,119 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    faqs = data.faqs;
-                    renderFAQs(faqs);
+                    allFAQs = data.faqs;
+                    filterAndDisplayFAQs();
+                } else {
+                    console.error('Failed to fetch FAQs:', data.message);
                 }
+            })
+            .catch(error => {
+                console.error('Error fetching FAQs:', error);
             });
         }
-        function renderFAQs(list) {
-            const faqList = document.getElementById('faq-list');
-            const noResults = document.getElementById('no-results');
-            if (!list.length) {
-                faqList.innerHTML = '';
-                noResults.style.display = 'block';
+
+        function filterAndDisplayFAQs() {
+            const searchTerm = document.getElementById('faqSearch').value.toLowerCase();
+            const filteredFAQs = allFAQs.filter(faq => {
+                // Normalize category for comparison
+                const faqCat = (faq.category || '').toLowerCase();
+                const matchesCategory = currentCategory === 'all' || faqCat === currentCategory;
+                const matchesSearch = faq.question.toLowerCase().includes(searchTerm) || 
+                                   faq.answer.toLowerCase().includes(searchTerm) ||
+                                   (faq.keywords && faq.keywords.toLowerCase().includes(searchTerm));
+                return matchesCategory && matchesSearch;
+            });
+            // Sort by priority (1 is highest)
+            filteredFAQs.sort((a, b) => (a.priority || 5) - (b.priority || 5));
+            displayFAQs(filteredFAQs);
+        }
+
+        function displayFAQs(faqs) {
+            const faqList = document.getElementById('faqList');
+            
+            if (faqs.length === 0) {
+                faqList.innerHTML = '<div id="no-results">No FAQs found matching your search.</div>';
                 return;
             }
-            noResults.style.display = 'none';
-            faqList.innerHTML = list.map(faq => `
-                <li class="faq-item">
-                    <div class="faq-question">Q: ${faq.question}</div>
-                    <div class="faq-answer">A: ${faq.answer}</div>
-                </li>
+
+            faqList.innerHTML = faqs.map(faq => `
+                <div class="faq-item">
+                    <div class="faq-question">
+                        ${faq.question}
+                        <span class="priority-badge priority-${faq.priority || 5}">Priority ${faq.priority || 5}</span>
+                    </div>
+                    <div class="faq-answer">${faq.answer}</div>
+                </div>
             `).join('');
+
+            // Log the interaction if it's a search
+            const searchTerm = document.getElementById('faqSearch').value;
+            if (searchTerm) {
+                logInteraction(searchTerm, faqs.length > 0);
+            }
         }
-        function filterFAQs() {
-            const query = document.getElementById('faq-search').value.toLowerCase();
-            const filtered = faqs.filter(faq =>
-                faq.question.toLowerCase().includes(query) ||
-                faq.answer.toLowerCase().includes(query) ||
-                (faq.keywords && faq.keywords.toLowerCase().includes(query))
-            );
-            renderFAQs(filtered);
+
+        function logInteraction(question, foundAnswer) {
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (!currentUser) return;
+
+            // Prevent logging if the search is an email address
+            if (/^[a-zA-Z0-9._%+-]+@dhvsu\\.edu\\.ph$/.test(question.trim())) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'logConversation');
+            formData.append('username', currentUser.username);
+            formData.append('question', question);
+            formData.append('answer', foundAnswer ? 'Found relevant FAQs' : 'No matching FAQs found');
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    console.error('Failed to log conversation:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error logging conversation:', error);
+            });
         }
+
         function setNavbarAvatarFromCache() {
             const avatar = document.getElementById('navbar-profile-avatar');
             const cachedPic = sessionStorage.getItem('profilePic');
             avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png';
             avatar.onerror = function() { this.src = 'default_profile.png'; };
         }
+
         function fetchAndRenderUserProfilePicNavbar() {
-            setNavbarAvatarFromCache(); // Show cached image instantly
+            setNavbarAvatarFromCache();
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
+
             const formData = new FormData();
             formData.append('action', 'getUserProfile');
-            formData.append('username', currentUser.username);
-            fetch(APPS_SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success && data.profile && data.profile.profilePic) {
-                        sessionStorage.setItem('profilePic', data.profile.profilePic);
-                        setNavbarAvatarFromCache();
-                    }
-                });
-        }
-        function displayFAQs(faqs) {
-            const faqList = document.getElementById('faqList');
-            faqList.innerHTML = '';
-            
-            // Sort FAQs by priority
-            faqs.sort((a, b) => a.priority - b.priority);
-            
-            faqs.forEach(faq => {
-                const faqItem = document.createElement('div');
-                faqItem.className = 'faq-item';
-                faqItem.innerHTML = `
-                    <div class="faq-question">
-                        ${faq.question}
-                        <span class="priority-badge priority-${faq.priority}">Priority ${faq.priority}</span>
-                    </div>
-                    <div class="faq-answer">${faq.answer}</div>
-                `;
-                faqList.appendChild(faqItem);
+            formData.append('identifier', currentUser.username);
+
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.profile && data.profile.profilePic) {
+                    sessionStorage.setItem('profilePic', data.profile.profilePic);
+                    setNavbarAvatarFromCache();
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching profile:', error);
             });
         }
-        function filterFAQs(category) {
-            const searchTerm = document.getElementById('faqSearch').value.toLowerCase();
-            const faqs = window.allFAQs.filter(faq => {
-                const matchesCategory = category === 'all' || faq.category === category;
-                const matchesSearch = faq.question.toLowerCase().includes(searchTerm) || 
-                                    faq.answer.toLowerCase().includes(searchTerm) ||
-                                    faq.keywords.toLowerCase().includes(searchTerm);
-                return matchesCategory && matchesSearch;
-            });
-            displayFAQs(faqs);
-        }
-        // Initialize category tabs
-        document.querySelectorAll('.category-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                filterFAQs(tab.dataset.category);
-            });
-        });
-        // Initialize search
-        document.getElementById('faqSearch').addEventListener('input', () => {
-            const activeCategory = document.querySelector('.category-tab.active').dataset.category;
-            filterFAQs(activeCategory);
-        });
-        // Load FAQs on page load
-        window.addEventListener('load', () => {
-            // Fetch FAQs from your backend
-            fetch('YOUR_BACKEND_URL?action=getFAQs')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        window.allFAQs = data.faqs;
-                        filterFAQs('all');
-                    }
-                })
-                .catch(error => console.error('Error loading FAQs:', error));
-        });
     </script>
 </body>
 </html> 

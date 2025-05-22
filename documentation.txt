@@ -2,7 +2,7 @@ Honorian AskBot - Setup Documentation
 
 Project Overview
 
-The Honorian AskBot is a web-based FAQ assistant designed for Don Honorio Ventura State University (DHVSU) students. It provides immediate answers to common inquiries about classroom locations, enrollment procedures, and other academic concerns. The system includes a secure login/signup mechanism and a smart FAQ search functionality, with Google Sheets serving as the database.
+The Honorian AskBot is a web-based FAQ assistant designed for Pampanga State University students. It provides immediate answers to common inquiries about classroom locations, enrollment procedures, and other academic concerns. The system includes a secure login/signup mechanism and a smart FAQ search functionality, with Google Sheets serving as the database.
 
 System Architecture
 
@@ -20,22 +20,21 @@ Step 1: Set Up Google Sheets Databases
    - User Database: For storing user credentials
    - FAQ Database: For storing frequently asked questions and answers
 
-2. We get the Spreadsheet IDs of both documents from their URLs:
+2. Get the Spreadsheet IDs of both documents from their URLs:
    1eFy0MRxFpYraCJmV08MGA1OzOK-SRVFNg9JXzilUF6Q
 
 Step 2: Deploy the Google Apps Script
 
 1. Open [Google Apps Script](https://script.google.com)
-2. We Create a new project
+2. Create a new project
 3. Copy and paste the provided Google Apps Script code
-4. We Replace `YOUR_USER_SPREADSHEET_ID` with the ID of the User Database sheet and FAQ Database Sheets
-6. Save the project (Ctrl+S or File > Save)
-7. Run the `initialize()` function once to set up the database structure:
+5. Save the project (Ctrl+S or File > Save)
+6. Run the `initialize()` function once to set up the database structure:
    - Select "initialize" from the function dropdown
    - Click the "Run" button
    - Authorize the script when prompted
 
-8. Deploy the script as a web app:
+7. Deploy the script as a web app:
    - Click Deploy > New deployment
    - Select "Web app" as the deployment type
    - Set "Execute as" to "Me"
@@ -49,13 +48,16 @@ Step 3: Configure the Frontend
 2. Replace `YOUR_GOOGLE_SCRIPT_WEB_APP_URL` with the URL from Step 2
 3. Save the file
 
-Honorian AskBot – DHVSU
+Honorian AskBot – Pampanga State University
 Project Documentation: Progress from Start to Finish
+
 1. Project Overview
-Honorian AskBot is a web-based FAQ and inquiry platform for Don Honorio Ventura State University (DHVSU). It provides students and staff with instant answers to common questions, a secure authentication system, and an admin panel for managing FAQs, users, and analytics. The system uses Google Apps Script and Google Sheets for the backend/database, and HTML/CSS/JavaScript for the frontend, hosted on GitHub Pages.
+Honorian AskBot is a web-based FAQ and inquiry platform for Pampanga State University. It provides students and staff with instant answers to common questions, a secure authentication system, and an admin panel for managing FAQs, users, and analytics. The system uses Google Apps Script and Google Sheets for the backend/database, and HTML/CSS/JavaScript for the frontend, hosted on GitHub Pages.
+
 2. Development Timeline & Feature Progress
+
 A. Initial Planning & Setup
-Defined project goals: Build a DHVSU-branded FAQ/chatbot system with user authentication and admin management.
+Defined project goals: Build a Pampanga State University-branded FAQ/chatbot system with user authentication and admin management.
 Chose technology stack:
 Frontend: HTML, CSS, JavaScript (vanilla, no frameworks), hosted on GitHub Pages.
 Backend: Google Apps Script (GAS) for logic, Google Sheets as the database.
@@ -77,7 +79,7 @@ Basic FAQ Chatbot:
 Users can ask questions; bot matches queries to FAQ entries in Google Sheets.
 Sample FAQ data seeded for demonstration.
 Frontend UI:
-Responsive, DHVSU-themed design.
+Responsive, Pampanga State University-themed design.
 Session management using sessionStorage.
 Security:
 No plain-text password storage.
@@ -124,7 +126,7 @@ Profile Page:
 Users can view and update their email and profile picture.
 Profile pictures are stored as URLs (no Google Drive upload for privacy/security).
 UI/UX Improvements:
-Consistent DHVSU branding:
+Consistent Pampanga State University branding:
 Colors, logo, and responsive design across all pages.
 Accessibility:
 Improved color contrast, larger clickable areas, and keyboard navigation.
@@ -143,7 +145,7 @@ Backend deployed as a Google Apps Script web app.
 
 E. Latest Updates (FAQ Database Enhancement)
 Comprehensive FAQ Database:
-Added 103 categorized FAQs covering various aspects of DHVSU:
+Added 103 categorized FAQs covering various aspects of Pampanga State University:
 - Administration and Leadership
 - Academic Programs and Colleges
 - Campus Information (Main and Satellite Campuses)
@@ -181,6 +183,7 @@ Features added and improved in cycles, with testing after each major addition.
 Collaboration:
 Main development by one member, with input and review from the group.
 All code and documentation shared via GitHub.
+
 4. Key Features List (Chronological Order)
 User Signup/Login with CAPTCHA and password hashing
 Google Sheets as secure backend database
@@ -199,14 +202,17 @@ Profile page with editable email and profile picture
 Rate limiting on chat to prevent spam
 UI/UX improvements and accessibility
 Comprehensive documentation and deployment
+
 5. Future/Planned Enhancements
 Announcements module for admins
 FAQ approval workflow (pending/approved)
 User profile pages with chat history
 Data export (CSV/Excel)
 Further accessibility improvements
+
 6. How to Set Up & Use
 See documentation.txt in the project root for step-by-step setup instructions for Google Sheets, Apps Script, and frontend configuration.
+
 7. Team Members
 Magat Ren Jay S.
 Olaybar, Vlademiere
@@ -214,3 +220,612 @@ Dela Cruz, Eugene Mark
 Kabiling Abegail
 Matic, Britany
 Hazel, Placer
+
+8. Current Issue Encountered
+Chat history and FAQ responses stopped working after removing non-DHVSU users from the Google Sheet. The backend script relies on user data for logging and matching FAQs. If the user is missing, the script fails silently. A quick fix is to restore the user data in the Google Sheet and ensure the backend script correctly validates and logs user data. Note: The user cannot restore the removed users because the data was deleted yesterday. The user will need to manually re-add the users to the Google Sheet to restore functionality.
+
+---
+
+# Recent Progress and Enhancements (Latest Update)
+
+## 1. Recent Enhancements and Changes (Since Yesterday)
+
+### A. Email Domain Restriction
+- Only official Pampanga State University emails ending with `@dhvsu.edu.ph` are allowed for signup, login, and profile updates.
+- Both frontend and backend enforce this restriction, with clear error messages for invalid emails.
+
+### B. User Identification Logic
+- The system now uses **email** (not username) as the primary identifier for all user-related operations.
+- This ensures uniqueness and consistency, especially with the new email domain restriction.
+
+### C. Profile Editing Restriction
+- Users can no longer change their email address from their profile page.
+- This maintains the integrity of the email-based user identification and prevents circumvention of the domain restriction.
+
+### D. Rebranding
+- All references to "Don Honorio Ventura State University (DHVSU)" were updated to "Pampanga State University" in the UI and documentation, while temporarily retaining the DHVSU logo.
+
+### E. Codebase Clean-up and Security
+- Improved normalization and validation of user input for login and signup.
+- Ensured all user actions (login, signup, FAQ queries) are logged in the appropriate Google Sheets.
+- Added more robust error handling and logging in the backend.
+
+---
+
+## 2. Problems and Issues Encountered
+
+### A. Backend Not Receiving Parameters
+- **Symptom:** All POST requests to the backend result in `Received POST request: undefined` and `Invalid request: Missing parameters`.
+- **Impact:** Signup, login, FAQ queries, and logging do not work.
+- **Root Cause:** The Apps Script backend is not receiving the expected parameters from the frontend, likely due to an incorrect or outdated web app URL, deployment settings, or request formatting issues.
+
+### B. Google Sheets Data Structure
+- If the Users or FAQ sheets are missing required columns or have malformed data, all user-related actions fail.
+
+### C. FAQ Matching and Logging Failures
+- The bot always responds with "not in the database" even for known questions, due to backend or sheet structure issues.
+
+---
+
+## 3. Troubleshooting and Debugging Steps Taken
+
+- Added extensive logging in the backend to capture incoming requests and parameter parsing.
+- Verified frontend request code to ensure it uses `FormData` and does not set the `Content-Type` header manually.
+- Checked Apps Script deployment to confirm it is set as a web app with "Anyone" access.
+- Tested endpoint with Postman/curl to isolate whether the issue is with the frontend or backend.
+- Reviewed Google Sheets structure to ensure all required columns are present and correctly named.
+
+---
+
+## 4. Current Action Items / Recommendations
+
+1. Verify and update the Apps Script web app URL in all frontend files to match the latest deployment.
+2. Ensure the Apps Script is deployed as a web app with "Anyone" access and "Execute as Me".
+3. Check the structure of the Users and FAQ sheets in Google Sheets for required columns.
+4. Test the backend endpoint directly (using Postman/curl) to confirm it receives parameters.
+5. Monitor Apps Script logs for incoming requests and errors after each test.
+
+---
+
+## 5. Summary Table of Recent Changes
+
+| Change/Feature                | Description/Status                                                                 |
+|-------------------------------|-----------------------------------------------------------------------------------|
+| Email domain restriction      | Only `@dhvsu.edu.ph` emails allowed for signup/login/profile/admin                |
+| User identification           | Switched from username to email as primary key                                    |
+| Profile editing restriction   | Users cannot change their email from profile page                                 |
+| Rebranding                    | Updated all references to "Pampanga State University"                             |
+| Backend parameter issue       | All POST requests currently fail due to missing parameters                        |
+| FAQ/chatbot broken            | Bot always says "not in the database" due to backend/user/FAQ issues              |
+| Logging not working           | No activity/conversation logs due to backend not receiving parameters             |
+
+---
+
+## 6. Next Steps
+
+- Fix the backend parameter issue by ensuring correct deployment and request formatting.
+- Restore or verify Google Sheets structure for Users and FAQ.
+- Retest all user flows (signup, login, FAQ, logging) after fixing the above.
+
+---
+
+This section documents all major changes, enhancements, and the current critical issue as of the latest project review.
+
+## Technical Implementation Details
+
+### 1. Authentication System
+#### Login/Signup Logic
+- **Email Validation**
+  ```javascript
+  function isValidDHVSUEmail(email) {
+    return email.toLowerCase().trim().endsWith('@dhvsu.edu.ph');
+  }
+  ```
+  - Enforces DHVSU-only email policy
+  - Case-insensitive validation
+  - Trims whitespace for consistency
+
+- **Password Security**
+  - Client-side hashing using SHA-256
+  - No plain-text password storage
+  - Secure token generation for password reset
+
+#### Session Management
+- Uses sessionStorage for client-side session
+- Implements rate limiting (5-second cooldown)
+- Tracks user activity and login attempts
+
+### 2. FAQ Matching System
+#### Smart Matching Algorithm
+```javascript
+function findBestMatches(userQuestion, faqs, maxSuggestions = 3) {
+  // 1. Text Normalization
+  const userQNorm = normalize(userQuestion);
+  
+  // 2. Multiple Matching Strategies
+  let scoredFaqs = faqs.map(faq => {
+    let score = 0;
+    
+    // Exact Match (100 points)
+    if (faqQNorm === userQNorm) {
+      score = 100;
+    } else {
+      // Jaccard Similarity (up to 80 points)
+      const jaccard = calculateJaccardSimilarity(userQNorm, faqQNorm);
+      score += jaccard * 80;
+      
+      // Keyword Overlap (10 points per match)
+      if (faq.keywords) {
+        const keywords = faq.keywords.toLowerCase().split(',');
+        keywords.forEach(keyword => {
+          if (userQNorm.includes(keyword)) score += 10;
+        });
+      }
+      
+      // Phrase Matching (20 points)
+      if (faqQNorm.includes(userQNorm) || userQNorm.includes(faqQNorm)) {
+        score += 20;
+      }
+    }
+    return { ...faq, _score: score };
+  });
+}
+```
+
+#### Matching Components
+1. **Text Normalization**
+   - Converts to lowercase
+   - Removes special characters
+   - Standardizes whitespace
+   - Trims leading/trailing spaces
+
+2. **Jaccard Similarity**
+   - Measures word overlap between questions
+   - Handles partial matches effectively
+   - Weighted scoring system
+
+3. **Keyword Matching**
+   - Pre-defined keywords for each FAQ
+   - Case-insensitive matching
+   - Multiple keyword support
+
+4. **Suggestion Filtering**
+   - Removes redundant suggestions
+   - Prevents similar questions
+   - Limits to top 3 matches
+   - Minimum similarity threshold
+
+### 3. Chat System
+#### Message Processing
+```javascript
+function handleChatMessage(e, conversationSheet, faqSheet) {
+  // 1. Input Validation
+  const { question, username, email } = e.parameter;
+  
+  // 2. FAQ Matching
+  const { bestMatch, suggestions } = findBestMatches(question, faqs);
+  
+  // 3. Response Generation
+  let answer = bestMatch ? bestMatch.answer : generateFallbackResponse(suggestions);
+  
+  // 4. Conversation Logging
+  logConversation({
+    id: Utilities.getUuid(),
+    username,
+    email,
+    question,
+    answer,
+    timestamp: new Date().toISOString()
+  });
+}
+```
+
+#### Features
+1. **Rate Limiting**
+   - 5-second cooldown between messages
+   - Prevents spam and abuse
+   - Tracks last message time
+
+2. **Conversation Logging**
+   - Stores all interactions
+   - Tracks user identifiers
+   - Timestamps for analytics
+
+3. **Fallback Handling**
+   - Suggests related questions
+   - Provides support contact
+   - Maintains conversation flow
+
+### 4. Feedback System
+#### Implementation
+```javascript
+function handleLogFeedback(params, sheet) {
+  const {
+    username,
+    message,
+    feedbackType,
+    comment
+  } = params;
+  
+  // Log feedback with metadata
+  sheet.appendRow([
+    new Date().toISOString(),
+    username,
+    message,
+    feedbackType,
+    comment
+  ]);
+}
+```
+
+#### Features
+1. **Rating System**
+   - Binary feedback (Helpful/Not Helpful)
+   - Optional comments
+   - Timestamp tracking
+
+2. **Analytics Integration**
+   - Feedback aggregation
+   - Performance metrics
+   - User satisfaction tracking
+
+### 5. Data Management
+#### Google Sheets Structure
+1. **Users Sheet**
+   ```
+   id | username | email | password | dateCreated | reset_token | token_expiry | last_message_time | role | profile_pic
+   ```
+
+2. **FAQs Sheet**
+   ```
+   id | question | answer | keywords | status | category | priority
+   ```
+
+3. **Conversations Sheet**
+   ```
+   id | username | email | question | answer | timestamp
+   ```
+
+4. **Feedback Sheet**
+   ```
+   timestamp | username | message | feedbackType | comment
+   ```
+
+#### Data Operations
+1. **CRUD Operations**
+   - Create: `appendRow()` for new entries
+   - Read: `getDataRange().getValues()`
+   - Update: `getRange().setValue()`
+   - Delete: `deleteRow()`
+
+2. **Data Validation**
+   - Required field checking
+   - Format validation
+   - Duplicate prevention
+
+### 6. Security Measures
+1. **Input Sanitization**
+   - HTML escaping
+   - SQL injection prevention
+   - XSS protection
+
+2. **Access Control**
+   - Role-based permissions
+   - Session validation
+   - Rate limiting
+
+3. **Error Handling**
+   - Graceful failure
+   - User-friendly messages
+   - Error logging
+
+### 7. Performance Optimizations
+1. **Caching**
+   - FAQ data caching
+   - User session caching
+   - Response optimization
+
+2. **Query Optimization**
+   - Efficient sheet access
+   - Batch operations
+   - Indexed lookups
+
+3. **Resource Management**
+   - Connection pooling
+   - Memory management
+   - Request throttling
+
+## Latest Updates (FAQ and Q&A System Enhancement)
+
+### 1. Smart Q&A System Features
+
+#### A. Context-Aware Responses
+- **Feature**: The system now maintains conversation context to provide more relevant answers
+- **Implementation**: 
+  - Stores last question and timestamp in session
+  - Boosts relevance scores for contextually related questions
+  - Uses conversation history to improve response accuracy
+- **Benefits**:
+  - More natural conversation flow
+  - Better handling of follow-up questions
+  - Improved answer relevance
+
+#### B. Enhanced Question Matching
+- **Feature**: Advanced question matching algorithm combining multiple techniques
+- **Implementation**:
+  - Jaccard similarity for word overlap
+  - Levenshtein distance for close matches
+  - Keyword-based matching
+  - Context boosting (20% boost for related questions)
+- **Benefits**:
+  - More accurate answer matching
+  - Better handling of similar questions
+  - Reduced false positives
+
+#### C. Response Types
+- **Feature**: Multiple response types for different scenarios
+- **Implementation**:
+  1. `direct_answer`: Clear, direct responses
+  2. `clarification`: When more information is needed
+  3. `follow_up`: For related questions and suggestions
+- **Benefits**:
+  - More natural conversation flow
+  - Better user guidance
+  - Improved user experience
+
+#### D. Smart Suggestions
+- **Feature**: Intelligent suggestion system for related questions
+- **Implementation**:
+  - Category-based suggestions
+  - Priority-based sorting
+  - Context-aware filtering
+  - Duplicate prevention
+- **Benefits**:
+  - Helps users find related information
+  - Reduces need for multiple questions
+  - Improves information discovery
+
+#### E. Error Handling
+- **Feature**: Comprehensive error handling system
+- **Implementation**:
+  - Specific error types (timeout, permission, validation)
+  - User-friendly error messages
+  - Detailed error logging
+  - Graceful fallbacks
+- **Benefits**:
+  - Better user experience during errors
+  - Easier debugging
+  - Improved system reliability
+
+### 2. FAQ Management System
+
+#### A. FAQ Structure
+- **Feature**: Enhanced FAQ data structure
+- **Implementation**:
+  ```javascript
+  {
+    id: string,
+    question: string,
+    answer: string,
+    keywords: string[],
+    status: 'active' | 'pending',
+    category: string,
+    priority: number,
+    clarificationOptions?: Array<{
+      text: string,
+      question: string
+    }>,
+    followUpQuestions?: string[]
+  }
+  ```
+- **Benefits**:
+  - Better organization
+  - Easier maintenance
+  - Improved searchability
+
+#### B. Category System
+- **Feature**: Hierarchical category organization
+- **Implementation**:
+  - Main categories: Administration, Academics, Student Services, etc.
+  - Sub-categories for specific topics
+  - Priority levels (1-5)
+- **Benefits**:
+  - Better content organization
+  - Easier navigation
+  - Improved content discovery
+
+#### C. Search Optimization
+- **Feature**: Advanced search capabilities
+- **Implementation**:
+  - Keyword-based search
+  - Category filtering
+  - Priority-based sorting
+  - Fuzzy matching
+- **Benefits**:
+  - Faster answer retrieval
+  - More accurate results
+  - Better user experience
+
+### 3. Conversation Management
+
+#### A. Session Handling
+- **Feature**: Smart session management
+- **Implementation**:
+  - Context preservation
+  - Rate limiting (5-second cooldown)
+  - Activity tracking
+- **Benefits**:
+  - Prevents spam
+  - Maintains conversation flow
+  - Better user tracking
+
+#### B. Conversation Logging
+- **Feature**: Comprehensive conversation logging
+- **Implementation**:
+  - Stores all interactions
+  - Tracks user identifiers
+  - Timestamps for analytics
+- **Benefits**:
+  - Better analytics
+  - Improved debugging
+  - Enhanced user tracking
+
+### 4. Performance Optimizations
+
+#### A. Response Time
+- **Feature**: Optimized response handling
+- **Implementation**:
+  - Efficient matching algorithms
+  - Caching of frequent questions
+  - Batch processing
+- **Benefits**:
+  - Faster response times
+  - Reduced server load
+  - Better scalability
+
+#### B. Resource Management
+- **Feature**: Efficient resource usage
+- **Implementation**:
+  - Connection pooling
+  - Memory management
+  - Request throttling
+- **Benefits**:
+  - Better system stability
+  - Reduced resource usage
+  - Improved reliability
+
+### 5. Security Features
+
+#### A. Input Validation
+- **Feature**: Comprehensive input validation
+- **Implementation**:
+  - Parameter validation
+  - Type checking
+  - Sanitization
+- **Benefits**:
+  - Prevents injection attacks
+  - Improves data integrity
+  - Better security
+
+#### B. Access Control
+- **Feature**: Role-based access control
+- **Implementation**:
+  - User role verification
+  - Permission checking
+  - Session validation
+- **Benefits**:
+  - Better security
+  - Controlled access
+  - Protected resources
+
+### 6. Future Enhancements
+
+#### A. Planned Features
+1. **Sentiment Analysis**
+   - Analyze user sentiment
+   - Adjust response tone
+   - Improve user satisfaction
+
+2. **Learning System**
+   - Learn from user feedback
+   - Improve answer quality
+   - Adapt to user patterns
+
+3. **Multi-language Support**
+   - Multiple language support
+   - Automatic translation
+   - Cultural adaptation
+
+4. **Advanced Analytics**
+   - User behavior tracking
+   - Performance metrics
+   - Usage patterns
+
+5. **Integration Capabilities**
+   - API endpoints
+   - Third-party integration
+   - External service support
+
+
+
+1. Backend (Google Apps Script) Review
+A. Core Structure
+Sheets: Users, FAQs, Feedback, ActivityLog, Conversations — all present and used correctly.
+Headers: Code checks and creates required columns. Good.
+Security: Only DHVSU emails allowed for signup/login. Good.
+Error Handling: Uses handleError for most actions. Good, but could be more consistent in all functions.
+B. Rate Limiting
+Logic: Now robust, case-insensitive, logs all actions, blocks if user not found, and has a utility to initialize missing times.
+Improvement: None needed; current logic is best practice.
+C. Chat/FAQ Logic
+Context Awareness: Supports context, clarification, follow-ups.
+Matching: Uses normalized, multi-factor matching (Jaccard, Levenshtein, keywords).
+Clarification/Follow-up: Requires exact question matches in FAQ sheet for best results.
+Improvement: Consider adding fuzzy matching for clarifications/follow-ups, or auto-suggesting close matches if not found.
+D. User Management
+Signup/Login: Checks for duplicates, enforces email domain, hashes passwords.
+Profile: Supports profile pic, role, and updates.
+Improvement: Consider adding email verification for extra security.
+E. Logging & Analytics
+ActivityLog: Logs most user actions.
+Feedback: Captures feedback with comments.
+Improvement: Consider logging failed login attempts and suspicious activity.
+F. Error-Prone Areas
+Sheet Structure: If columns are renamed or deleted, errors will occur. The code tries to auto-fix, but manual changes can break things.
+Data Consistency: Clarification/follow-up options must have matching FAQ rows.
+2. Frontend Review (All HTML/JS Files)
+A. General
+Session Handling: Uses sessionStorage/localStorage for user info. Good.
+Input Validation: Checks for DHVSU email, password, etc.
+Error Display: Shows errors in UI, but could be more consistent in style and placement.
+B. Chat/Dashboard
+Chat UI: Modern, supports avatars, timestamps, suggestions, feedback.
+Rate Limiting: Now disables input while waiting for bot, re-enables after response. Good.
+Improvement: Consider adding a visual spinner or overlay when input is disabled.
+C. Login/Signup
+Validation: Checks email format, password, captcha.
+Improvement: Add password strength meter, show/hide password toggle.
+D. Profile
+Profile Pic: Supports upload and display.
+Improvement: Add cropping/preview for profile pic uploads.
+E. Admin
+User/FAQ Management: Appears robust, but test for edge cases (e.g., deleting users/FAQs, editing with missing fields).
+F. Accessibility & UX
+Keyboard Navigation: Most buttons/inputs are accessible, but test with only keyboard.
+Screen Reader: Add aria-labels and roles for better accessibility.
+Mobile Responsiveness: CSS uses media queries, but test on real devices.
+3. Common Issues to Watch For
+FAQ Sheet: If clarification/follow-up options don’t have exact matches, bot may give wrong answers.
+Multiple Users: If two users have the same username, rate limiting and chat history may break.
+Sheet Edits: Manual changes to sheet structure can break the backend.
+Frontend/Backend URL: If you redeploy Apps Script, update the frontend URL everywhere.
+4. System Test Checklist
+A. User Flows
+[ ] Signup: Try with valid/invalid DHVSU email, duplicate username/email, weak password.
+[ ] Login: Try with correct/incorrect credentials, non-DHVSU email.
+[ ] Profile: Update profile pic, change username, check for errors.
+[ ] Password Reset: Test forgot/reset password flow.
+B. Chatbot
+[ ] Ask FAQ: Ask a direct FAQ, get correct answer.
+[ ] Clarification: Trigger a clarification, select an option, get correct answer.
+[ ] Follow-up: Trigger follow-up, select a suggestion, get correct answer.
+[ ] Rate Limiting: Try to send messages rapidly; input should disable, backend should block.
+[ ] Feedback: Submit feedback, check if it logs.
+C. Admin
+[ ] Add/Edit/Delete FAQ: Try all actions, check for errors.
+[ ] Add/Edit/Delete User: Try all actions, check for errors.
+[ ] View Logs/Analytics: Check if data loads and displays.
+D. Edge Cases
+[ ] Network Loss: Disconnect and try to send a message; check error handling.
+[ ] Sheet Structure: Rename/delete a column, see if system recovers or errors.
+[ ] Mobile: Test all flows on a phone/tablet.
+5. Recommended Improvements
+Accessibility: Add ARIA labels, improve keyboard navigation.
+Security: Add email verification, log failed logins, consider 2FA for admin.
+User Experience: Add loading spinners, improve error messages, add password strength meter.
+Data Consistency: Add a backend utility to auto-create missing clarification/follow-up FAQ rows with a warning for admin.
+Testing: Write a test plan and have a non-developer user try all flows.
+6. How to Proceed
+Run through the checklist above.
+Fix any issues you find, or let me know and I’ll help you fix them.
+If you want, I can apply specific improvements (e.g., accessibility, security, UX) for you.

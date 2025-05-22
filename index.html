@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Honorian AskBot - DHVSU</title>
+    <title>Honorian AskBot - Pampanga State University</title>
     <style>
         :root {
             --dhvsu-maroon: #800000;
@@ -36,6 +36,21 @@
             text-align: center;
             box-shadow: 0 3px 10px rgba(0,0,0,0.13);
             position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(45deg, rgba(255,255,255,0.03) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(255,255,255,0.03) 25%, transparent 25%);
+            background-size: 60px 60px;
+            pointer-events: none;
         }
         
         .header-content {
@@ -43,6 +58,8 @@
             flex-direction: column;
             align-items: center;
             gap: 18px;
+            position: relative;
+            z-index: 1;
         }
         
         .logo-container {
@@ -50,6 +67,11 @@
             align-items: center;
             justify-content: center;
             gap: 18px;
+            padding: 0.5rem 1.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
         .logo {
@@ -59,10 +81,35 @@
             border-radius: 50%;
             background: #fff;
             padding: 8px;
+            opacity: 0;
+            transform: scale(0.95);
+            animation: logoFadeIn 1.2s ease 0.2s forwards;
+            border: 2px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        @keyframes logoFadeIn {
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
         
         .title-container {
             text-align: left;
+            position: relative;
+            padding-left: 1rem;
+        }
+        
+        .title-container::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 70%;
+            background: var(--dhvsu-gold);
+            border-radius: 3px;
         }
         
         .university-name {
@@ -70,6 +117,10 @@
             font-weight: bold;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.13);
             margin-bottom: 5px;
+            background: linear-gradient(to right, #fff, #f0f0f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
         }
         
         .tagline {
@@ -78,6 +129,18 @@
             letter-spacing: 1px;
             font-style: italic;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.13);
+            position: relative;
+            display: inline-block;
+            padding: 0.2rem 0.8rem;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .tagline::before {
+            content: '🤖';
+            margin-right: 0.5rem;
+            font-style: normal;
         }
         
         .profile-link {
@@ -115,15 +178,24 @@
         }
         
         .login-container {
-            background: #fff;
-            border-radius: var(--card-radius);
-            box-shadow: var(--shadow);
+            background: linear-gradient(135deg, #fff 0%, #fffbe6 100%);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(128,0,0,0.13), 0 1.5px 8px rgba(128,0,0,0.07);
             width: 100%;
             max-width: 420px;
-            padding: 2.5rem 2.2rem 2.2rem 2.2rem;
+            padding: 2.8rem 2.5rem 2.5rem 2.5rem;
             border: 1px solid #f3e3e3;
-            margin-top: 1.5rem;
+            margin-top: 2.5rem;
             animation: fadeIn 0.7s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        
+        .login-container:hover, .login-container:focus-within {
+            box-shadow: 0 12px 36px rgba(128,0,0,0.18), 0 2px 12px rgba(128,0,0,0.10);
+            transform: translateY(-2px) scale(1.01);
         }
         
         @keyframes fadeIn {
@@ -138,9 +210,10 @@
         
         .login-header h2 {
             color: var(--dhvsu-maroon);
-            font-size: 2.2rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: 18px;
             font-weight: 700;
+            letter-spacing: 0.5px;
         }
         
         .login-header p {
@@ -149,32 +222,47 @@
         }
         
         .form-group {
-            margin-bottom: 1.7rem;
+            margin-bottom: 1.5rem;
             position: relative;
         }
         
-        label {
+        .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 0.5rem;
             font-weight: 600;
-            color: #555;
+            color: #444;
+            font-size: 0.95rem;
+        }
+        
+        .helper-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+            margin-bottom: 0.5rem;
         }
         
         input {
             width: 100%;
-            padding: 16px 14px;
+            padding: 14px 16px;
             border: 1.5px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1.08rem;
+            border-radius: 12px;
+            font-size: 1.05rem;
             background: #fafafa;
-            transition: border-color 0.3s, box-shadow 0.3s;
+            transition: all 0.3s ease;
+            color: #333;
+            height: 48px;
         }
         
         input:focus {
             outline: none;
-            border-color: var(--dhvsu-maroon);
-            box-shadow: 0 0 8px rgba(165, 42, 42, 0.13);
+            border-color: var(--dhvsu-gold);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
             background: #fff;
+        }
+        
+        input::placeholder {
+            color: #999;
+            font-size: 0.95rem;
         }
         
         .error-message {
@@ -197,21 +285,70 @@
             box-shadow: 0 2px 8px rgba(128,0,0,0.07);
         }
         
+        .btn-primary, .btn-secondary {
+            padding: 12px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.13rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s, box-shadow 0.3s;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
         .btn-primary {
             background: linear-gradient(90deg, var(--dhvsu-maroon) 60%, var(--dhvsu-gold) 100%);
-            color: white;
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 1rem;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
         
         .btn-primary:hover {
-            background: linear-gradient(90deg, var(--light-maroon) 60%, var(--dhvsu-gold) 100%);
-            box-shadow: 0 4px 16px rgba(128,0,0,0.13);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(128,0,0,0.15);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 4px rgba(128,0,0,0.1);
+        }
+        
+        .btn-secondary {
+            background: #fffbe6;
+            color: var(--dhvsu-maroon);
+            border: 1.5px solid var(--dhvsu-gold);
+            width: auto;
+            min-width: 70px;
+            margin-left: 8px;
+            font-size: 1rem;
+            padding: 8px 16px;
+        }
+        
+        .btn-secondary:hover {
+            background: var(--dhvsu-gold);
+            color: var(--dhvsu-maroon);
         }
         
         .toggle-form {
-            margin-top: 1.5rem;
+            margin-top: 1.2rem;
             text-align: center;
-            font-size: 1.05rem;
-            color: #666;
+            font-size: 1.08rem;
+            color: #800000;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            display: block;
         }
         
         .toggle-form a {
@@ -296,24 +433,27 @@
 
         /* Custom Captcha Styles */
         .captcha-container {
-            margin-bottom: 1.7rem;
+            margin-bottom: 1.5rem;
+            position: relative;
         }
         
         .captcha-box {
-            background-color: #f7f7f7;
-            border: 1.5px solid #ddd;
-            border-radius: 10px;
-            padding: 15px 10px;
-            font-size: 1.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(45deg, #f8f8f8, #ffffff);
+            border: 1.5px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 12px 12px 12px 16px;
+            font-size: 1.6rem;
             font-family: 'Courier New', monospace;
             font-weight: bold;
-            letter-spacing: 8px;
-            text-align: center;
-            user-select: none;
-            margin-bottom: 12px;
+            letter-spacing: 6px;
             color: var(--dhvsu-maroon);
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+            height: 52px;
+            margin-bottom: 0.8rem;
             position: relative;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
             overflow: hidden;
         }
         
@@ -322,34 +462,116 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background: repeating-linear-gradient(
                 45deg,
-                transparent,
-                transparent 10px,
-                rgba(0,0,0,0.03) 10px,
-                rgba(0,0,0,0.03) 20px
+                rgba(128, 0, 0, 0.03),
+                rgba(128, 0, 0, 0.03) 10px,
+                rgba(255, 215, 0, 0.03) 10px,
+                rgba(255, 215, 0, 0.03) 20px
             );
+            pointer-events: none;
+        }
+        
+        .captcha-text {
+            flex: 1;
+            text-align: left;
+            user-select: none;
+            text-shadow: 1px 1px 0 #fff, 0 1px 2px #e0e0e0;
+            font-size: 1.6rem;
+            letter-spacing: 6px;
+            position: relative;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+        }
+        
+        .captcha-char {
+            display: inline-block;
+            transform: rotate(var(--rotation));
+            margin: 0 1px;
         }
         
         .captcha-refresh {
-            background-color: #fffbe6;
-            border: 1.5px solid #FFD700;
-            border-radius: 8px;
-            padding: 8px 12px;
+            background: none;
+            border: none;
+            color: var(--dhvsu-maroon);
             cursor: pointer;
-            font-size: 0.98rem;
+            padding: 0;
+            margin-left: 12px;
             display: flex;
             align-items: center;
-            margin-left: auto;
-            transition: background-color 0.3s;
+            justify-content: center;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            position: relative;
+            z-index: 1;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
         }
         
-        .captcha-refresh:hover {
-            background-color: #e0e0e0;
+        .captcha-refresh:hover,
+        .captcha-refresh:focus {
+            background: #fffbe6;
+            color: var(--dhvsu-gold);
+            box-shadow: 0 2px 8px rgba(128,0,0,0.08);
+            outline: 2px solid var(--dhvsu-gold);
         }
         
+        .captcha-refresh svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s;
+        }
+        
+        .captcha-refresh:hover svg,
+        .captcha-refresh:focus svg {
+            transform: rotate(180deg);
+        }
+        
+        .captcha-refresh:active {
+            transform: scale(0.95);
+        }
+        
+        .captcha-tooltip {
+            display: none;
+            position: absolute;
+            top: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fffbe6;
+            color: #800000;
+            border: 1px solid #FFD700;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+        }
+        
+        .captcha-refresh:hover .captcha-tooltip,
+        .captcha-refresh:focus .captcha-tooltip {
+            display: block;
+        }
+        
+        @media (max-width: 480px) {
+            .captcha-box {
+                font-size: 1.1rem;
+                height: 40px;
+                padding: 8px 8px 8px 10px;
+            }
+            #login-captcha-text {
+                font-size: 1.1rem;
+                letter-spacing: 4px;
+            }
+            .captcha-refresh {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
         /* Security indicator */
         .password-strength {
             height: 6px;
@@ -385,72 +607,446 @@
             position: relative;
         }
         
-        .toggle-password {
+        .eye-icon {
             position: absolute;
-            right: 12px;
+            right: 16px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
             cursor: pointer;
             color: #777;
-            font-size: 0.98rem;
+            font-size: 1.2rem;
             padding: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        .toggle-password:hover {
+        .eye-icon:focus {
+            outline: 2px solid var(--dhvsu-gold);
+        }
+        
+        .eye-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        /* Email validation icons */
+        .input-icon {
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2rem;
+            pointer-events: none;
+        }
+        .input-icon.valid { color: #28a745; }
+        .input-icon.invalid { color: #e74c3c; }
+        /* Enhanced Remember Me - Simple, user-friendly, no yellow */
+        .remember-me-simple {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            font-size: 1.08rem;
+            color: #444;
+            user-select: none;
+        }
+        
+        .remember-me-simple input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--dhvsu-maroon);
+            margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        
+        .remember-me-label {
+            font-weight: 500;
+            color: #444;
+            cursor: pointer;
+            margin-right: 0.2rem;
+            margin-left: 0.1rem;
+            font-size: 1.08rem;
+            letter-spacing: 0.01em;
+            line-height: 1;
+        }
+        
+        .remember-me-info {
+            background: none;
+            border: none;
+            padding: 0;
+            margin: 0 0 0 2px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            color: #888;
+            position: relative;
+            transition: color 0.2s;
+            outline: none;
+        }
+        
+        .remember-me-info svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            color: #888;
+            transition: color 0.2s;
+        }
+        
+        .remember-me-info:focus svg,
+        .remember-me-info:hover svg {
             color: var(--dhvsu-maroon);
         }
         
-        .toggle-password:focus {
-            outline: none;
+        .remember-tooltip {
+            display: none;
+            position: absolute;
+            left: 120%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.98rem;
+            white-space: nowrap;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+            min-width: 120px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s;
         }
-
-        @media (max-width: 768px) {
-            .university-name {
-                font-size: 1.4rem;
+        
+        .remember-me-info:focus .remember-tooltip,
+        .remember-me-info:hover .remember-tooltip {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        @media (max-width: 600px) {
+            .remember-tooltip {
+                left: 0;
+                top: 120%;
+                transform: none;
+                min-width: 100px;
+                text-align: left;
             }
-            
-            .tagline {
-                font-size: 0.95rem;
-            }
-            
+        }
+        /* Security notice */
+        .security-notice {
+            margin-top: 2.2rem;
+            font-size: 0.98rem;
+            color: #888;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .security-notice svg {
+            width: 18px;
+            height: 18px;
+            color: var(--dhvsu-maroon);
+            display: inline-block;
+            vertical-align: middle;
+        }
+        /* ARIA live region for messages */
+        #message-container[aria-live] {
+            min-height: 1.5em;
+            margin-bottom: 0.7em;
+        }
+        @media (max-width: 600px) {
             .login-container {
-                width: 98%;
-                padding: 1.5rem;
+                padding: 1.2rem 0.5rem;
+                max-width: 98vw;
+                min-width: 0;
             }
-            
-            .logo {
-                width: 60px;
-                height: 60px;
+            .login-header h2 {
+                font-size: 1.3rem;
             }
-        }
-
-        @media (max-width: 480px) {
-            .logo-container {
-                flex-direction: column;
-                align-items: center;
-                gap: 10px;
+            .welcome-title {
+                font-size: 1rem !important;
             }
-            
-            .title-container {
-                text-align: center;
+            .form-group label,
+            .helper-text {
+                font-size: 0.98rem;
             }
-            
-            .university-name {
+            input, .btn, .btn-primary {
+                font-size: 1rem;
+                padding: 14px 12px;
+                height: 44px;
+                min-height: 44px;
+            }
+            .captcha-box {
                 font-size: 1.1rem;
+                height: 44px;
+                padding: 8px 8px 8px 10px;
             }
-            
-            .login-container {
-                padding: 1.1rem;
+            .captcha-refresh {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
             }
-            
-            input, .btn {
-                padding: 12px;
+            .eye-icon {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
             }
+            .form-links a {
+                padding: 12px 0;
+                min-width: 44px;
+                min-height: 44px;
+                font-size: 1rem;
+            }
+        }
+
+        /* --- Remember Me Modern Pill Row --- */
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 1.2rem;
+            font-size: 1.08rem;
+            color: #444;
+            user-select: none;
+        }
+
+        .remember-me input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--dhvsu-maroon);
+            margin: 0;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .remember-me-label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: #f5f5f5;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 999px;
+            padding: 0.28em 1.1em 0.28em 1em;
+            font-weight: 500;
+            color: var(--dhvsu-maroon);
+            transition: background 0.2s, box-shadow 0.2s, border-color 0.2s;
+            cursor: pointer;
+            line-height: 1.2;
+            box-shadow: 0 1px 4px rgba(128,0,0,0.04);
+            margin-left: 2px;
+            font-size: 1.08rem;
+        }
+
+        .remember-me-label:hover,
+        .remember-me-label:focus-within {
+            background: #ededed;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+            border-color: #bbb;
+        }
+
+        .remember-me-info {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+            color: #888;
+            cursor: pointer;
+            outline: none;
+            margin-left: 0.18em;
+            transition: color 0.2s;
+        }
+
+        .remember-me-info svg {
+            width: 18px;
+            height: 18px;
+            display: block;
+            color: #888;
+            transition: color 0.2s;
+        }
+
+        .remember-me-info:focus svg,
+        .remember-me-info:hover svg {
+            color: var(--dhvsu-maroon);
+        }
+
+        .remember-tooltip {
+            display: none;
+            position: absolute;
+            left: 120%;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #f5f5f5;
+            color: #333;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-size: 0.98rem;
+            white-space: nowrap;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(128,0,0,0.07);
+            min-width: 120px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.18s;
+        }
+
+        .remember-me-info:focus .remember-tooltip,
+        .remember-me-info:hover .remember-tooltip {
+            display: block;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 600px) {
+            .remember-tooltip {
+                left: 0;
+                top: 120%;
+                transform: none;
+                min-width: 100px;
+                text-align: left;
+            }
+        }
+
+        /* Enhanced form links */
+        .form-links {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .form-links a {
+            color: var(--dhvsu-maroon);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .form-links a:hover {
+            background: rgba(128,0,0,0.05);
+            text-decoration: underline;
+        }
+
+        /* Welcome message */
+        .welcome-message {
+            text-align: center;
+            color: #666;
+            font-size: 0.95rem;
+            margin: 1rem 0 2rem;
+            line-height: 1.5;
+        }
+
+        #login-btn:hover, #login-btn:focus {
+            background: linear-gradient(90deg, #800000 0%, #FFD700 100%);
+            box-shadow: 0 2px 8px rgba(128,0,0,0.15);
+            outline: 2px solid #FFD700;
+        }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #800000;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Add these new styles for animations and loading states */
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes slideOut {
+            from { transform: translateY(0); opacity: 1; }
+            to { transform: translateY(-20px); opacity: 0; }
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out forwards;
+        }
+
+        .slide-out {
+            animation: slideOut 0.5s ease-out forwards;
+        }
+
+        #signup-message-container {
+            padding: 13px;
+            margin: 18px 0 10px 0;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            font-weight: 500;
+            font-size: 1.05rem;
+        }
+
+        #signup-message-container.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        #signup-message-container.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        #signup-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #800000;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            animation: spin 1s linear infinite;
+            display: none;
+            vertical-align: middle;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Add SR-only class for screen reader text */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
         }
     </style>
 
@@ -460,346 +1056,556 @@
     <header>
         <div class="header-content">
             <div class="logo-container">
+                <!-- Temporary: Using DHVSU logo until Pampanga State University branding is finalized -->
                 <img src="Don_Honorio_Ventura_State_University_logo.png" alt="University Logo" class="logo">
                 <div class="title-container">
-                    <div class="university-name">Don Honorio Ventura State University</div>
-                    <div class="tagline">Honorian AskBot - Your DHVSU Interactive Assistant</div>
+                    <div class="university-name">Pampanga State University</div>
+                    <div class="tagline">Honorian AskBot</div>
                 </div>
             </div>
-            <a href="profile.html" class="profile-link" id="profile-link" style="display: none;">
-                <img id="navbar-profile-avatar" src="default_profile.png" alt="Profile" class="navbar-avatar">
-                <span>Profile</span>
-            </a>
         </div>
     </header>
     <main>
-        <!-- Login and Signup Forms -->
-
-        <div class="login-container">
-            <div class="login-header">
-                <h2>Honorian AskBot</h2>
-                <p>Your DHVSU Interactive Assistant</p>
-            </div>
-            <div id="message-container"></div>
-            <div class="loader" id="loader"></div>
-            <form id="login-form" class="active-form">
+        <div class="login-container" role="main">
+            <form id="login-form" class="active-form" autocomplete="on" aria-label="Login form">
+                <div class="login-header">
+                    <div class="welcome-title" style="font-size:1.25rem; color:#800000; font-weight:700; margin-bottom:0.7em; text-align:center; letter-spacing:0.5px;">
+                        Welcome to Honorian AskBot!
+                    </div>
+                    <h2>Log In to Your Account</h2>
+                    <div class="welcome-message">
+                        Please log in with your university credentials.
+                    </div>
+                </div>
+                <div id="message-container" aria-live="assertive"></div>
                 <div class="form-group">
-                    <label for="login-username">Username</label>
-                    <input type="text" id="login-username" placeholder="Enter your username" required>
-                    <div class="error-message" id="login-username-error">Please enter a valid username</div>
+                    <label for="login-email">Email Address</label>
+                    <input type="email" id="login-email" aria-label="Email address" placeholder="Enter your university email" required autocomplete="username" aria-describedby="login-email-helper login-email-error">
+                    <div class="helper-text" id="login-email-helper">Use your Pampanga State University email (@dhvsu.edu.ph)</div>
+                    <div class="error-message" id="login-email-error" aria-live="assertive" style="display:none;">Please enter a valid Pampanga State University email (@dhvsu.edu.ph)</div>
                 </div>
                 <div class="form-group">
                     <label for="login-password">Password</label>
                     <div class="password-container">
-                        <input type="password" id="login-password" placeholder="Enter your password" required>
-                        <button type="button" class="toggle-password" id="login-toggle-password">Show</button>
-                    </div>
-                    <div class="error-message" id="login-password-error">Please enter your password</div>
-                </div>
-
-                <!-- Custom Captcha Section -->
-                <div class="captcha-container">
-                    <label for="login-captcha">Captcha Verification</label>
-                    <div class="captcha-box" id="login-captcha-box">CAPTCHA</div>
-                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <button type="button" class="captcha-refresh" id="login-captcha-refresh">
-                            Refresh
+                        <input type="password" id="login-password" aria-label="Password" placeholder="Enter your password" required autocomplete="current-password" aria-describedby="login-password-error">
+                        <button type="button" class="eye-icon" id="login-toggle-password" aria-label="Show or hide password">
+                            <svg id="eye-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg id="eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95M6.634 6.634A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"/>
+                            </svg>
                         </button>
                     </div>
-                    <input type="text" id="login-captcha-input" placeholder="Enter the code above" required>
-                    <div class="error-message" id="login-captcha-error">Incorrect captcha code</div>
+                    <div class="error-message" id="login-password-error" aria-live="assertive" style="display:none;">Please enter your password</div>
                 </div>
-                <button type="submit" class="btn btn-primary">Login</button>
-                <div class="toggle-form">
-                    Don't have an account? <a href="#" id="show-signup">Sign up</a>
+                <div class="remember-me">
+                    <input type="checkbox" id="remember-me" aria-label="Remember Me">
+                    <label for="remember-me" class="remember-me-label">
+                        Remember Me
+                        <span class="remember-me-info" tabindex="0">
+                            <svg viewBox="0 0 24 24" fill="none" width="18" height="18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10" />
+                                <line x1="12" y1="8" x2="12" y2="12" />
+                                <circle cx="12" cy="16" r="1" />
+                            </svg>
+                            <span class="remember-tooltip">Keep me signed in on this device. Do not use on public computers.</span>
+                        </span>
+                    </label>
                 </div>
-                <div class="toggle-form">
+                <div class="captcha-container">
+                    <label for="login-captcha-input">Security Verification</label>
+                    <div class="captcha-box" id="login-captcha-box">
+                        <span class="captcha-text" id="login-captcha-text" aria-label="Captcha code"></span>
+                        <button type="button" class="captcha-refresh" id="login-captcha-refresh" aria-label="Refresh captcha" tabindex="0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.635 19A9 9 0 0021 12.5M18.364 5A9 9 0 003 11.5"/></svg>
+                            <span class="sr-only">Refresh captcha</span>
+                        </button>
+                    </div>
+                    <input type="text" id="login-captcha-input" aria-label="Captcha input" placeholder="Enter the characters shown above" required aria-describedby="login-captcha-error">
+                    <div class="error-message" id="login-captcha-error" aria-live="assertive" style="display:none;">Incorrect captcha code</div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="login-btn" aria-label="Log in">
+                    <span id="login-btn-text">Log In</span>
+                    <span class="spinner" id="login-spinner" style="display:none;"></span>
+                </button>
+                <div class="form-links">
+                    <a href="#" id="show-signup">Create Account</a>
                     <a href="forgot_password.html">Forgot Password?</a>
                 </div>
+                <div class="security-notice">
+                    Your credentials are securely handled and never shared.
+                </div>
             </form>
-
-            <form id="signup-form">
+            <form id="signup-form" autocomplete="on" aria-label="Signup form">
+                <div class="login-header">
+                    <div class="welcome-title" style="font-size:1.15rem; color:#800000; font-weight:600; margin-bottom:0.3em; text-align:center; letter-spacing:0.5px;">
+                        Create Your Honorian AskBot Account
+                    </div>
+                    <h2>Create Account</h2>
+                    <div class="welcome-message">
+                        Sign up to access Pampanga State University's intelligent FAQ assistant.
+                    </div>
+                </div>
+                <div id="signup-message-container" aria-live="assertive"></div>
                 <div class="form-group">
                     <label for="signup-username">Username</label>
-                    <input type="text" id="signup-username" placeholder="Choose a username (min. 5 characters)" required>
-                    <div class="error-message" id="signup-username-error">Username must be at least 5 characters</div>
+                    <input type="text" id="signup-username" aria-label="Username" placeholder="Choose a username (min. 5 characters)" required autocomplete="username" aria-describedby="signup-username-error">
+                    <div class="error-message" id="signup-username-error" aria-live="assertive" style="display:none;">Username must be at least 5 characters</div>
                 </div>
                 <div class="form-group">
                     <label for="signup-email">Email</label>
-                    <input type="email" id="signup-email" placeholder="Enter your email address" required>
-                    <div class="error-message" id="signup-email-error">Please enter a valid email address</div>
+                    <input type="email" id="signup-email" aria-label="Email address" placeholder="Enter your email address" required autocomplete="email" aria-describedby="signup-email-error">
+                    <div class="error-message" id="signup-email-error" aria-live="assertive" style="display:none;">Only Pampanga State University email addresses (@dhvsu.edu.ph) are allowed</div>
                 </div>
                 <div class="form-group">
                     <label for="signup-password">Password</label>
                     <div class="password-container">
-                        <input type="password" id="signup-password" placeholder="Create a password (min. 8 characters)" required>
-                        <button type="button" class="toggle-password" id="signup-toggle-password">Show</button>
+                        <input type="password" id="signup-password" aria-label="Password" placeholder="Create a password (min. 8 characters)" required autocomplete="new-password" aria-describedby="signup-password-error password-strength strength-text">
+                        <button type="button" class="eye-icon" id="signup-toggle-password" aria-label="Show password" tabindex="0">
+                            <svg id="signup-eye-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg id="signup-eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95M6.634 6.634A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"/>
+                            </svg>
+                        </button>
                     </div>
                     <div class="password-strength" id="password-strength"></div>
                     <div class="strength-text" id="strength-text">Password strength</div>
-                    <div class="error-message" id="signup-password-error">Password must be at least 8 characters</div>
+                    <div class="error-message" id="signup-password-error" aria-live="assertive" style="display:none;">Password must be at least 8 characters</div>
                 </div>
                 <div class="form-group">
                     <label for="signup-confirm">Confirm Password</label>
                     <div class="password-container">
-                        <input type="password" id="signup-confirm" placeholder="Re-enter your password" required>
-                        <button type="button" class="toggle-password" id="signup-confirm-toggle-password">Show</button>
-                    </div>
-                    <div class="error-message" id="signup-confirm-error">Passwords do not match</div>
-                </div>
-
-                <!-- Custom Captcha Section for Signup -->
-                <div class="captcha-container">
-                    <label for="signup-captcha">Captcha Verification</label>
-                    <div class="captcha-box" id="signup-captcha-box">CAPTCHA</div>
-                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <button type="button" class="captcha-refresh" id="signup-captcha-refresh">
-                            Refresh
+                        <input type="password" id="signup-confirm" aria-label="Confirm password" placeholder="Re-enter your password" required autocomplete="new-password" aria-describedby="signup-confirm-error">
+                        <button type="button" class="eye-icon" id="signup-confirm-toggle-password" aria-label="Show password" tabindex="0">
+                            <svg id="signup-confirm-eye-open" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <svg id="signup-confirm-eye-closed" style="display:none;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" width="22" height="22">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.293-3.95M6.634 6.634A9.956 9.956 0 0112 5c4.478 0 8.268 2.943 9.542 7a9.956 9.956 0 01-4.043 5.306M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18"/>
+                            </svg>
                         </button>
                     </div>
-                    <input type="text" id="signup-captcha-input" placeholder="Enter the code above" required>
-                    <div class="error-message" id="signup-captcha-error">Incorrect captcha code</div>
+                    <div class="error-message" id="signup-confirm-error" aria-live="assertive" style="display:none;">Passwords do not match</div>
                 </div>
-                <button type="submit" class="btn btn-primary">Sign Up</button>
+                <div class="captcha-container">
+                    <label for="signup-captcha-input">Captcha Verification</label>
+                    <div class="captcha-box" id="signup-captcha-box">
+                        <span class="captcha-text" id="signup-captcha-text" aria-label="Captcha code"></span>
+                        <button type="button" class="captcha-refresh" id="signup-captcha-refresh" aria-label="Refresh captcha" tabindex="0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M20 20v-5h-.581M5.635 19A9 9 0 0021 12.5M18.364 5A9 9 0 003 11.5"/></svg>
+                            <span class="sr-only">Refresh captcha</span>
+                        </button>
+                    </div>
+                    <input type="text" id="signup-captcha-input" aria-label="Captcha input" placeholder="Enter the code above" required aria-describedby="signup-captcha-error">
+                    <div class="error-message" id="signup-captcha-error" aria-live="assertive" style="display:none;">Incorrect captcha code</div>
+                </div>
+                <button type="submit" class="btn btn-primary" id="signup-btn" aria-label="Sign up">
+                    <span id="signup-btn-text">Sign Up</span>
+                    <span class="spinner" id="signup-spinner" style="display:none;"></span>
+                </button>
                 <div class="toggle-form">
-                    Already have an account? <a href="#" id="show-login">Login</a>
+                    <a href="#" id="show-login">Login</a>
                 </div>
             </form>
         </div>
     </main>
     <footer>
-        &copy; 2025 Don Honorio Ventura State University. All Rights Reserved.
+        &copy; 2025 Pampanga State University. All Rights Reserved.
     </footer>
     
     <script>
-        // Toggle between login and signup forms
-          document.getElementById('show-signup').addEventListener('click', function(e) {
-              e.preventDefault();
-              document.getElementById('login-form').classList.remove('active-form');
-              document.getElementById('signup-form').classList.add('active-form');
-              generateCaptcha('signup-captcha-box');
-          });
-          
-          document.getElementById('show-login').addEventListener('click', function(e) {
-              e.preventDefault();
-              document.getElementById('signup-form').classList.remove('active-form');
-              document.getElementById('login-form').classList.add('active-form');
-              generateCaptcha('login-captcha-box');
-          });
-          
-          // Google Sheets API Script URL 
-          const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyT5rAzRKuZNhu0_GIjnx3AJs2Mpy6NAXlrP41dU8ZSWoRDO0N1dw3tijZoHDnysGDR/exec';
-          
-          // SHA-256 hash function
-          async function sha256(message) {
-              const msgBuffer = new TextEncoder().encode(message);                    
-              const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-              const hashArray = Array.from(new Uint8Array(hashBuffer));
-              const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-              return hashHex;
-          }
-          
-          // Password strength indicator
-          function checkPasswordStrength(password) {
-              const strengthBar = document.getElementById('password-strength');
-              const strengthText = document.getElementById('strength-text');
-              
-              // Clear previous classes
-              strengthBar.classList.remove('strength-weak', 'strength-medium', 'strength-strong');
-              
-              if (password.length === 0) {
-                  strengthBar.style.width = '0';
-                  strengthText.textContent = 'Password strength';
-                  return;
-              }
-              
-              // Check password strength
-              let strength = 0;
-              
-              // Length check
-              if (password.length >= 8) strength += 1;
-              if (password.length >= 12) strength += 1;
-              
-              // Character variety checks
-              if (/[A-Z]/.test(password)) strength += 1;
-              if (/[0-9]/.test(password)) strength += 1;
-              if (/[^A-Za-z0-9]/.test(password)) strength += 1;
-              
-              // Update UI based on strength
-              if (strength <= 2) {
-                  strengthBar.classList.add('strength-weak');
-                  strengthText.textContent = 'Weak password';
-              } else if (strength <= 4) {
-                  strengthBar.classList.add('strength-medium');
-                  strengthText.textContent = 'Medium strength';
-              } else {
-                  strengthBar.classList.add('strength-strong');
-                  strengthText.textContent = 'Strong password';
-              }
-          }
-          
-          // Add event listener for password field
-          document.getElementById('signup-password').addEventListener('input', function() {
-              checkPasswordStrength(this.value);
-          });
-          
-          // Captcha functionality
-          function generateCaptcha(boxId) {
-              const captchaBox = document.getElementById(boxId);
-              const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-              let captchaValue = '';
-              
-              // Generate random 6-character captcha
-              for (let i = 0; i < 6; i++) {
-                  captchaValue += characters.charAt(Math.floor(Math.random() * characters.length));
-              }
-              
-              captchaBox.textContent = captchaValue;
-              captchaBox.dataset.value = captchaValue; // Store the captcha value as a data attribute
-          }
-          
-          // Toggle password visibility function
-          function setupPasswordToggles() {
-              const toggleButtons = document.querySelectorAll('.toggle-password');
-              
-              toggleButtons.forEach(button => {
-                  button.addEventListener('click', function() {
-                      const input = this.previousElementSibling;
-                      
-                      // Toggle the input type
+        // Add sha256 function from old working code
+        async function sha256(message) {
+            const msgBuffer = new TextEncoder().encode(message);                    
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
+
+        // --- Backend Connectivity Check ---
+        function checkBackendConnection() {
+            console.log('Checking backend connectivity...');
+            // Using the correct web app URL
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
+            
+            // Create the message container if not already displayed
+            const messageContainer = document.getElementById('message-container');
+            messageContainer.textContent = 'Checking server connection...';
+            messageContainer.className = '';
+            messageContainer.style.display = 'block';
+            
+            // Use FormData for compatibility with Apps Script
+            const formData = new FormData();
+            formData.append('action', 'connectionTest');
+            formData.append('test', 'connection');
+            
+            // Set a timeout for the request
+            const timeoutDuration = 10000; // 10 seconds
+            
+            // Create a timeout promise
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => {
+                    reject(new Error('Connection timed out'));
+                }, timeoutDuration);
+            });
+            
+            // Create fetch promise
+            const fetchPromise = fetch(SCRIPT_URL, { 
+                method: 'POST',
+                body: formData
+            });
+            
+            // Race between fetch and timeout
+            Promise.race([fetchPromise, timeoutPromise])
+                .then(res => {
+                    if (!res.ok) {
+                        throw new Error(`HTTP error! Status: ${res.status}`);
+                    }
+                    return res.text();
+                })
+                .then(txt => {
+                    console.log('Backend connectivity test response:', txt);
+                    
+                    try {
+                        // Try to parse as JSON (might be JSON or plain text)
+                        const response = JSON.parse(txt);
+                        if (response.success) {
+                            // Connection successful
+                            console.log('Backend connection successful:', response);
+                            messageContainer.style.display = 'none';
+                            return;
+                        }
+                    } catch (e) {
+                        // Not valid JSON, continue with text analysis
+                    }
+                    
+                    // Check if response contains error or is too short
+                    if (txt.toLowerCase().includes('error') || txt.length < 5) {
+                        showMessage('message-container', '⚠️ Server connection issue. Please refresh the page or try again later.', 'error');
+                        console.error('Backend connection issue. Response:', txt);
+                    } else {
+                        // Connection seems OK
+                        console.log('Backend connectivity OK:', txt);
+                        messageContainer.style.display = 'none';
+                    }
+                })
+                .catch(err => {
+                    console.error('Backend connection error:', err);
+                    showMessage('message-container', '⚠️ Cannot connect to the server. Please check your internet connection or contact administrator.', 'error');
+                });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkBackendConnection(); // Run backend check on page load
+            // --- Constants ---
+            // Updated with new web app URL
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
+            
+            // --- Form Elements ---
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const showSignupLink = document.getElementById('show-signup');
+            const showLoginLink = document.getElementById('show-login');
+            const signupBtn = document.getElementById('signup-btn');
+            const signupBtnText = document.getElementById('signup-btn-text');
+            const signupSpinner = document.getElementById('signup-spinner');
+            const loginBtn = document.getElementById('login-btn');
+            const loginBtnText = document.getElementById('login-btn-text');
+            const loginSpinner = document.getElementById('login-spinner');
+            
+            // --- Helper Functions ---
+            function setLoading(isLoading, isLogin = false) {
+                const btn = isLogin ? loginBtn : signupBtn;
+                const btnText = isLogin ? loginBtnText : signupBtnText;
+                const spinner = isLogin ? loginSpinner : signupSpinner;
+
+                if (isLoading) {
+                    btn.disabled = true;
+                    btnText.style.display = 'none';
+                    spinner.style.display = 'inline-block';
+                    btn.style.opacity = '0.7';
+                } else {
+                    btn.disabled = false;
+                    btnText.style.display = 'inline';
+                    spinner.style.display = 'none';
+                    btn.style.opacity = '1';
+                }
+            }
+
+            function showMessage(containerId, message, type) {
+                const container = document.getElementById(containerId);
+                container.textContent = message;
+                container.className = type;
+                container.style.display = 'block';
+                
+                container.classList.add('slide-in');
+                
+                setTimeout(() => {
+                    container.classList.remove('slide-in');
+                }, 500);
+
+                setTimeout(() => {
+                    container.classList.add('slide-out');
+                    setTimeout(() => {
+                        container.style.display = 'none';
+                        container.classList.remove('slide-out');
+                    }, 500);
+                }, 5000);
+            }
+
+            function validateEmail(email) {
+                return /^[^@\s]+@dhvsu\.edu\.ph$/.test(email.toLowerCase().trim());
+            }
+
+            function validatePassword(password) {
+                return password.length >= 8;
+            }
+
+            function validateUsername(username) {
+                return username.length >= 5;
+            }
+
+            function resetSignupForm() {
+                signupForm.reset();
+                document.getElementById('password-strength').className = 'password-strength';
+                document.getElementById('strength-text').textContent = 'Password strength';
+                generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+            }
+
+            function generateCaptcha(containerId, textId) {
+                const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'; // Removed similar looking characters
+                let captcha = '';
+                for (let i = 0; i < 6; i++) {
+                    captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                
+                // Get the container element
+                const textElement = document.getElementById(textId);
+                textElement.innerHTML = ''; // Clear previous content
+                
+                // Create individual character spans with slight rotations
+                for (let i = 0; i < captcha.length; i++) {
+                    const charSpan = document.createElement('span');
+                    charSpan.className = 'captcha-char';
+                    charSpan.textContent = captcha[i];
+                    
+                    // Random slight rotation (-10 to 10 degrees)
+                    const rotation = Math.floor(Math.random() * 20) - 10;
+                    charSpan.style.setProperty('--rotation', `${rotation}deg`);
+                    
+                    // Random colors between maroon and gold (university colors)
+                    const colorBias = Math.random();
+                    const r = Math.floor(128 * colorBias);
+                    const g = Math.floor(100 * colorBias);
+                    const b = Math.floor(50 * colorBias);
+                    charSpan.style.color = `rgb(${r}, ${g}, ${b})`;
+                    
+                    textElement.appendChild(charSpan);
+                }
+                
+                // Store the actual captcha text as a data attribute
+                textElement.dataset.captcha = captcha;
+                return captcha;
+            }
+
+            // --- Password Visibility Toggle ---
+            function setupPasswordToggle(toggleId, inputId, eyeOpenId, eyeClosedId) {
+                const toggle = document.getElementById(toggleId);
+                const input = document.getElementById(inputId);
+                const eyeOpen = document.getElementById(eyeOpenId);
+                const eyeClosed = document.getElementById(eyeClosedId);
+
+                if (toggle && input && eyeOpen && eyeClosed) {
+                    toggle.onclick = function() {
                       if (input.type === 'password') {
                           input.type = 'text';
-                          this.textContent = 'Hide';
+                            eyeOpen.style.display = 'none';
+                            eyeClosed.style.display = 'inline';
                       } else {
                           input.type = 'password';
-                          this.textContent = 'Show';
-                      }
-                  });
-              });
-          }
-          
-          // Initialize captchas and password toggles
-          document.addEventListener('DOMContentLoaded', function() {
-              const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-              const profileLink = document.getElementById('profile-link');
-              
-              if (currentUser) {
-                  profileLink.style.display = 'flex';
-                  fetchAndRenderUserProfilePicNavbar();
+                            eyeOpen.style.display = 'inline';
+                            eyeClosed.style.display = 'none';
+                        }
+                    };
+                }
+            }
+
+            // --- Form Toggle ---
+            showSignupLink.onclick = function(e) {
+                e.preventDefault();
+                loginForm.classList.remove('active-form');
+                signupForm.classList.add('active-form');
+                generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                resetSignupForm();
+            };
+
+            showLoginLink.onclick = function(e) {
+                e.preventDefault();
+                signupForm.classList.remove('active-form');
+                loginForm.classList.add('active-form');
+              generateCaptcha('login-captcha-box', 'login-captcha-text');
+            };
+
+            // --- Captcha Refresh ---
+            document.getElementById('login-captcha-refresh').onclick = function(e) {
+                e.preventDefault();
+                generateCaptcha('login-captcha-box', 'login-captcha-text');
+            };
+
+            document.getElementById('signup-captcha-refresh').onclick = function(e) {
+                e.preventDefault();
+                  generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+            };
+
+            // --- Password Strength Meter ---
+            const passwordInput = document.getElementById('signup-password');
+            const strengthMeter = document.getElementById('password-strength');
+            const strengthText = document.getElementById('strength-text');
+
+            if (passwordInput && strengthMeter && strengthText) {
+                passwordInput.oninput = function() {
+                    const password = this.value;
+                    let strength = 0;
+                    
+                    if (password.length >= 8) strength += 1;
+                    if (password.match(/[a-z]/)) strength += 1;
+                    if (password.match(/[A-Z]/)) strength += 1;
+                    if (password.match(/[0-9]/)) strength += 1;
+                    if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+
+                    strengthMeter.className = 'password-strength';
+                    if (strength <= 2) {
+                        strengthMeter.classList.add('strength-weak');
+                        strengthText.textContent = 'Weak password';
+                    } else if (strength <= 4) {
+                        strengthMeter.classList.add('strength-medium');
+                        strengthText.textContent = 'Medium password';
+              } else {
+                        strengthMeter.classList.add('strength-strong');
+                        strengthText.textContent = 'Strong password';
               }
-              
-              generateCaptcha('login-captcha-box');
-              generateCaptcha('signup-captcha-box');
-              
-              // Setup captcha refresh buttons
-              document.getElementById('login-captcha-refresh').addEventListener('click', function() {
-                  generateCaptcha('login-captcha-box');
-              });
-              
-              document.getElementById('signup-captcha-refresh').addEventListener('click', function() {
-                  generateCaptcha('signup-captcha-box');
-              });
-              
-              // Setup password toggles
-              setupPasswordToggles();
-          });
-          
-          // Handle login form submission
-          document.getElementById('login-form').addEventListener('submit', async function(e) {
+                };
+            }
+
+            // --- Form Submissions ---
+            loginForm.onsubmit = async function(e) {
               e.preventDefault();
-              
-              const username = document.getElementById('login-username').value.trim();
-              const password = document.getElementById('login-password').value;
-              const captchaInput = document.getElementById('login-captcha-input').value.trim();
-              const captchaValue = document.getElementById('login-captcha-box').dataset.value;
-              const messageContainer = document.getElementById('message-container');
-              const loader = document.getElementById('loader');
-              
-              // Clear previous messages
-              messageContainer.textContent = '';
-              messageContainer.className = '';
-              messageContainer.style.display = 'none';
-              
-              // Hide all error messages
-              document.getElementById('login-username-error').style.display = 'none';
-              document.getElementById('login-password-error').style.display = 'none';
-              document.getElementById('login-captcha-error').style.display = 'none';
-              
-              // Basic input validation
-              if (username.length < 3) {
-                  document.getElementById('login-username-error').style.display = 'block';
-                  return;
-              }
-              
-              if (password.length < 1) {
-                  document.getElementById('login-password-error').style.display = 'block';
-                  return;
-              }
-              
-              // Validate captcha
-              if (captchaInput !== captchaValue) {
-                  document.getElementById('login-captcha-error').style.display = 'block';
-                  generateCaptcha('login-captcha-box'); // Generate new captcha
-                  return;
-              }
-              
-              // Display loader
-              loader.style.display = 'block';
-              
-              try {
-                  // Hash the password
-                  const hashedPassword = await sha256(password);
+                
+                const email = document.getElementById('login-email').value.trim();
+                const password = document.getElementById('login-password').value;
+                const captchaInput = document.getElementById('login-captcha-input').value.trim();
+                const captchaText = document.getElementById('login-captcha-text').textContent;
+                const messageContainer = document.getElementById('message-container');
+                
+                if (!validateEmail(email)) {
+                    showMessage('message-container', 'Please use your Pampanga State University email (@dhvsu.edu.ph)', 'error');
+                    messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    return;
+                }
+                
+                if (captchaInput.toLowerCase() !== document.getElementById('login-captcha-text').dataset.captcha.toLowerCase()) {
+                    showMessage('message-container', 'Incorrect captcha code. Please try again.', 'error');
+                    generateCaptcha('login-captcha-box', 'login-captcha-text');
+                    messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    return;
+                }
+                
+                // Show loading state
+                setLoading(true, true);
+                
+                try {
+                    // Hash the password using sha256 function
+                    const hashedPassword = await sha256(password);
                   
-                  // Send login request to Google Sheets App Script
-                  const formData = new FormData();
-                  formData.append('action', 'login');
-                  formData.append('username', username);
-                  formData.append('password', hashedPassword);
+                    // Create FormData for backend compatibility
+                    const formData = new FormData();
+                    formData.append('action', 'login');
+                    formData.append('email', email);
+                    formData.append('password', hashedPassword);
                   
-                  const response = await fetch(SCRIPT_URL, {
-                      method: 'POST',
-                      body: formData
-                  });
+                    console.log('Sending login request to backend...', {
+                        url: SCRIPT_URL,
+                        email: email
+                    });
+                    
+                    const response = await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData // Do not set Content-Type header when using FormData
+                    });
+                    
+                    console.log('Received login response from backend. Status:', response.status);
+                    let result;
+                    
+                    try {
+                        // Try to parse response as JSON
+                        result = await response.json();
+                        console.log('Login response parsed:', result);
+                    } catch (parseError) {
+                        // Handle parsing error
+                        console.error('Failed to parse login response:', parseError);
+                        const responseText = await response.text();
+                        console.log('Raw response text:', responseText);
+                        
+                        // Show error message
+                        showMessage('message-container', 'Server returned an invalid response. Please try again later.', 'error');
+                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        generateCaptcha('login-captcha-box', 'login-captcha-text');
+                        return;
+                    }
                   
-                  const result = await response.json();
-                  
-                  if (result.success) {
-                      // Successful login
-                      messageContainer.textContent = 'Login successful! Redirecting...';
-                      messageContainer.className = 'success';
-                      messageContainer.style.display = 'block';
+                    if (result && result.success) {
+                        // Success - user authenticated
+                        showMessage('message-container', 'Login successful! Redirecting...', 'success');
+                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
                       
-                      // Store user data in sessionStorage, including role
-                      sessionStorage.setItem('currentUser', JSON.stringify({
-                          username: result.username,
-                          email: result.email,
-                          role: result.role || 'student'
-                      }));
+                        // Store user data in session storage
+                        sessionStorage.setItem('currentUser', JSON.stringify({
+                            username: result.username,
+                            email: result.email,
+                            role: result.role || 'student'
+                        }));
+                        
+                        console.log('User authenticated successfully:', {
+                            username: result.username,
+                            email: result.email,
+                            role: result.role || 'student'
+                        });
                       
-                      // Redirect to dashboard after 1 second
-                      setTimeout(() => {
-                          window.location.href = 'dashboard_page.html';
-                      }, 1000);
-                  } else {
-                      // Failed login
-                      messageContainer.textContent = result.message || 'Invalid username or password.';
-                      messageContainer.className = 'error';
-                      messageContainer.style.display = 'block';
-                      generateCaptcha('login-captcha-box'); // Generate new captcha
-                  }
-              } catch (error) {
-                  console.error('Login error:', error);
-                  messageContainer.textContent = 'An error occurred. Please try again.';
-                  messageContainer.className = 'error';
-                  messageContainer.style.display = 'block';
-                  generateCaptcha('login-captcha-box'); // Generate new captcha
-              } finally {
-                  loader.style.display = 'none';
-              }
-          });
-          
-          // Handle signup form submission
-          document.getElementById('signup-form').addEventListener('submit', async function(e) {
+                        // Redirect to dashboard
+                        setTimeout(() => {
+                            window.location.href = 'dashboard_page.html';
+                        }, 1000);
+                    } else {
+                        // Backend returned error
+                        const errorMessage = result && result.message ? result.message : 'Login failed. Please check your credentials.';
+                        showMessage('message-container', errorMessage, 'error');
+                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        console.error('Backend login error:', result);
+                        generateCaptcha('login-captcha-box', 'login-captcha-text');
+                    }
+                } catch (error) {
+                    // Network or other error
+                    console.error('Login request error:', error);
+                    showMessage('message-container', 'Connection error. Please check your internet connection and try again.', 'error');
+                    messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    generateCaptcha('login-captcha-box', 'login-captcha-text');
+                } finally {
+                    // Reset loading state
+                    setLoading(false, true);
+                }
+            };
+
+            signupForm.onsubmit = async function(e) {
               e.preventDefault();
               
               const username = document.getElementById('signup-username').value.trim();
@@ -807,134 +1613,145 @@
               const password = document.getElementById('signup-password').value;
               const confirmPassword = document.getElementById('signup-confirm').value;
               const captchaInput = document.getElementById('signup-captcha-input').value.trim();
-              const captchaValue = document.getElementById('signup-captcha-box').dataset.value;
-              const messageContainer = document.getElementById('message-container');
-              const loader = document.getElementById('loader');
+              const messageContainer = document.getElementById('signup-message-container');
               
-              // Clear previous messages
-              messageContainer.textContent = '';
-              messageContainer.className = '';
+              // Clear previous message
               messageContainer.style.display = 'none';
+              messageContainer.className = '';
+              messageContainer.textContent = '';
               
-              // Basic validation
-              let isValid = true;
-              
-              if (username.length < 5) {
-                  document.getElementById('signup-username-error').style.display = 'block';
-                  isValid = false;
-              } else {
-                  document.getElementById('signup-username-error').style.display = 'none';
+              // Validation
+              if (!validateUsername(username)) {
+                  showMessage('signup-message-container', 'Username must be at least 5 characters', 'error');
+                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  return;
               }
               
-              if (!/\S+@\S+\.\S+/.test(email)) {
-                  document.getElementById('signup-email-error').style.display = 'block';
-                  isValid = false;
-              } else {
-                  document.getElementById('signup-email-error').style.display = 'none';
+              if (!validateEmail(email)) {
+                  showMessage('signup-message-container', 'Please use your Pampanga State University email (@dhvsu.edu.ph)', 'error');
+                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  return;
               }
               
-              if (password.length < 8) {
-                  document.getElementById('signup-password-error').style.display = 'block';
-                  isValid = false;
-              } else {
-                  document.getElementById('signup-password-error').style.display = 'none';
+              if (!validatePassword(password)) {
+                  showMessage('signup-message-container', 'Password must be at least 8 characters', 'error');
+                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  return;
               }
               
               if (password !== confirmPassword) {
-                  document.getElementById('signup-confirm-error').style.display = 'block';
-                  isValid = false;
-              } else {
-                  document.getElementById('signup-confirm-error').style.display = 'none';
+                  showMessage('signup-message-container', 'Passwords do not match', 'error');
+                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  return;
               }
               
-              // Validate captcha
-              if (captchaInput !== captchaValue) {
-                  document.getElementById('signup-captcha-error').style.display = 'block';
-                  generateCaptcha('signup-captcha-box'); // Generate new captcha
-                  isValid = false;
-              } else {
-                  document.getElementById('signup-captcha-error').style.display = 'none';
+              if (captchaInput.toLowerCase() !== document.getElementById('signup-captcha-text').dataset.captcha.toLowerCase()) {
+                  showMessage('signup-message-container', 'Incorrect captcha code. Please try again.', 'error');
+                  generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  return;
               }
               
-              if (!isValid) return;
-              
-              // Display loader
-              loader.style.display = 'block';
+              // Show loading state
+              setLoading(true);
               
               try {
-                  // Hash the password
+                  // Hash the password using sha256 function
                   const hashedPassword = await sha256(password);
                   
-                  // Send signup request to Google Sheets App Script
+                  // Create FormData for backend compatibility
                   const formData = new FormData();
                   formData.append('action', 'signup');
                   formData.append('username', username);
                   formData.append('email', email);
                   formData.append('password', hashedPassword);
                   
-                  const response = await fetch(SCRIPT_URL, {
-                      method: 'POST',
-                      body: formData
+                  console.log('Sending signup request to backend...', {
+                      url: SCRIPT_URL,
+                      action: 'signup',
+                      email,
+                      username
                   });
                   
-                  const result = await response.json();
+                  const response = await fetch(SCRIPT_URL, {
+                      method: 'POST',
+                      body: formData // Do not set Content-Type header when using FormData
+                  });
                   
-                  if (result.success) {
-                      // Successful signup
-                      messageContainer.textContent = 'Signup successful! You can now log in.';
-                      messageContainer.className = 'success';
-                      messageContainer.style.display = 'block';
+                  console.log('Received signup response from backend. Status:', response.status);
+                  let result;
+                  
+                  try {
+                      // Try to parse response as JSON
+                      result = await response.json();
+                      console.log('Signup response parsed:', result);
+                  } catch (parseError) {
+                      // Handle parsing error
+                      console.error('Failed to parse signup response:', parseError);
+                      const responseText = await response.text();
+                      console.log('Raw response text:', responseText);
                       
-                      // Clear form fields
-                      document.getElementById('signup-form').reset();
-                      generateCaptcha('signup-captcha-box');
+                      // Show error message
+                      showMessage('signup-message-container', 'Server returned an invalid response. Please try again later.', 'error');
+                      messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                      return;
+                  }
+                  
+                  if (result && result.success) {
+                      // Success - account created
+                      showMessage('signup-message-container', 'Account created successfully! Redirecting to login...', 'success');
+                      messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                      resetSignupForm();
                       
-                      // Switch to login form after successful signup
+                      // Redirect to login after delay
                       setTimeout(() => {
-                          document.getElementById('show-login').click();
+                          showLoginLink.click();
                       }, 2000);
                   } else {
-                      // Failed signup
-                      messageContainer.textContent = result.message || 'Username already exists. Please choose another one.';
-                      messageContainer.className = 'error';
-                      messageContainer.style.display = 'block';
-                      generateCaptcha('signup-captcha-box');
+                      // Backend returned error
+                      const errorMessage = result && result.message ? result.message : 'Signup failed. Please try again.';
+                      showMessage('signup-message-container', errorMessage, 'error');
+                      messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                      console.error('Backend signup error:', result);
+                      generateCaptcha('signup-captcha-box', 'signup-captcha-text');
                   }
               } catch (error) {
-                  console.error('Signup error:', error);
-                  messageContainer.textContent = 'An error occurred. Please try again.';
-                  messageContainer.className = 'error';
-                  messageContainer.style.display = 'block';
-                  generateCaptcha('signup-captcha-box');
+                  // Network or other error
+                  console.error('Signup request error:', error);
+                  showMessage('signup-message-container', 'Connection error. Please check your internet connection and try again.', 'error');
+                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                  generateCaptcha('signup-captcha-box', 'signup-captcha-text');
               } finally {
-                  loader.style.display = 'none';
+                  // Reset loading state
+                  setLoading(false);
               }
-          });
+            };
 
-        function fetchAndRenderUserProfilePicNavbar() {
-            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-            if (!currentUser) return;
-            const formData = new FormData();
-            formData.append('action', 'getUserProfile');
-            formData.append('username', currentUser.username);
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const avatar = document.getElementById('navbar-profile-avatar');
-                if (data.success && data.profile && data.profile.profilePic && data.profile.profilePic !== '') {
-                    avatar.src = data.profile.profilePic;
-                } else {
-                    avatar.src = 'default_profile.png';
+            // --- Initialize ---
+            setupPasswordToggle('login-toggle-password', 'login-password', 'eye-open', 'eye-closed');
+            setupPasswordToggle('signup-toggle-password', 'signup-password', 'signup-eye-open', 'signup-eye-closed');
+            setupPasswordToggle('signup-confirm-toggle-password', 'signup-confirm', 'signup-confirm-eye-open', 'signup-confirm-eye-closed');
+            
+            generateCaptcha('login-captcha-box', 'login-captcha-text');
+            generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+
+            // Add SR-only class for screen reader text
+            const srOnlyStyle = document.createElement('style');
+            srOnlyStyle.textContent = `
+                .sr-only {
+                    position: absolute;
+                    width: 1px;
+                    height: 1px;
+                    padding: 0;
+                    margin: -1px;
+                    overflow: hidden;
+                    clip: rect(0, 0, 0, 0);
+                    white-space: nowrap;
+                    border-width: 0;
                 }
-            })
-            .catch(() => {
-                const avatar = document.getElementById('navbar-profile-avatar');
-                avatar.src = 'default_profile.png';
-            });
-        }
+            `;
+            document.head.appendChild(srOnlyStyle);
+        });
     </script>
 </body>
 
