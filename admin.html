@@ -706,13 +706,21 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-            alert('Current user: ' + JSON.stringify(currentUser));
-            if (!currentUser || currentUser.role !== 'admin') {
-                alert('Not admin! Redirecting...');
-                window.location.href = 'index.html';
+            
+            // Check if user is an admin using multiple methods for robustness
+            const isAdmin = currentUser && (
+                currentUser.role === 'admin' || 
+                currentUser.username === 'admin' || 
+                (currentUser.email && currentUser.email.includes('admin@'))
+            );
+            
+            if (!isAdmin) {
+                console.error('Unauthorized access to admin panel');
+                window.location.href = 'dashboard_page.html';
                 return;
             }
             
+            // Continue with admin panel initialization
             showUsersLoading();
             showFAQsLoading();
             showFeedbackLoading();
@@ -730,14 +738,7 @@
             setupSearch();
             setupFAQForm();
 
-            if (currentUser && currentUser.role === 'admin') {
-                const adminLink = document.createElement('a');
-                adminLink.href = 'admin.html';
-                adminLink.className = 'navbar-link';
-                adminLink.textContent = 'Admin Panel';
-                document.querySelector('.navbar-links').prepend(adminLink);
-            }
-
+            // Add admin panel link to navbar (already in admin panel, so no need to add again)
             fetchAndRenderUserProfilePicNavbar();
         });
         
@@ -941,12 +942,38 @@
                 if (data.success && data.feedbacks && data.feedbacks.length > 0) {
                     data.feedbacks.forEach(item => {
                         const tr = document.createElement('tr');
+                        // Convert feedback type to user-friendly format
+                        let feedbackTypeText = '-';
+                        if (item.feedbackType === 'positive') {
+                            feedbackTypeText = '<span style="color:#4CAF50;font-weight:bold;">Helpful</span>';
+                        } else if (item.feedbackType === 'negative') {
+                            feedbackTypeText = '<span style="color:#F44336;font-weight:bold;">Not Helpful</span>';
+                        } else if (item.feedbackType) {
+                            feedbackTypeText = item.feedbackType;
+                        }
+                        
+                        // Format date if available
+                        let dateStr = '-';
+                        if (item.timestamp) {
+                            try {
+                                const date = new Date(item.timestamp);
+                                dateStr = date.toLocaleString();
+                            } catch (e) {
+                                dateStr = item.timestamp;
+                            }
+                        }
+                        
+                        // Display comment with placeholder if empty
+                        const commentText = item.comment && item.comment.trim() ? 
+                            item.comment : 
+                            '<span style="color:#999;font-style:italic;">No comment provided</span>';
+                        
                         tr.innerHTML = `
                             <td>${item.username || '-'}</td>
                             <td>${item.message || '-'}</td>
-                            <td>${item.feedbackType === 'positive' ? 'Helpful' : (item.feedbackType === 'negative' ? 'Not Helpful' : '-')}</td>
-                            <td>-</td>
-                            <td>${item.timestamp ? new Date(item.timestamp).toLocaleString() : '-'}</td>
+                            <td>${feedbackTypeText}</td>
+                            <td>${commentText}</td>
+                            <td>${dateStr}</td>
                         `;
                         tbody.appendChild(tr);
                     });
@@ -957,6 +984,7 @@
                 }
             })
             .catch(error => {
+                console.error('Error loading feedback:', error);
                 showMessage('Error loading feedback', 'error');
             });
         }
@@ -971,20 +999,24 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.success) {
-                    const tbody = document.getElementById('logs-table-body');
-                    tbody.innerHTML = '';
-                    
+                const tbody = document.getElementById('logs-table-body');
+                tbody.innerHTML = '';
+                
+                if (data.success && data.logs && data.logs.length > 0) {
                     data.logs.forEach(log => {
                         const tr = document.createElement('tr');
                         tr.innerHTML = `
                             <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : '-'}</td>
                             <td>${log.username || '-'}</td>
                             <td>${log.action || '-'}</td>
-                            <td>-</td>
+                            <td>${log.details || '-'}</td>
                         `;
                         tbody.appendChild(tr);
                     });
+                } else {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td colspan="4" style="text-align:center;">No logs found.</td>`;
+                    tbody.appendChild(tr);
                 }
             })
             .catch(error => {

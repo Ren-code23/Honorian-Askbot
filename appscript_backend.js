@@ -128,6 +128,8 @@ function doPost(e) {
           return handleSignup(params, userSheet);
         case "forgotPassword":
           return handleForgotPassword(params, userSheet);
+        case "validateResetToken":
+          return validateResetToken(params, userSheet);
         case "resetPassword":
           return handleResetPassword(params, userSheet);
         case "getFAQs":
@@ -199,6 +201,7 @@ function doPost(e) {
 /**
  * Robust rate limiting: case-insensitive username match, always updates last_message_time, logs all actions.
  * If user not found, do NOT allow (security). If missing last_message_time, treat as allowed and set it.
+ * Added admin role preservation to ensure admin status isn't lost.
  */
 function checkRateLimit(username, sheet) {
   Logger.log("[RateLimit] Checking for user: '" + username + "'");
@@ -210,19 +213,32 @@ function checkRateLimit(username, sheet) {
   const headers = data[0];
   const usernameCol = headers.indexOf("username");
   const lastMsgCol = headers.indexOf("last_message_time");
+  const roleCol = headers.indexOf("role");
+  const emailCol = headers.indexOf("email");
+  
   if (usernameCol === -1 || lastMsgCol === -1) {
     Logger.log("[RateLimit] ERROR: Required columns missing");
     return { allowed: false, reason: "System error" };
   }
   const normUsername = (username || "").toLowerCase().trim();
   let found = false;
+  
   for (let i = 1; i < data.length; i++) {
     const sheetUsername = (data[i][usernameCol] || "").toLowerCase().trim();
     if (sheetUsername === normUsername) {
       found = true;
       const lastTimeStr = data[i][lastMsgCol];
+      const role = data[i][roleCol];
+      const email = emailCol !== -1 ? data[i][emailCol] : '';
+      
+      // Check if user is an admin and ensure role preservation
+      const isAdmin = (role === 'admin') || 
+                     (sheetUsername === 'admin') || 
+                     (email && email.includes('admin@'));
+      
       const now = Date.now();
       let lastTime = 0;
+      
       if (lastTimeStr) {
         try {
           lastTime = new Date(lastTimeStr).getTime();
@@ -231,17 +247,28 @@ function checkRateLimit(username, sheet) {
           lastTime = 0;
         }
       }
-      Logger.log(`[RateLimit] Found user. Now: ${now}, Last: ${lastTime}, Diff: ${now - lastTime}`);
+      
+      Logger.log(`[RateLimit] Found user. Now: ${now}, Last: ${lastTime}, Diff: ${now - lastTime}, Role: ${role}`);
+      
       if (lastTime && now - lastTime < RATE_LIMIT_COOLDOWN_MS) {
         Logger.log(`[RateLimit] BLOCKED: User sent message too soon. Wait ${(RATE_LIMIT_COOLDOWN_MS - (now - lastTime))/1000}s more.`);
         return { allowed: false, reason: "Too soon" };
       }
-      // Update last_message_time
+      
+      // Only update the last_message_time column and don't touch other columns
       sheet.getRange(i + 1, lastMsgCol + 1).setValue(new Date().toISOString());
-      Logger.log("[RateLimit] ALLOWED: Updated last_message_time.");
+      
+      // If this is an admin but the role is not 'admin', fix it
+      if (isAdmin && role !== 'admin' && roleCol !== -1) {
+        sheet.getRange(i + 1, roleCol + 1).setValue('admin');
+        Logger.log("[RateLimit] NOTICE: Reset admin role for user: " + sheetUsername);
+      }
+      
+      Logger.log("[RateLimit] ALLOWED: Updated last_message_time only.");
       return { allowed: true };
     }
   }
+  
   if (!found) {
     Logger.log(`[RateLimit] WARNING: Username not found in Users sheet: '${username}'. BLOCKING.`);
     return { allowed: false, reason: "User not found" };
@@ -404,21 +431,33 @@ function handleLogin(params, sheet) {
   for (let i = 1; i < data.length; i++) {
     const storedEmail = String(data[i][emailCol]).toLowerCase().trim();
     const storedPassword = String(data[i][passwordCol]);
+    const username = data[i][usernameCol];
 
     Logger.log("Comparing emails: '" + storedEmail + "' vs '" + email + "'");
     Logger.log("Password lengths - stored: " + storedPassword.length + ", provided: " + hashedPassword.length);
 
     if (storedEmail === email) {
       if (storedPassword === hashedPassword) {
+        // Check if this should be an admin user and update their role if needed
+        let userRole = roleCol !== -1 ? (data[i][roleCol] || "student") : "student";
+        
+        // For admin users, ensure admin role is set and preserved
+        if (username === "admin" || email.includes("admin@")) {
+          ensureAdminRole(email, username);
+          userRole = "admin";
+          Logger.log("Admin login detected. Role is set to: " + userRole);
+        }
+        
         // Log the successful login
         logActivity(email, "login");
         Logger.log("Login successful for: " + email);
+        
         return createJsonResponse({
           success: true,
           message: "Login successful",
-          username: data[i][usernameCol],
+          username: username,
           email: email,
-          role: roleCol !== -1 ? (data[i][roleCol] || "student") : "student"
+          role: userRole
         });
       } else {
         Logger.log("Login failed: Password mismatch for " + email);
@@ -468,46 +507,103 @@ function handleGetUserProfile(sheet, identifier) {
 
 function handleDeleteUser(params, sheet) {
   const email = params.email;
-  Logger.log("Deleting user: " + email);
+  const username = params.username;
+  
+  // Need either email or username
+  if (!email && !username) {
+    Logger.log("ERROR: Missing email or username for deletion");
+    return createJsonResponse({ success: false, message: "Username or email required for deletion." });
+  }
+  
+  Logger.log("Deleting user by " + (email ? "email: " + email : "username: " + username));
+  
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const emailCol = headers.indexOf("email");
-  if (emailCol === -1) {
-    return createJsonResponse({ success: false, message: "Email column not found." });
+  const usernameCol = headers.indexOf("username");
+  
+  if (emailCol === -1 && usernameCol === -1) {
+    return createJsonResponse({ success: false, message: "Email or username column not found." });
   }
+  
   for (let i = 1; i < data.length; i++) {
-    if (data[i][emailCol] === email) {
+    // Match by email or username
+    if ((email && emailCol !== -1 && data[i][emailCol] === email) ||
+        (username && usernameCol !== -1 && data[i][usernameCol] === username)) {
       sheet.deleteRow(i + 1);
-      Logger.log("User deleted: " + email);
+      Logger.log("User deleted: " + (email || username));
       return createJsonResponse({ success: true, message: "User deleted successfully." });
     }
   }
-  Logger.log("User not found for deletion: " + email);
+  
+  Logger.log("User not found for deletion: " + (email || username));
   return createJsonResponse({ success: false, message: "User not found." });
 }
 
 function handleUpdateUser(params, sheet) {
   if (!params) throw new Error('This function must be called via web request with parameters.');
+  
+  // Get parameters
+  const username = params.username;
   const email = params.email;
   const role = params.role;
-  if (!email.toLowerCase().endsWith('@dhvsu.edu.ph')) {
-      Logger.log("User update failed: Invalid email domain");
-      return createJsonResponse({ success: false, message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed." });
+  
+  // Need either email or username
+  if (!email && !username) {
+    Logger.log("ERROR: Missing email or username for updating");
+    return createJsonResponse({ success: false, message: "Username or email required for updating." });
   }
+  
+  Logger.log("ADMIN ACTION: Attempting to update user. " +
+            (email ? "Email: " + email : "Username: " + username) + 
+            (role ? ", New role: " + role : ""));
+  
+  // If email is provided, validate domain
+  if (email && !email.toLowerCase().endsWith('@dhvsu.edu.ph')) {
+    Logger.log("User update failed: Invalid email domain");
+    return createJsonResponse({ success: false, message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed." });
+  }
+  
   const data = sheet.getDataRange().getValues();
   const headers = data[0];
   const emailCol = headers.indexOf("email");
+  const usernameCol = headers.indexOf("username");
   const roleCol = headers.indexOf("role");
-  if (emailCol === -1 || roleCol === -1) {
+  
+  if ((emailCol === -1 && usernameCol === -1) || roleCol === -1) {
     return createJsonResponse({ success: false, message: "Required columns not found." });
   }
+  
   for (let i = 1; i < data.length; i++) {
-    if (data[i][emailCol] === email) {
-      if (role) sheet.getRange(i + 1, roleCol + 1).setValue(role);
-      Logger.log("User updated: " + email);
+    // Match by either email or username
+    if ((email && emailCol !== -1 && data[i][emailCol] === email) ||
+        (username && usernameCol !== -1 && data[i][usernameCol] === username)) {
+      
+      const currentRole = data[i][roleCol] || "student";
+      
+      // Update role if provided
+      if (role) {
+        sheet.getRange(i + 1, roleCol + 1).setValue(role);
+        Logger.log(`ROLE UPDATE: User ${email || username} role changed from '${currentRole}' to '${role}'`);
+      }
+      
+      // Update email if new email provided (and different username was used to find user)
+      if (email && username && emailCol !== -1 && data[i][emailCol] !== email) {
+        sheet.getRange(i + 1, emailCol + 1).setValue(email);
+        Logger.log(`EMAIL UPDATE: User ${username} email changed to '${email}'`);
+      }
+      
+      // Update username if new username provided (and different email was used to find user)
+      if (username && email && usernameCol !== -1 && data[i][usernameCol] !== username) {
+        sheet.getRange(i + 1, usernameCol + 1).setValue(username);
+        Logger.log(`USERNAME UPDATE: User ${email} username changed to '${username}'`);
+      }
+      
       return createJsonResponse({ success: true, message: "User updated successfully." });
     }
   }
+  
+  Logger.log("User update failed: User not found - " + (email || username));
   return createJsonResponse({ success: false, message: "User not found." });
 }
 
@@ -586,7 +682,8 @@ function handleGetUserChatHistory(params, sheet) {
   const timestampCol = headers.indexOf("timestamp");
   const questionCol = headers.indexOf("question");
   const answerCol = headers.indexOf("answer");
-  const categoryCol = headers.indexOf("category"); // NEW: get category column if exists
+  const categoryCol = headers.indexOf("category"); // Get category column if exists
+  const faqIdCol = headers.indexOf("faqId"); // May contain reference to FAQ for category
 
   // Validate required columns
   if ((emailCol === -1 && usernameCol === -1) || timestampCol === -1 || questionCol === -1 || answerCol === -1) {
@@ -603,27 +700,131 @@ function handleGetUserChatHistory(params, sheet) {
     return createJsonResponse({ success: false, message: "No identifier provided" });
   }
 
+  // Get FAQs to cross-reference categories if needed
+  let faqCategories = {};
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const faqSheet = ss.getSheetByName("FAQs");
+    if (faqSheet) {
+      const faqData = faqSheet.getDataRange().getValues();
+      const faqHeaders = faqData[0];
+      const faqIdCol = faqHeaders.indexOf("id");
+      const faqCatCol = faqHeaders.indexOf("category");
+      
+      if (faqIdCol !== -1 && faqCatCol !== -1) {
+        for (let i = 1; i < faqData.length; i++) {
+          const id = faqData[i][faqIdCol];
+          const category = faqData[i][faqCatCol];
+          if (id && category) {
+            faqCategories[id] = category;
+          }
+        }
+      }
+    }
+  } catch (e) {
+    Logger.log("Error loading FAQ categories: " + e.toString());
+  }
+
   // Filter conversations for this user
   const userHistory = [];
+  
+  // Keep track of used timestamps to ensure uniqueness
+  const usedTimestamps = new Set();
+  
   for (let i = 1; i < data.length; i++) {
     if (
       (emailCol !== -1 && data[i][emailCol] === identifier) ||
       (usernameCol !== -1 && data[i][usernameCol] === identifier)
     ) {
+      // Process timestamp with improved handling
       let timestamp = data[i][timestampCol];
-      // Try to parse and reformat timestamp to ISO if needed
-      let isoTimestamp = '';
+      let formattedTimestamp = timestamp;
+      let timestampObj = null;
+      
       try {
-        const d = new Date(timestamp);
-        isoTimestamp = isNaN(d.getTime()) ? '' : d.toISOString();
+        if (typeof timestamp === 'string') {
+          // Parse string timestamp
+          timestampObj = new Date(timestamp);
+          if (!isNaN(timestampObj.getTime())) {
+            formattedTimestamp = timestampObj.toISOString();
+          }
+        } else if (timestamp instanceof Date) {
+          // Direct Date object
+          timestampObj = timestamp;
+          formattedTimestamp = timestamp.toISOString();
+        } else if (typeof timestamp === 'object' && timestamp !== null) {
+          // Google Sheets date object format
+          if (timestamp.year) {
+            timestampObj = new Date(
+              timestamp.year, 
+              timestamp.month - 1, 
+              timestamp.day || 1, 
+              timestamp.hours || 0, 
+              timestamp.minutes || 0,
+              timestamp.seconds || 0
+            );
+            formattedTimestamp = timestampObj.toISOString();
+          }
+        }
       } catch (e) {
-        isoTimestamp = '';
+        Logger.log("Error formatting timestamp: " + e.toString());
       }
+      
+      // Create uniqueness if parsing failed or timestamp already exists
+      if (!timestampObj || isNaN(timestampObj.getTime()) || usedTimestamps.has(formattedTimestamp)) {
+        // Use current time with random milliseconds for uniqueness
+        const now = new Date();
+        // Add some randomness to ensure uniqueness (i value + random ms)
+        now.setMilliseconds(now.getMilliseconds() + i + Math.floor(Math.random() * 1000));
+        formattedTimestamp = now.toISOString();
+        timestampObj = now;
+      }
+      
+      // Add this timestamp to the used set to ensure uniqueness
+      usedTimestamps.add(formattedTimestamp);
+      
+      // Determine category with improved detection logic
+      let category = "general";
+      
+      // First check if category is directly available in the sheet
+      if (categoryCol !== -1 && data[i][categoryCol] && data[i][categoryCol].toString().trim() !== "") {
+        category = data[i][categoryCol].toString().trim().toLowerCase();
+      }
+      // Then check if we can get it from FAQ reference
+      else if (faqIdCol !== -1 && data[i][faqIdCol] && faqCategories[data[i][faqIdCol]]) {
+        category = faqCategories[data[i][faqIdCol]].toLowerCase();
+      }
+      // Otherwise infer from question content
+      else {
+        const question = data[i][questionCol].toLowerCase();
+        
+        if (question.includes("id") || question.includes("card") || question.includes("registration") ||
+            question.includes("certificate") || question.includes("record") || question.includes("transcript")) {
+          category = "registrar";
+        } 
+        else if (question.includes("enroll") || question.includes("admission") || 
+                question.includes("apply") || question.includes("application")) {
+          category = "admissions";
+        }
+        else if (question.includes("class") || question.includes("course") || 
+                question.includes("program") || question.includes("subject")) {
+          category = "academics";
+        }
+        else if (question.includes("president") || question.includes("dean") || 
+                question.includes("director") || question.includes("admin")) {
+          category = "administration";
+        }
+        else if (question.includes("scholarship") || question.includes("library") || 
+                question.includes("dormitory") || question.includes("student service")) {
+          category = "student-services";
+        }
+      }
+      
       userHistory.push({
-        timestamp: isoTimestamp || timestamp,
+        timestamp: formattedTimestamp,
         question: data[i][questionCol],
         answer: data[i][answerCol],
-        category: categoryCol !== -1 ? data[i][categoryCol] : undefined
+        category: category
       });
     }
   }
@@ -673,15 +874,36 @@ function handleLogFeedback(params, sheet) {
   const message = params.message || '';
   const feedbackType = params.feedbackType || '';
   const comment = params.comment || '';
-  const headers = sheet.getDataRange().getValues()[0];
+  
+  // Ensure the comment column exists in the sheet
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
   // Add 'comment' column if missing
-  if (headers.indexOf('comment') === -1) {
+  let commentCol = headers.indexOf('comment');
+  if (commentCol === -1) {
     sheet.insertColumnAfter(headers.length);
     sheet.getRange(1, headers.length + 1).setValue('comment');
+    commentCol = headers.length; // New column index is the previous length
   }
-  sheet.appendRow([timestamp, username, message, feedbackType, comment]);
-  Logger.log("Feedback logged: " + username + " - " + feedbackType + (comment ? " - " + comment : ""));
-  return createJsonResponse({ success: true, message: "Feedback logged successfully." });
+  
+  // Create new row data
+  const rowData = [timestamp, username, message, feedbackType];
+  
+  // Add comment in the right position
+  while (rowData.length <= commentCol) {
+    rowData.push('');
+  }
+  rowData[commentCol] = comment;
+  
+  // Append the row
+  sheet.appendRow(rowData);
+  
+  Logger.log(`Feedback logged: ${username} - ${feedbackType}${comment ? " - " + comment : ""}`);
+  
+  return createJsonResponse({ 
+    success: true, 
+    message: "Feedback logged successfully." 
+  });
 }
 
 // --- Utility: Ensure all required columns exist in a sheet ---
@@ -1706,95 +1928,433 @@ function handleGetFAQs(sheet, isAdmin = false) {
   }
 }
 
+/**
+ * Add a new FAQ to the database
+ */
+function handleAddFAQ(params, sheet) {
+  try {
+    if (!params) throw new Error('This function must be called via web request with parameters.');
+    Logger.log("Adding new FAQ");
+    
+    // Validate required parameters
+    const question = params.question;
+    const answer = params.answer;
+    
+    if (!question || !answer) {
+      Logger.log("Missing required parameters for FAQ");
+      return createJsonResponse({
+        success: false,
+        message: "Question and answer are required"
+      });
+    }
+    
+    // Get optional parameters
+    const keywords = params.keywords || "";
+    const status = params.status || "pending";
+    const category = params.category || "general";
+    const priority = params.priority || "3";
+    
+    // Ensure headers exist
+    ensureFAQHeaders(sheet);
+    
+    // Create a new FAQ with unique ID
+    const newId = Utilities.getUuid();
+    sheet.appendRow([
+      newId,
+      question,
+      answer,
+      keywords,
+      status,
+      category,
+      priority
+    ]);
+    
+    Logger.log("New FAQ added successfully with ID: " + newId);
+    
+    // Log the activity
+    logActivity(params.username || "unknown", "add_faq", "Added FAQ: " + question);
+    
+    return createJsonResponse({
+      success: true,
+      message: "FAQ added successfully",
+      id: newId
+    });
+  } catch (error) {
+    Logger.log("Error in handleAddFAQ: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error adding FAQ: " + error.toString()
+    });
+  }
+}
+
+/**
+ * Edit an existing FAQ
+ */
+function handleEditFAQ(params, sheet) {
+  try {
+    if (!params) throw new Error('This function must be called via web request with parameters.');
+    
+    // Validate required parameters
+    const id = params.id;
+    const question = params.question;
+    const answer = params.answer;
+    
+    if (!id || !question || !answer) {
+      Logger.log("Missing required parameters for FAQ edit");
+      return createJsonResponse({
+        success: false,
+        message: "ID, question, and answer are required"
+      });
+    }
+    
+    Logger.log("Editing FAQ with ID: " + id);
+    
+    // Get optional parameters
+    const keywords = params.keywords || "";
+    const status = params.status || "pending";
+    const category = params.category || "general";
+    const priority = params.priority || "3";
+    
+    // Find the FAQ in the sheet
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf("id");
+    const questionCol = headers.indexOf("question");
+    const answerCol = headers.indexOf("answer");
+    const keywordsCol = headers.indexOf("keywords");
+    const statusCol = headers.indexOf("status");
+    const categoryCol = headers.indexOf("category");
+    const priorityCol = headers.indexOf("priority");
+    
+    // Validate required columns
+    if (idCol === -1 || questionCol === -1 || answerCol === -1) {
+      Logger.log("Required columns missing in FAQ sheet");
+      return createJsonResponse({
+        success: false,
+        message: "Database structure error"
+      });
+    }
+    
+    // Find the row with the matching FAQ ID
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][idCol] === id) {
+        rowIndex = i + 1; // +1 because sheet rows are 1-indexed
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      Logger.log("FAQ with ID " + id + " not found");
+      return createJsonResponse({
+        success: false,
+        message: "FAQ not found"
+      });
+    }
+    
+    // Update the FAQ
+    sheet.getRange(rowIndex, questionCol + 1).setValue(question);
+    sheet.getRange(rowIndex, answerCol + 1).setValue(answer);
+    
+    if (keywordsCol !== -1) {
+      sheet.getRange(rowIndex, keywordsCol + 1).setValue(keywords);
+    }
+    
+    if (statusCol !== -1) {
+      sheet.getRange(rowIndex, statusCol + 1).setValue(status);
+    }
+    
+    if (categoryCol !== -1) {
+      sheet.getRange(rowIndex, categoryCol + 1).setValue(category);
+    }
+    
+    if (priorityCol !== -1) {
+      sheet.getRange(rowIndex, priorityCol + 1).setValue(priority);
+    }
+    
+    Logger.log("FAQ updated successfully");
+    
+    // Log the activity
+    logActivity(params.username || "unknown", "edit_faq", "Edited FAQ: " + id);
+    
+    return createJsonResponse({
+      success: true,
+      message: "FAQ updated successfully"
+    });
+  } catch (error) {
+    Logger.log("Error in handleEditFAQ: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error updating FAQ: " + error.toString()
+    });
+  }
+}
+
+/**
+ * Delete an FAQ
+ */
+function handleDeleteFAQ(params, sheet) {
+  try {
+    if (!params) throw new Error('This function must be called via web request with parameters.');
+    
+    // Validate required parameters
+    const id = params.id;
+    
+    if (!id) {
+      Logger.log("Missing FAQ ID for deletion");
+      return createJsonResponse({
+        success: false,
+        message: "FAQ ID is required"
+      });
+    }
+    
+    Logger.log("Deleting FAQ with ID: " + id);
+    
+    // Find the FAQ in the sheet
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const idCol = headers.indexOf("id");
+    
+    if (idCol === -1) {
+      Logger.log("ID column missing in FAQ sheet");
+      return createJsonResponse({
+        success: false,
+        message: "Database structure error"
+      });
+    }
+    
+    // Find the row with the matching FAQ ID
+    let rowIndex = -1;
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][idCol] === id) {
+        rowIndex = i + 1; // +1 because sheet rows are 1-indexed
+        break;
+      }
+    }
+    
+    if (rowIndex === -1) {
+      Logger.log("FAQ with ID " + id + " not found");
+      return createJsonResponse({
+        success: false,
+        message: "FAQ not found"
+      });
+    }
+    
+    // Delete the FAQ
+    sheet.deleteRow(rowIndex);
+    
+    Logger.log("FAQ deleted successfully");
+    
+    // Log the activity
+    logActivity(params.username || "unknown", "delete_faq", "Deleted FAQ: " + id);
+    
+    return createJsonResponse({
+      success: true,
+      message: "FAQ deleted successfully"
+    });
+  } catch (error) {
+    Logger.log("Error in handleDeleteFAQ: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error deleting FAQ: " + error.toString()
+    });
+  }
+}
+
 // --- Improved FAQ Matching ---
-function findBestMatch(userQuestion, faqs) {
+function findBestMatches(userQuestion, faqs, maxSuggestions = 3) {
   // Normalize input
   function normalize(str) {
     return String(str).toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
   }
 
-  const userQNorm = normalize(userQuestion);
-  let bestMatch = null;
-  let highestScore = 0;
-
-  faqs.forEach(faq => {
-    const faqQNorm = normalize(faq.question);
-    let score = 0;
-
-    // Exact match
-    if (faqQNorm === userQNorm) {
-      score = 100;
-    } else {
-      // Jaccard similarity
-      const userWords = new Set(userQNorm.split(' '));
-      const faqWords = new Set(faqQNorm.split(' '));
-      const intersection = new Set([...userWords].filter(x => faqWords.has(x)));
-      const union = new Set([...userWords, ...faqWords]);
-      const jaccard = intersection.size / union.size;
-      score += jaccard * 80; // up to 80 points
-
-      // Keyword overlap
-      if (faq.keywords) {
-        const keywords = faq.keywords.toLowerCase().split(',').map(k => k.trim());
-        keywords.forEach(keyword => {
-          if (userQNorm.includes(keyword)) score += 10;
-        });
+  // Enhanced keyword matching with synonyms
+  function enhancedKeywordMatching(userText, keywords) {
+    if (!keywords || !userText) return 0;
+    
+    const keywordsList = keywords.toLowerCase().split(',').map(k => k.trim());
+    let matches = 0;
+    
+    // Synonym dictionary for educational terms
+    const synonyms = {
+      'id': ['identification', 'card', 'school id', 'dhvsu id', 'student id'],
+      'tor': ['transcript', 'record', 'grades', 'academic record'],
+      'registration': ['enroll', 'enrollment', 'sign up', 'register', 'admission'],
+      'tuition': ['fee', 'payment', 'cost', 'expense'],
+      'subject': ['course', 'class', 'lecture'],
+      'professor': ['teacher', 'instructor', 'faculty'],
+      'schedule': ['timetable', 'calendar', 'class hours'],
+      'campus': ['school', 'university', 'college', 'institution'],
+      'document': ['papers', 'requirements', 'credentials', 'certificate'],
+      'exam': ['test', 'quiz', 'assessment', 'evaluation'],
+      'get': ['obtain', 'acquire', 'receive', 'claim', 'request', 'how to get'],
+      'where': ['location', 'place', 'office', 'building', 'where is', 'where to'],
+      'how': ['procedure', 'process', 'steps', 'instructions', 'way', 'how to'],
+      'lost': ['missing', 'misplaced', 'cannot find', 'gone']
+    };
+    
+    // Check direct keyword matches
+    keywordsList.forEach(keyword => {
+      if (userText.includes(keyword)) {
+        matches += 1;
+        Logger.log("Keyword match: " + keyword);
       }
-
-      // Partial phrase match (for questions like 'what is the mission of dhvsu')
-      if (faqQNorm.includes(userQNorm) || userQNorm.includes(faqQNorm)) {
-        score += 20;
-      }
-    }
-
-    if (score > highestScore) {
-      highestScore = score;
-      bestMatch = faq;
-    }
-  });
-
-  // Set a reasonable threshold (e.g., 30)
-  return highestScore >= 30 ? bestMatch : null;
-}
-
-// --- Improved FAQ Matching with Suggestions ---
-function findBestMatches(userQuestion, faqs, maxSuggestions = 3) {
-  function normalize(str) {
-    return String(str).toLowerCase().replace(/[^a-z0-9 ]/g, '').replace(/\s+/g, ' ').trim();
+      
+      // Check synonym matches
+      Object.keys(synonyms).forEach(key => {
+        if (keyword.includes(key) || key.includes(keyword)) {
+          synonyms[key].forEach(synonym => {
+            if (userText.includes(synonym)) {
+              matches += 0.7; // Slightly lower weight for synonyms
+              Logger.log("Synonym match: " + synonym + " for keyword " + keyword);
+            }
+          });
+        }
+      });
+    });
+    
+    return Math.min(1, matches / Math.max(keywordsList.length, 1));
   }
+
   const userQNorm = normalize(userQuestion);
+  
+  // Detect question intent/topic for boosting
+  const isAboutId = 
+    userQNorm.includes('id') || 
+    userQNorm.includes('identification') || 
+    userQNorm.includes('card');
+    
+  const isAboutTranscript = 
+    userQNorm.includes('transcript') || 
+    userQNorm.includes('tor') || 
+    userQNorm.includes('record');
+    
+  const isAboutLocation = 
+    userQNorm.includes('where') || 
+    userQNorm.includes('location') || 
+    userQNorm.includes('office') || 
+    userQNorm.includes('find');
+
+  Logger.log(`Question analysis - about ID: ${isAboutId}, transcript: ${isAboutTranscript}, location: ${isAboutLocation}`);
+  
   let scoredFaqs = faqs.map(faq => {
     const faqQNorm = normalize(faq.question);
     let score = 0;
+
+    // Exact match (100 points)
     if (faqQNorm === userQNorm) {
       score = 100;
+      Logger.log("Exact match found: " + faqQNorm);
     } else {
+      // Jaccard similarity (up to 40 points)
       const userWords = new Set(userQNorm.split(' '));
       const faqWords = new Set(faqQNorm.split(' '));
       const intersection = new Set([...userWords].filter(x => faqWords.has(x)));
       const union = new Set([...userWords, ...faqWords]);
       const jaccard = intersection.size / union.size;
-      score += jaccard * 80;
-      if (faq.keywords) {
-        const keywords = faq.keywords.toLowerCase().split(',').map(k => k.trim());
-        keywords.forEach(keyword => {
-          if (userQNorm.includes(keyword)) score += 10;
-        });
+      score += jaccard * 40;
+      
+      if (jaccard > 0.3) {
+        Logger.log(`Good jaccard match (${jaccard.toFixed(2)}) for: ${faq.question}`);
       }
-      if (faqQNorm.includes(userQNorm) || userQNorm.includes(faqQNorm)) {
+
+      // Enhanced keyword matching with synonyms (up to 30 points)
+      if (faq.keywords) {
+        const keywordScore = enhancedKeywordMatching(userQNorm, faq.keywords);
+        score += keywordScore * 30;
+        
+        if (keywordScore > 0.3) {
+          Logger.log(`Good keyword match (${keywordScore.toFixed(2)}) for: ${faq.question}`);
+        }
+      }
+
+      // Topic-specific boosts (up to 20 points)
+      // For ID questions, boost ID-related FAQs
+      if (isAboutId && (
+          faqQNorm.includes('id') || 
+          faqQNorm.includes('identification') || 
+          faqQNorm.includes('card'))) {
         score += 20;
+        Logger.log("Applied ID topic boost to: " + faq.question);
+      }
+      
+      // For transcript questions, boost transcript-related FAQs
+      else if (isAboutTranscript && (
+          faqQNorm.includes('transcript') || 
+          faqQNorm.includes('tor') || 
+          faqQNorm.includes('record'))) {
+        score += 20;
+        Logger.log("Applied transcript topic boost to: " + faq.question);
+      }
+      
+      // For location questions, boost location-related FAQs
+      else if (isAboutLocation && (
+          faqQNorm.includes('where') || 
+          faqQNorm.includes('location') || 
+          faqQNorm.includes('office'))) {
+        score += 15;
+        Logger.log("Applied location topic boost to: " + faq.question);
+      }
+
+      // Phrase matching (15 points)
+      if (faqQNorm.includes(userQNorm) || userQNorm.includes(faqQNorm)) {
+        score += 15;
+        Logger.log("Phrase match found between user Q and FAQ Q");
       }
     }
+
+    // Priority boost (up to 5 points)
+    if (faq.priority) {
+      const priority = parseInt(faq.priority) || 3;
+      score += (6 - priority); // Higher priority (1-5) gives more points
+    }
+
     return { ...faq, _score: score };
   });
-  scoredFaqs.sort((a, b) => b._score - a._score);
-  const bestMatch = scoredFaqs[0]._score >= 30 ? scoredFaqs[0] : null;
-  // Suggestions: next best matches, not the main answer, with score >= 20
-  const suggestions = scoredFaqs.filter(faq => faq !== bestMatch && faq._score >= 20).slice(0, maxSuggestions);
+
+  scoredFaqs = scoredFaqs
+    .filter(faq => faq._score > 0)
+    .sort((a, b) => b._score - a._score);
+
+  // Higher threshold (25) for better precision
+  const bestMatch = scoredFaqs[0] && scoredFaqs[0]._score >= 20 ? scoredFaqs[0] : null;
+  
+  // Get suggestions with diversity
+  let suggestions = [];
+  
+  if (scoredFaqs.length > 1) {
+    // First try to get suggestions from different categories
+    const bestMatchCategory = bestMatch?.category || '';
+    const differentCategorySuggestions = scoredFaqs
+      .filter(faq => faq !== bestMatch && faq._score >= 15 && faq.category !== bestMatchCategory)
+      .slice(0, 2);
+    
+    suggestions = [...differentCategorySuggestions];
+    
+    // If we need more suggestions, add highest-scoring ones
+    if (suggestions.length < maxSuggestions) {
+      const remainingSuggestions = scoredFaqs
+        .filter(faq => faq !== bestMatch && !suggestions.includes(faq) && faq._score >= 15)
+        .slice(0, maxSuggestions - suggestions.length);
+      
+      suggestions = [...suggestions, ...remainingSuggestions];
+    }
+  }
+
+  Logger.log(`Best match score: ${bestMatch ? bestMatch._score.toFixed(2) : 'none'}`);
+  Logger.log(`Number of suggestions: ${suggestions.length}`);
+  if (bestMatch) {
+    Logger.log(`Best match question: ${bestMatch.question}`);
+  }
+
   return { bestMatch, suggestions };
 }
 
-// Updated chat message handler with improved suggestion filtering
+// --- Import the enhanced FAQ matcher ---
+// Note: Since Apps Script doesn't support ES6 imports, we need to ensure faq_matcher.js is included in the project
+
+// Update the handleChatMessage function to use the improved matcher
 function handleChatMessage(e, conversationSheet, faqSheet) {
   try {
     Logger.log("Handling chat message with parameters:", JSON.stringify(e.parameter));
@@ -1812,7 +2372,18 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
     const userQuestion = e.parameter.question;
     const username = e.parameter.username;
     const email = e.parameter.email || "";
-    const context = e.parameter.context ? JSON.parse(e.parameter.context) : null;
+    
+    // Parse context if available
+    let context = null;
+    try {
+      if (e.parameter.context) {
+        context = JSON.parse(e.parameter.context);
+        Logger.log("Parsed context: " + JSON.stringify(context));
+      }
+    } catch (error) {
+      Logger.log("Error parsing context: " + error.toString());
+      // Continue without context if parsing fails
+    }
 
     if (!userQuestion || !username) {
       Logger.log("ERROR: Missing required parameters in handleChatMessage");
@@ -1858,6 +2429,7 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
     const requiresClarCol = headers.indexOf("requiresClarification");
     const categoryCol = headers.indexOf("category");
     const priorityCol = headers.indexOf("priority");
+    const statusCol = headers.indexOf("status");
 
     if (questionCol === -1 || answerCol === -1) {
       Logger.log("ERROR: FAQ sheet missing required columns");
@@ -1868,22 +2440,180 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
       });
     }
 
-    // Process FAQs
+    // Process FAQs - only include approved FAQs
     for (let i = 1; i < data.length; i++) {
+      // Skip inactive/unapproved FAQs
+      if (statusCol !== -1 && data[i][statusCol] !== "approved" && data[i][statusCol] !== "") {
+        continue;
+      }
+      
       faqs.push({
         question: data[i][questionCol],
         answer: data[i][answerCol],
         keywords: keywordsCol !== -1 ? data[i][keywordsCol] : "",
         clarificationOptions: clarificationCol !== -1 ? data[i][clarificationCol] : "",
         followUpQuestions: followUpCol !== -1 ? data[i][followUpCol] : "",
-        requiresClarification: requiresClarCol !== -1 ? data[i][requiresClarCol] : "FALSE",
+        requiresClarification: requiresClarCol !== -1 ? 
+          (data[i][requiresClarCol] === true || 
+           data[i][requiresClarCol] === "TRUE" || 
+           data[i][requiresClarCol] === "true") : false,
         category: categoryCol !== -1 ? data[i][categoryCol] : "",
         priority: priorityCol !== -1 ? data[i][priorityCol] : "3"
       });
     }
 
+    Logger.log(`Loaded ${faqs.length} FAQs for processing`);
+
+    // Special handling for clarification responses
+    if (context && context.awaitingClarification && context.originalQuestion) {
+      Logger.log("Processing clarification response to: " + context.originalQuestion);
+      
+      // Find the original FAQ that needed clarification
+      const originalFAQ = faqs.find(faq => 
+        faq.question.toLowerCase() === context.originalQuestion.toLowerCase());
+        
+      if (originalFAQ) {
+        // Try to match clarification response with one of the options
+        let matchedClarification = null;
+        let clarificationOptions = [];
+        
+        try {
+          // Parse clarification options if they exist
+          if (originalFAQ.clarificationOptions) {
+            if (typeof originalFAQ.clarificationOptions === 'string') {
+              if (originalFAQ.clarificationOptions.startsWith('[') && 
+                  originalFAQ.clarificationOptions.endsWith(']')) {
+                clarificationOptions = JSON.parse(originalFAQ.clarificationOptions);
+              } else {
+                clarificationOptions = originalFAQ.clarificationOptions.split('|').map(o => ({
+                  text: o.trim(),
+                  response: ""
+                }));
+              }
+            }
+            
+            // Find matching option
+            matchedClarification = clarificationOptions.find(option => 
+              userQuestion.toLowerCase().includes(option.text.toLowerCase()));
+          }
+        } catch (error) {
+          Logger.log("Error processing clarification options: " + error.toString());
+        }
+        
+        if (matchedClarification && matchedClarification.response) {
+          // If matching option found, return its response
+          Logger.log("Matched clarification option: " + matchedClarification.text);
+          
+          // Generate unique timestamp with milliseconds
+          const now = new Date();
+          const timestamp = now.toISOString();
+          
+          const conversationId = Utilities.getUuid();
+          let row = [
+            conversationId, username, email, userQuestion,
+            matchedClarification.response, timestamp
+          ];
+          
+          // Add category if column exists
+          const convHeaders = conversationSheet.getRange(1, 1, 1, conversationSheet.getLastColumn()).getValues()[0];
+          const convCategoryCol = convHeaders.indexOf('category');
+          if (convCategoryCol !== -1) {
+            while (row.length < convCategoryCol) row.push("");
+            row[convCategoryCol] = originalFAQ.category || '';
+          }
+          
+          conversationSheet.appendRow(row);
+          
+          // Return clarification response
+          return createJsonResponse({
+            success: true,
+            type: "direct_answer",
+            answer: matchedClarification.response,
+            followUpQuestions: [],
+            suggestions: [],
+            context: {
+              lastQuestion: userQuestion,
+              lastCategory: originalFAQ.category || '',
+              timestamp: timestamp,
+              user: username
+            }
+          });
+        }
+      }
+      
+      // If we couldn't match a clarification option, continue with normal processing
+      Logger.log("No matching clarification option found, proceeding with normal processing");
+    }
+
+    // --- START OF ADDED PREPROCESSING ---
+    // Special preprocessing for common question topics
+    const lowercaseQuestion = userQuestion.toLowerCase();
+    
+    // Log basic question analysis
+    Logger.log(`Processing question: "${userQuestion}"`);
+    Logger.log(`Question contains "id": ${lowercaseQuestion.includes('id')}`);
+    Logger.log(`Question contains "where": ${lowercaseQuestion.includes('where')}`);
+    Logger.log(`Question contains "how": ${lowercaseQuestion.includes('how')}`);
+    
+    // Handle ID-related questions - boost ID FAQs
+    if (lowercaseQuestion.includes('id') || 
+        lowercaseQuestion.includes('identification') || 
+        lowercaseQuestion.includes('card')) {
+      Logger.log("ID-related question detected - prioritizing ID answers");
+      
+      // Find and boost ID-related FAQs
+      faqs.forEach(faq => {
+        const faqText = (faq.question + " " + (faq.keywords || "")).toLowerCase();
+        if (faqText.includes('id') || faqText.includes('identification') || faqText.includes('card')) {
+          // Temporarily improve priority (lower number = higher priority)
+          const currentPriority = parseInt(faq.priority) || 3;
+          faq.priority = Math.max(1, currentPriority - 1);
+          
+          // Temporarily boost keywords for better matching
+          if (faq.keywords) {
+            faq.keywords += ",id,identification,card";
+          } else {
+            faq.keywords = "id,identification,card";
+          }
+        }
+      });
+    }
+    
+    // Handle lost ID questions specifically (common issue)
+    if ((lowercaseQuestion.includes('lost') || lowercaseQuestion.includes('missing')) && 
+        lowercaseQuestion.includes('id')) {
+      Logger.log("Lost ID question detected - highly prioritizing lost ID answers");
+      
+      // Find and highly boost lost ID FAQs
+      faqs.forEach(faq => {
+        const faqText = (faq.question + " " + (faq.keywords || "")).toLowerCase();
+        if ((faqText.includes('lost') || faqText.includes('replace')) && faqText.includes('id')) {
+          // Give maximum priority to exact match for lost ID questions
+          faq.priority = 1;
+        }
+      });
+    }
+    // --- END OF ADDED PREPROCESSING ---
+
     // Use enhanced matching
-    const { bestMatch, suggestions } = findBestMatches(userQuestion, faqs, context);
+    // First try to use dedicated faq_matcher.js if available in the namespace
+    let matchResult;
+    try {
+      if (typeof this.findBestMatches === 'function' && this.findBestMatches !== findBestMatches) {
+        // This would use the more advanced matcher from faq_matcher.js if available
+        Logger.log("Using advanced matcher from faq_matcher.js");
+        matchResult = this.findBestMatches(userQuestion, faqs, 3, context);
+      } else {
+        // Fall back to the local implementation
+        Logger.log("Using built-in matcher");
+        matchResult = findBestMatches(userQuestion, faqs, 3);
+      }
+    } catch (error) {
+      Logger.log("Error using advanced matcher: " + error.toString() + ", falling back to built-in");
+      matchResult = findBestMatches(userQuestion, faqs, 3);
+    }
+    
+    const { bestMatch, suggestions } = matchResult;
     Logger.log("Best match found:", bestMatch ? bestMatch.question : "none");
     Logger.log("Number of suggestions:", suggestions.length);
 
@@ -1894,36 +2624,72 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
     let followUpQuestions = [];
 
     if (bestMatch) {
-      if (bestMatch.requiresClarification === true || bestMatch.requiresClarification === "TRUE") {
+      // Check if this FAQ requires clarification
+      if (bestMatch.requiresClarification) {
         responseType = "clarification";
         answer = bestMatch.answer;
+        
         try {
-          clarificationOptions = JSON.parse(bestMatch.clarificationOptions);
+          // Process clarification options
+          if (typeof bestMatch.clarificationOptions === 'string') {
+            if (bestMatch.clarificationOptions.startsWith('[') && 
+                bestMatch.clarificationOptions.endsWith(']')) {
+              clarificationOptions = JSON.parse(bestMatch.clarificationOptions);
+            } else if (bestMatch.clarificationOptions.trim() !== '') {
+              clarificationOptions = bestMatch.clarificationOptions.split('|').map(o => ({
+                text: o.trim(),
+                response: ""
+              }));
+            }
+          } else {
+            clarificationOptions = bestMatch.clarificationOptions;
+          }
         } catch (e) {
-          clarificationOptions = bestMatch.clarificationOptions;
+          Logger.log("Error parsing clarification options: " + e.toString());
+          clarificationOptions = [];
         }
       } else {
         responseType = "direct_answer";
         answer = bestMatch.answer;
 
         // Process follow-up questions
-        if (bestMatch.followUpQuestions) {
-          try {
-            followUpQuestions = JSON.parse(bestMatch.followUpQuestions);
-          } catch (e) {
-            if (typeof bestMatch.followUpQuestions === "string" && bestMatch.followUpQuestions.length > 0) {
-              followUpQuestions = bestMatch.followUpQuestions.split("|").map(q => q.trim()).filter(q => q);
+        try {
+          if (bestMatch.followUpQuestions) {
+            // Parse follow-up questions from various formats
+            if (typeof bestMatch.followUpQuestions === 'string') {
+              if (bestMatch.followUpQuestions.startsWith('[') && 
+                  bestMatch.followUpQuestions.endsWith(']')) {
+                followUpQuestions = JSON.parse(bestMatch.followUpQuestions);
+              } else if (bestMatch.followUpQuestions.trim() !== '') {
+                followUpQuestions = bestMatch.followUpQuestions.split('|')
+                  .map(q => q.trim())
+                  .filter(q => q.length > 0);
+              }
+            } else if (Array.isArray(bestMatch.followUpQuestions)) {
+              followUpQuestions = bestMatch.followUpQuestions;
             }
           }
+        } catch (e) {
+          Logger.log("Error parsing follow-up questions: " + e.toString());
+          followUpQuestions = [];
         }
 
-        // Add category-based follow-ups
+        // Add category-based follow-ups (from FAQs with same category)
         if (bestMatch.category) {
           const related = faqs
-            .filter(f => f.category === bestMatch.category && f.question !== bestMatch.question)
-            .sort((a, b) => (parseInt(b.priority) || 3) - (parseInt(a.priority) || 3))
+            .filter(f => f.category === bestMatch.category && 
+                      f.question !== bestMatch.question)
+            .sort((a, b) => {
+              const priorityA = parseInt(a.priority) || 3;
+              const priorityB = parseInt(b.priority) || 3;
+              return priorityA - priorityB;  // Lower priority number = higher priority
+            })
             .slice(0, 2);
-          followUpQuestions = followUpQuestions.concat(related.map(f => f.question));
+            
+          const relatedQuestions = related.map(f => f.question);
+          
+          // Combine with existing follow-ups, avoiding duplicates
+          followUpQuestions = [...new Set([...followUpQuestions, ...relatedQuestions])].slice(0, 3);
         }
       }
     } else {
@@ -1932,10 +2698,46 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
       followUpQuestions = suggestions.map(s => s.question);
     }
 
-    // Log conversation
-    const timestamp = new Date().toISOString();
+    // Determine category using improved logic
+    let category = bestMatch && bestMatch.category ? bestMatch.category : '';
+    
+    // If no category assigned from FAQ, try to infer from question content
+    if (!category) {
+        const lowerQuestion = userQuestion.toLowerCase();
+        
+        if (lowerQuestion.includes("id") || lowerQuestion.includes("card") || 
+            lowerQuestion.includes("registration") || lowerQuestion.includes("certificate") || 
+            lowerQuestion.includes("record") || lowerQuestion.includes("transcript")) {
+            category = "registrar";
+        } 
+        else if (lowerQuestion.includes("enroll") || lowerQuestion.includes("admission") || 
+                lowerQuestion.includes("apply") || lowerQuestion.includes("application")) {
+            category = "admissions";
+        }
+        else if (lowerQuestion.includes("class") || lowerQuestion.includes("course") || 
+                lowerQuestion.includes("program") || lowerQuestion.includes("subject")) {
+            category = "academics";
+        }
+        else if (lowerQuestion.includes("president") || lowerQuestion.includes("dean") || 
+                lowerQuestion.includes("director") || lowerQuestion.includes("admin")) {
+            category = "administration";
+        }
+        else if (lowerQuestion.includes("scholarship") || lowerQuestion.includes("library") || 
+                lowerQuestion.includes("dormitory") || lowerQuestion.includes("student service")) {
+            category = "student-services";
+        }
+        else {
+            category = "general"; // Default category
+        }
+    }
+    
+    Logger.log("Determined category for question: " + category);
+
+    // Generate unique timestamp with milliseconds
+    const now = new Date();
+    const timestamp = now.toISOString();
+    
     const conversationId = Utilities.getUuid();
-    const category = bestMatch && bestMatch.category ? bestMatch.category : '';
 
     // Prepare row data
     let row = [
@@ -1950,9 +2752,21 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
     // Add category if column exists
     const convHeaders = conversationSheet.getRange(1, 1, 1, conversationSheet.getLastColumn()).getValues()[0];
     const convCategoryCol = convHeaders.indexOf('category');
+    
     if (convCategoryCol !== -1) {
       while (row.length < convCategoryCol) row.push("");
       row[convCategoryCol] = category;
+    } else {
+      // If category column doesn't exist, add it
+      try {
+        conversationSheet.insertColumnAfter(convHeaders.length);
+        conversationSheet.getRange(1, convHeaders.length + 1).setValue('category');
+        
+        // Update row to include category in the new column
+        row.push(category);
+      } catch (e) {
+        Logger.log("Error adding category column: " + e.toString());
+      }
     }
 
     // Append conversation
@@ -1961,951 +2775,621 @@ function handleChatMessage(e, conversationSheet, faqSheet) {
     // Log activity
     logActivity(username, "chat_message", "Question: " + userQuestion);
 
-    // Return response
+    // Return response with enhanced context info
     return createJsonResponse({
       success: true,
       type: responseType,
       answer: answer,
       clarificationOptions: clarificationOptions,
-      followUpQuestions: followUpQuestions,
-      suggestions: suggestions.map(s => s.question),
+      followUpQuestions: followUpQuestions || [],
+      suggestions: suggestions && Array.isArray(suggestions) ? suggestions.map(s => s.question) : [],
       context: {
         lastQuestion: userQuestion,
+        lastCategory: category,
         timestamp: timestamp,
-        user: username
+        user: username,
+        // Add clarification context if needed
+        awaitingClarification: responseType === "clarification" ? true : undefined,
+        originalQuestion: responseType === "clarification" ? bestMatch.question : undefined
       }
     });
-
   } catch (error) {
     Logger.log("Error in handleChatMessage: " + error.toString());
-    Logger.log("Stack trace: " + error.stack);
     return createJsonResponse({
       success: false,
-      message: "Error processing chat message: " + error.toString(),
-      error: "CHAT_PROCESSING_ERROR"
+      message: "An error occurred while processing your message",
+      error: "SERVER_ERROR"
     });
   }
 }
 
-// Updated conversation logging handler
-function handleLogConversation(params, sheet) {
-  try {
-    Logger.log("Logging conversation for user: " + params.username);
-    
-    // Ensure required parameters
-    if (!params.username || !params.question || !params.answer) {
-      Logger.log("Missing required conversation parameters");
-      return createJsonResponse({
-        success: false,
-        message: "Missing required conversation data"
-      });
-    }
+// Add this after ensureFAQHeaders function
 
-    // Add conversation to sheet
-    const timestamp = new Date().toISOString();
-    sheet.appendRow([
-      Utilities.getUuid(), // id
-      params.username,
-      params.email || "", // email is optional
-      params.question,
-      params.answer,
-      timestamp
-    ]);
-
-    // Log the activity
-    logActivity(params.username, "conversation", "Question: " + params.question);
-
-    Logger.log("Conversation logged successfully");
-    return createJsonResponse({
-      success: true,
-      message: "Conversation logged successfully"
-    });
-  } catch (error) {
-    Logger.log("Error logging conversation: " + error.toString());
-    return createJsonResponse({
-      success: false,
-      message: "Error logging conversation: " + error.toString()
-    });
-  }
-}
-
-// Enhanced FAQ matching with context awareness
-function findBestMatches(question, faqs, context = null) {
-  if (!question || !faqs || !Array.isArray(faqs)) {
-    Logger.log("ERROR in findBestMatches: Invalid input parameters");
-    Logger.log("Question:", question);
-    Logger.log("FAQs:", JSON.stringify(faqs));
-    return { bestMatch: null, suggestions: [] };
-  }
-
-  function normalize(str) {
-    if (!str) return '';
-    return String(str)
-      .toLowerCase()
-      .replace(/[^a-z0-9 ]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  function calculateJaccardSimilarity(str1, str2) {
-    if (!str1 || !str2) return 0;
-    const words1 = new Set(str1.split(' '));
-    const words2 = new Set(str2.split(' '));
-    const intersection = new Set([...words1].filter(x => words2.has(x)));
-    const union = new Set([...words1, ...words2]);
-    return intersection.size / union.size;
-  }
-
-  function calculateLevenshteinDistance(str1, str2) {
-    if (!str1 || !str2) return Math.max(str1?.length || 0, str2?.length || 0);
-    const m = str1.length;
-    const n = str2.length;
-    const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
-    
-    for (let i = 0; i <= m; i++) dp[i][0] = i;
-    for (let j = 0; j <= n; j++) dp[0][j] = j;
-    
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        if (str1[i - 1] === str2[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1];
-        } else {
-          dp[i][j] = Math.min(
-            dp[i - 1][j - 1] + 1,
-            dp[i - 1][j] + 1,
-            dp[i][j - 1] + 1
-          );
-        }
-      }
-    }
-    return dp[m][n];
-  }
-
-  const userQNorm = normalize(question);
-  Logger.log("Normalized question:", userQNorm);
-
-  let scoredFaqs = faqs.map(faq => {
-    if (!faq || !faq.question) {
-      Logger.log("Invalid FAQ entry:", JSON.stringify(faq));
-      return { ...faq, _score: 0 };
-    }
-    
-    const faqQNorm = normalize(faq.question);
-    let score = 0;
-
-    // 1. Exact match (100 points)
-    if (faqQNorm === userQNorm) {
-      score = 100;
-      Logger.log("Exact match found:", faqQNorm);
-    } else {
-      // 2. Jaccard similarity (up to 40 points)
-      const jaccard = calculateJaccardSimilarity(userQNorm, faqQNorm);
-      score += jaccard * 40;
-
-      // 3. Levenshtein distance (up to 30 points)
-      const maxLength = Math.max(userQNorm.length, faqQNorm.length);
-      const levenshtein = calculateLevenshteinDistance(userQNorm, faqQNorm);
-      const levenshteinScore = (1 - levenshtein / maxLength) * 30;
-      score += levenshteinScore;
-
-      // 4. Keyword matching (up to 20 points)
-      if (faq.keywords) {
-        const keywords = faq.keywords.toLowerCase().split(',').map(k => k.trim());
-        const matchedKeywords = keywords.filter(k => userQNorm.includes(k));
-        score += (matchedKeywords.length / keywords.length) * 20;
-        if (matchedKeywords.length > 0) {
-          Logger.log("Matched keywords:", matchedKeywords);
-        }
-      }
-
-      // 5. Partial phrase match (10 points)
-      if (faqQNorm.includes(userQNorm) || userQNorm.includes(faqQNorm)) {
-        score += 10;
-        Logger.log("Partial phrase match found");
-      }
-
-      // 6. Context boost (5 points)
-      if (context && context.lastQuestion) {
-        const lastQNorm = normalize(context.lastQuestion);
-        if (faqQNorm.includes(lastQNorm) || lastQNorm.includes(faqQNorm)) {
-          score += 5;
-          Logger.log("Context boost applied");
-        }
-      }
-    }
-
-    // 7. Priority boost (up to 5 points)
-    if (faq.priority) {
-      const priority = parseInt(faq.priority) || 3;
-      score += (6 - priority); // Higher priority (1-5) gives more points
-    }
-
-    return { ...faq, _score: score };
-  });
-
-  // Sort by score and filter out invalid entries
-  scoredFaqs = scoredFaqs
-    .filter(faq => faq && faq._score > 0)
-    .sort((a, b) => b._score - a._score);
-
-  // Lower threshold for better matching (20 instead of 30)
-  const bestMatch = scoredFaqs[0] && scoredFaqs[0]._score >= 20 ? scoredFaqs[0] : null;
-  
-  // Get suggestions (next best matches with score >= 15)
-  const suggestions = scoredFaqs
-    .filter(faq => faq !== bestMatch && faq._score >= 15)
-    .slice(0, 3);
-
-  // Log matching results for debugging
-  Logger.log(`Matching results for: "${question}"`);
-  Logger.log(`Best match score: ${bestMatch ? bestMatch._score : 'none'}`);
-  Logger.log(`Number of suggestions: ${suggestions.length}`);
-  if (bestMatch) {
-    Logger.log(`Best match question: ${bestMatch.question}`);
-  }
-
-  return { bestMatch, suggestions };
-}
-
-// Enhanced similarity calculation
-function calculateSimilarity(str1, str2) {
-  // Tokenize strings
-  const tokens1 = str1.toLowerCase().split(/\s+/);
-  const tokens2 = str2.toLowerCase().split(/\s+/);
-  
-  // Calculate Jaccard similarity
-  const set1 = new Set(tokens1);
-  const set2 = new Set(tokens2);
-  const intersection = new Set([...set1].filter(x => set2.has(x)));
-  const union = new Set([...set1, ...set2]);
-  
-  let jaccardScore = intersection.size / union.size;
-  
-  // Add Levenshtein distance for close matches
-  const levenshteinScore = 1 - (levenshteinDistance(str1, str2) / Math.max(str1.length, str2.length));
-  
-  // Combine scores with weights
-  return (jaccardScore * 0.7) + (levenshteinScore * 0.3);
-}
-
-// Levenshtein distance calculation
-function levenshteinDistance(str1, str2) {
-  const m = str1.length;
-  const n = str2.length;
-  const dp = Array(m + 1).fill().map(() => Array(n + 1).fill(0));
-
-  for (let i = 0; i <= m; i++) dp[i][0] = i;
-  for (let j = 0; j <= n; j++) dp[0][j] = j;
-
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      if (str1[i - 1] === str2[j - 1]) {
-        dp[i][j] = dp[i - 1][j - 1];
-      } else {
-        dp[i][j] = Math.min(
-          dp[i - 1][j - 1] + 1, // substitution
-          dp[i - 1][j] + 1,     // deletion
-          dp[i][j - 1] + 1      // insertion
-        );
-      }
-    }
-  }
-  return dp[m][n];
-}
-
-// Enhanced error handling
-function handleError(error, action) {
-  Logger.log("handleError called with: " + JSON.stringify(error));
-  console.error(`Error in ${action}:`, error);
-
-  let errorMessage = 'An unexpected error occurred';
-  let errorType = 'general';
-
-  if (error && error.message) {
-    if (error.message.includes('timeout')) {
-      errorMessage = 'The request timed out. Please try again.';
-      errorType = 'timeout';
-    } else if (error.message.includes('permission')) {
-      errorMessage = 'You do not have permission to perform this action.';
-      errorType = 'permission';
-    } else if (error.message.includes('validation')) {
-      errorMessage = 'Invalid input. Please check your request.';
-      errorType = 'validation';
-    } else {
-      errorMessage = error.message;
-    }
-  } else if (typeof error === 'string') {
-    errorMessage = error;
-  } else {
-    errorMessage = JSON.stringify(error);
-  }
-
-  return createJsonResponse({
-    success: false,
-    type: errorType,
-    message: errorMessage
-  });
-}
-
-function updateFAQSheetStructure() {
-  var sheetName = "FAQs"; // Change if your sheet is named differently
+/**
+ * Ensure FAQ sheet has columns for clarification and follow-up features
+ * This function creates the necessary columns if they don't exist
+ */
+function ensureClarificationColumns() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(sheetName);
+  var sheet = ss.getSheetByName("FAQs");
+  if (!sheet) return;
+  
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  
+  // Required columns for clarification and follow-up features
+  var requiredColumns = [
+    { name: "requiresClarification", defaultValue: "FALSE" },
+    { name: "clarificationOptions", defaultValue: "" },
+    { name: "followUpQuestions", defaultValue: "" }
+  ];
+  
+  var columnsAdded = 0;
+  
+  // Check each required column and add if missing
+  requiredColumns.forEach(column => {
+    if (headers.indexOf(column.name) === -1) {
+      // Add new column at the end
+      var newColIndex = headers.length + columnsAdded + 1;
+      sheet.getRange(1, newColIndex).setValue(column.name);
+      
+      // Set default values for all rows
+      if (sheet.getLastRow() > 1) {
+        var range = sheet.getRange(2, newColIndex, sheet.getLastRow() - 1, 1);
+        range.setValue(column.defaultValue);
+      }
+      
+      columnsAdded++;
+      Logger.log(`Added column: ${column.name}`);
+    }
+  });
+  
+  if (columnsAdded > 0) {
+    SpreadsheetApp.getUi().alert(`Added ${columnsAdded} columns to support clarification and follow-up features.`);
+  }
+  
+  return columnsAdded;
+}
+
+/**
+ * Helper function to create a FAQ with clarification options
+ * @param {string} question - The main FAQ question
+ * @param {string} baseAnswer - The initial response before clarification
+ * @param {Array} options - Array of clarification options with their answers
+ * @param {string} keywords - Comma-separated keywords
+ * @param {string} category - FAQ category
+ * @param {number} priority - Priority level (1-5)
+ */
+function createClarificationFAQ(question, baseAnswer, options, keywords, category, priority) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("FAQs");
+  if (!sheet) return false;
+  
+  // Ensure the sheet has the necessary columns
+  ensureClarificationColumns();
+  
+  // Get the headers to find column positions
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var columns = {
+    id: headers.indexOf("id"),
+    question: headers.indexOf("question"),
+    answer: headers.indexOf("answer"),
+    keywords: headers.indexOf("keywords"),
+    status: headers.indexOf("status"),
+    category: headers.indexOf("category"),
+    priority: headers.indexOf("priority"),
+    requiresClarification: headers.indexOf("requiresClarification"),
+    clarificationOptions: headers.indexOf("clarificationOptions"),
+    followUpQuestions: headers.indexOf("followUpQuestions")
+  };
+  
+  // Create row data
+  var rowData = Array(sheet.getLastColumn()).fill("");
+  
+  // Set basic FAQ fields
+  rowData[columns.id] = Utilities.getUuid();
+  rowData[columns.question] = question;
+  rowData[columns.answer] = baseAnswer;
+  rowData[columns.keywords] = keywords || "";
+  rowData[columns.status] = "approved";
+  rowData[columns.category] = category || "general";
+  rowData[columns.priority] = priority || 3;
+  
+  // Set clarification fields
+  rowData[columns.requiresClarification] = "TRUE";
+  
+  // Format clarification options as JSON
+  if (options && Array.isArray(options)) {
+    rowData[columns.clarificationOptions] = JSON.stringify(options);
+  }
+  
+  // Append the row
+  sheet.appendRow(rowData);
+  
+  return true;
+}
+
+// Example usage:
+/*
+function addClarificationFAQExample() {
+  createClarificationFAQ(
+    "How do I request a document?",
+    "There are several document types available. Which document do you need?",
+    [
+      { text: "transcript", response: "To request a transcript, visit the Registrar's Office with valid ID." },
+      { text: "certificate of enrollment", response: "For certificates of enrollment, go to the Registrar's Office." },
+      { text: "good moral", response: "Good moral certificates are issued by the Guidance Office." }
+    ],
+    "document,request,transcript,certificate,good moral",
+    "registrar",
+    2
+  );
+}
+*/
+
+/**
+ * Utility function to restore admin role for users
+ * Call this function from the Apps Script editor when needed
+ */
+function restoreAdminRole() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getSheetByName("Users");
   if (!sheet) {
-    SpreadsheetApp.getUi().alert("Sheet named '" + sheetName + "' not found.");
+    Logger.log("Users sheet not found");
     return;
   }
-
-  // Desired columns in order
-  var desiredHeaders = [
-    "id",
-    "question",
-    "answer",
-    "keywords",
-    "status",
-    "category",
-    "priority",
-    "requiresClarification",
-    "clarificationOptions",
-    "followUpQuestions"
-  ];
-
-  // Get current headers
-  var currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-
-  // Add missing columns at the end
-  desiredHeaders.forEach(function(header) {
-    if (currentHeaders.indexOf(header) === -1) {
-      sheet.insertColumnAfter(sheet.getLastColumn());
-      sheet.getRange(1, sheet.getLastColumn()).setValue(header);
-    }
-  });
-
-  // Re-fetch headers after possible additions
-  currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-
-  // Reorder columns to match desiredHeaders
-  var colMap = desiredHeaders.map(function(header) {
-    return currentHeaders.indexOf(header) + 1;
-  });
-
-  // Move columns if out of order
-  for (var i = 0; i < desiredHeaders.length; i++) {
-    if (colMap[i] !== i + 1) {
-      sheet.moveColumns(sheet.getRange(1, colMap[i], sheet.getMaxRows()), i + 1);
-      // After moving, update colMap
-      currentHeaders = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-      colMap = desiredHeaders.map(function(header) {
-        return currentHeaders.indexOf(header) + 1;
-      });
-    }
-  }
-
-  // Fill default values for new columns (if empty)
-  var data = sheet.getDataRange().getValues();
-  var numRows = data.length;
-  var requiresClarCol = currentHeaders.indexOf("requiresClarification");
-  var clarOptCol = currentHeaders.indexOf("clarificationOptions");
-  var followUpCol = currentHeaders.indexOf("followUpQuestions");
-
-  for (var r = 1; r < numRows; r++) {
-    if (requiresClarCol !== -1 && !data[r][requiresClarCol]) {
-      sheet.getRange(r + 1, requiresClarCol + 1).setValue("FALSE");
-    }
-    if (clarOptCol !== -1 && !data[r][clarOptCol]) {
-      sheet.getRange(r + 1, clarOptCol + 1).setValue("");
-    }
-    if (followUpCol !== -1 && !data[r][followUpCol]) {
-      sheet.getRange(r + 1, followUpCol + 1).setValue("");
-    }
-  }
-
-  SpreadsheetApp.getUi().alert("FAQ sheet structure updated successfully!");
-}
-
-/**
- * DEMO: Populate the first 3 FAQs with smart features for testing.
- * 1. Clarification, 2. Follow-up, 3. Both
- * All referenced clarification/follow-up questions will also be updated with good answers.
- */
-function demoPopulateSmartFAQs() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("FAQs");
-  if (!sheet) throw new Error("FAQs sheet not found");
-  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  var clarCol = headers.indexOf("clarificationOptions") + 1;
-  var followCol = headers.indexOf("followUpQuestions") + 1;
-  var reqClarCol = headers.indexOf("requiresClarification") + 1;
-  var qCol = headers.indexOf("question") + 1;
-  var aCol = headers.indexOf("answer") + 1;
-  // 1. Clarification only
-  sheet.getRange(2, qCol).setValue("How do I get my ID?");
-  sheet.getRange(2, aCol).setValue("Do you mean for new students or for lost ID?");
-  sheet.getRange(2, reqClarCol).setValue("TRUE");
-  sheet.getRange(2, clarCol).setValue('[{"text":"For new students","question":"How do new students get their ID?"},{"text":"For lost ID","question":"How to replace a lost ID?"}]');
-  sheet.getRange(2, followCol).setValue("");
-  // 2. Follow-up only
-  sheet.getRange(3, qCol).setValue("How to enroll?");
-  sheet.getRange(3, aCol).setValue("To enroll at DHVSU, visit the Admissions Office with your requirements. For detailed steps, see the follow-up questions below.");
-  sheet.getRange(3, reqClarCol).setValue("FALSE");
-  sheet.getRange(3, clarCol).setValue("");
-  sheet.getRange(3, followCol).setValue('["What are the requirements for enrollment?","How to transfer to DHVSU?"]');
-  // 3. Both
-  sheet.getRange(4, qCol).setValue("How to request a document?");
-  sheet.getRange(4, aCol).setValue("Which document do you want to request? Please clarify below.");
-  sheet.getRange(4, reqClarCol).setValue("TRUE");
-  sheet.getRange(4, clarCol).setValue('[{"text":"Transcript of Records (TOR)","question":"How to get TOR?"},{"text":"Certificate of Grades (COG)","question":"How to get Certificate of Grades?"}]');
-  sheet.getRange(4, followCol).setValue('["How to get Good Moral?","How to get Certificate of Enrollment?"]');
-  // --- Add/update referenced clarification/follow-up questions with good answers ---
-  var demoAnswers = {
-    "How do new students get their ID?": "New students can get their ID by visiting the Registrar's Office after enrollment. Please bring your Certificate of Registration (COR) and a valid ID.",
-    "How to replace a lost ID?": "To replace a lost ID, go to the Office of Student Affairs for an ID profiling form, pay at the Cashier's Office, and proceed to the MIS Office for ID printing. Bring a valid ID and proof of payment.",
-    "What are the requirements for enrollment?": "Requirements for enrollment include: accomplished application form, high school report card, birth certificate (PSA), certificate of good moral character, and 2x2 ID photos. Additional documents may be required for transferees.",
-    "How to transfer to DHVSU?": "To transfer to DHVSU, secure a transfer credential from your previous school, prepare your transcript of records, and submit all requirements to the Admissions Office for evaluation.",
-    "How to get TOR?": "To get your Transcript of Records (TOR), clear your account with the Accounting Office, then request and pay for your TOR at the Registrar's Office. Processing usually takes 2-3 days.",
-    "How to get Certificate of Grades?": "Request a Certificate of Grades (COG) at the Registrar's Office one week after classes start. Payment is required. The class mayor may assist in submitting requests for the class.",
-    "How to get Good Moral?": "Request a Certificate of Good Moral at the Guidance & Testing Center. State your purpose (enrollment, scholarship, etc.) and pay the required fee.",
-    "How to get Certificate of Enrollment?": "After enrolling, request your Certificate of Enrollment (COE) from the Registrar's Office. It may also be available in your student portal."
-  };
-  // For each referenced question, update or add the answer
-  Object.keys(demoAnswers).forEach(function(q) {
-    var found = false;
-    var data = sheet.getDataRange().getValues();
-    for (var i = 1; i < data.length; i++) {
-      if ((data[i][qCol-1] || "").toLowerCase().trim() === q.toLowerCase().trim()) {
-        sheet.getRange(i+1, aCol).setValue(demoAnswers[q]);
-        found = true;
-        break;
-      }
-    }
-    if (!found) {
-      // Add new row if missing
-      var row = [];
-      row[qCol-1] = q;
-      row[aCol-1] = demoAnswers[q];
-      while (row.length < headers.length) row.push("");
-      sheet.appendRow(row);
-    }
-  });
-}
-
-/**
- * Utility: Add missing FAQ rows for all clarification/follow-up options in the first 10 rows.
- * This ensures every clarification/follow-up question has a matching FAQ row.
- */
-function addMissingClarificationFAQs() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName("FAQs");
-  if (!sheet) throw new Error("FAQs sheet not found");
+  
   var data = sheet.getDataRange().getValues();
   var headers = data[0];
-  var questionCol = headers.indexOf("question");
-  var answerCol = headers.indexOf("answer");
-  var keywordsCol = headers.indexOf("keywords");
-  var statusCol = headers.indexOf("status");
-  var categoryCol = headers.indexOf("category");
-  var priorityCol = headers.indexOf("priority");
-  var existingQuestions = data.slice(1).map(row => (row[questionCol] || "").toLowerCase().trim());
-  var toAdd = [];
-  for (var i = 1; i <= Math.min(10, data.length - 1); i++) {
-    var clarOpts = headers.indexOf("clarificationOptions") !== -1 ? data[i][headers.indexOf("clarificationOptions")] : "";
-    var followUps = headers.indexOf("followUpQuestions") !== -1 ? data[i][headers.indexOf("followUpQuestions")] : "";
-    // Parse clarification options
-    if (clarOpts && clarOpts.length > 0) {
-      try {
-        var clarArr = JSON.parse(clarOpts);
-        clarArr.forEach(opt => {
-          var q = (typeof opt === 'string') ? opt : opt.question;
-          if (q && !existingQuestions.includes(q.toLowerCase().trim())) {
-            toAdd.push(q);
-          }
-        });
-      } catch (e) {
-        // Try pipe-separated fallback
-        clarOpts.split('|').forEach(q => {
-          if (q && !existingQuestions.includes(q.toLowerCase().trim())) {
-            toAdd.push(q.trim());
-          }
-        });
-      }
+  var emailCol = headers.indexOf("email");
+  var usernameCol = headers.indexOf("username");
+  var roleCol = headers.indexOf("role");
+  
+  if (emailCol === -1 || roleCol === -1) {
+    Logger.log("Required columns missing");
+    return;
+  }
+  
+  // Enter the email addresses of admin users you want to restore
+  var adminEmails = [
+    "admin@dhvsu.edu.ph"  // Add your admin email here
+  ];
+  
+  // Also add a check for admin username
+  var adminUsernames = [
+    "admin"  // Add your admin username here
+  ];
+  
+  var updatedCount = 0;
+  
+  for (var i = 1; i < data.length; i++) {
+    var email = data[i][emailCol];
+    var username = data[i][usernameCol];
+    var currentRole = data[i][roleCol];
+    
+    if ((adminEmails.includes(email) || adminUsernames.includes(username)) && currentRole !== "admin") {
+      sheet.getRange(i + 1, roleCol + 1).setValue("admin");
+      Logger.log("Restored admin role for " + email + " (username: " + username + ")");
+      updatedCount++;
     }
-    // Parse follow-up questions
-    if (followUps && followUps.length > 0) {
-      try {
-        var followArr = JSON.parse(followUps);
-        followArr.forEach(q => {
-          if (q && !existingQuestions.includes(q.toLowerCase().trim())) {
-            toAdd.push(q.trim());
-          }
-        });
-      } catch (e) {
-        followUps.split('|').forEach(q => {
-          if (q && !existingQuestions.includes(q.toLowerCase().trim())) {
-            toAdd.push(q.trim());
-          }
-        });
+  }
+  
+  Logger.log(updatedCount + " admin roles restored");
+  return updatedCount;
+}
+
+/**
+ * This function is called after login to ensure admins stay admins
+ */
+function ensureAdminRole(email, username) {
+  if (!email && !username) return false;
+  
+  // Check if this user should be an admin
+  var adminEmails = ["admin@dhvsu.edu.ph"]; // Same list as in restoreAdminRole
+  var adminUsernames = ["admin"];           // Same list as in restoreAdminRole
+  
+  if (adminEmails.includes(email) || adminUsernames.includes(username)) {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Users");
+    if (!sheet) return false;
+    
+    var data = sheet.getDataRange().getValues();
+    var headers = data[0];
+    var emailCol = headers.indexOf("email");
+    var usernameCol = headers.indexOf("username");
+    var roleCol = headers.indexOf("role");
+    
+    if (emailCol === -1 || usernameCol === -1 || roleCol === -1) return false;
+    
+    for (var i = 1; i < data.length; i++) {
+      if (data[i][emailCol] === email || data[i][usernameCol] === username) {
+        if (data[i][roleCol] !== "admin") {
+          sheet.getRange(i + 1, roleCol + 1).setValue("admin");
+          Logger.log("Reset admin role for " + email + " (username: " + username + ")");
+          return true;
+        }
+        return false; // already admin
       }
     }
   }
-  // Add missing questions
-  var added = 0;
-  toAdd = Array.from(new Set(toAdd)); // Remove duplicates
-  toAdd.forEach(q => {
-    var row = [];
-    row[questionCol] = q;
-    row[answerCol] = "[PLACEHOLDER] Please update this answer.";
-    row[keywordsCol] = "";
-    row[statusCol] = "approved";
-    row[categoryCol] = "general";
-    row[priorityCol] = 3;
-    // Fill up to the number of columns
-    while (row.length < headers.length) row.push("");
-    sheet.appendRow(row);
-    added++;
-  });
-  SpreadsheetApp.getUi().alert(added + " missing clarification/follow-up FAQs added. Please update their answers.");
+  return false;
 }
 
-function verifyAndFixFAQStructure() {
+// Add these missing functions after handleLogFeedback
+
+/**
+ * Get all feedback entries for admin panel
+ */
+function handleGetFeedback(sheet) {
   try {
+    Logger.log("Getting feedback for admin panel");
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const feedbacks = [];
+    
+    // Validate required columns
+    const timestampCol = headers.indexOf("timestamp");
+    const usernameCol = headers.indexOf("username");
+    const messageCol = headers.indexOf("message");
+    const feedbackTypeCol = headers.indexOf("feedbackType");
+    const commentCol = headers.indexOf("comment");
+    
+    if (usernameCol === -1 || messageCol === -1 || feedbackTypeCol === -1) {
+      Logger.log("Error: Required feedback columns missing");
+      return createJsonResponse({
+        success: false,
+        message: "Feedback sheet structure error"
+      });
+    }
+    
+    // Process each feedback row
+    for (let i = 1; i < data.length; i++) {
+      feedbacks.push({
+        timestamp: timestampCol !== -1 ? data[i][timestampCol] : "",
+        username: data[i][usernameCol] || "",
+        message: data[i][messageCol] || "",
+        feedbackType: data[i][feedbackTypeCol] || "",
+        comment: commentCol !== -1 ? data[i][commentCol] : ""
+      });
+    }
+    
+    Logger.log("Retrieved " + feedbacks.length + " feedback entries");
+    return createJsonResponse({
+      success: true,
+      feedbacks: feedbacks
+    });
+  } catch (error) {
+    Logger.log("Error in handleGetFeedback: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error retrieving feedback: " + error.toString()
+    });
+  }
+}
+
+/**
+ * Get activity logs for admin panel
+ */
+function handleGetLogs(sheet) {
+  try {
+    Logger.log("Getting activity logs for admin panel");
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const logs = [];
+    
+    // Validate required columns
+    const timestampCol = headers.indexOf("timestamp");
+    const usernameCol = headers.indexOf("username");
+    const actionCol = headers.indexOf("action");
+    const detailsCol = headers.indexOf("details");
+    const ipAddressCol = headers.indexOf("ipAddress");
+    
+    if (timestampCol === -1 || usernameCol === -1 || actionCol === -1) {
+      Logger.log("Error: Required log columns missing");
+      return createJsonResponse({
+        success: false,
+        message: "Log sheet structure error"
+      });
+    }
+    
+    // Process each log row
+    for (let i = 1; i < data.length; i++) {
+      logs.push({
+        timestamp: data[i][timestampCol] || "",
+        username: data[i][usernameCol] || "",
+        action: data[i][actionCol] || "",
+        details: detailsCol !== -1 ? data[i][detailsCol] : "",
+        ipAddress: ipAddressCol !== -1 ? data[i][ipAddressCol] : ""
+      });
+    }
+    
+    Logger.log("Retrieved " + logs.length + " log entries");
+    return createJsonResponse({
+      success: true,
+      logs: logs
+    });
+  } catch (error) {
+    Logger.log("Error in handleGetLogs: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error retrieving logs: " + error.toString()
+    });
+  }
+}
+
+/**
+ * Get analytics data for admin panel charts
+ */
+function handleGetAnalytics(faqSheet, feedbackSheet) {
+  try {
+    Logger.log("Generating analytics data for admin panel");
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const faqSheet = ss.getSheetByName("FAQs");
+    const conversationSheet = ss.getSheetByName("Conversations");
+    const activityLogSheet = ss.getSheetByName("ActivityLog");
     
-    if (!faqSheet) {
-      Logger.log("Creating new FAQs sheet");
-      return getOrCreateSheet(ss, "FAQs", SHEET_HEADERS.FAQS);
+    if (!conversationSheet || !activityLogSheet) {
+      Logger.log("Error: Required sheets missing");
+      return createJsonResponse({
+        success: false,
+        message: "Analytics sheets not found"
+      });
     }
     
-    // Get current headers
-    const headers = faqSheet.getRange(1, 1, 1, faqSheet.getLastColumn()).getValues()[0];
-    const requiredHeaders = SHEET_HEADERS.FAQS;
+    const analytics = {
+      userActivity: {
+        labels: [],
+        data: []
+      },
+      faqPerformance: {
+        labels: [],
+        data: []
+      },
+      ratings: [0, 0, 0, 0, 0]  // Default values [Helpful, Not Helpful, 3 Stars, 2 Stars, 1 Star]
+    };
     
-    // Check for missing headers
-    const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-    
-    if (missingHeaders.length > 0) {
-      Logger.log("Missing headers found: " + missingHeaders.join(", "));
+    // Generate user activity data (last 7 days) from actual activity logs
+    try {
+      const activityData = activityLogSheet.getDataRange().getValues();
+      const activityHeaders = activityData[0];
+      const timestampCol = activityHeaders.indexOf("timestamp");
       
-      // Add missing headers
-      const lastCol = faqSheet.getLastColumn();
-      missingHeaders.forEach((header, index) => {
-        faqSheet.getRange(1, lastCol + index + 1).setValue(header);
-      });
+      if (timestampCol === -1) {
+        Logger.log("Error: Activity log timestamp column missing");
+        throw new Error("Activity log timestamp column missing");
+      }
       
-      // Initialize new columns with default values
-      const lastRow = faqSheet.getLastRow();
-      if (lastRow > 1) {
-        missingHeaders.forEach((header, index) => {
-          const range = faqSheet.getRange(2, lastCol + index + 1, lastRow - 1, 1);
-          switch (header) {
-            case "status":
-              range.setValue("active");
-              break;
-            case "category":
-              range.setValue("general");
-              break;
-            case "priority":
-              range.setValue(3);
-              break;
-            case "keywords":
-              range.setValue("");
-              break;
-            default:
-              range.setValue("");
-          }
+      // Create date range for last 7 days
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+      
+      const last7Days = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        last7Days.push({
+          label: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          date: new Date(date.setHours(0, 0, 0, 0)), // Start of day
+          endDate: new Date(date.setHours(23, 59, 59, 999)), // End of day
+          count: 0
         });
       }
-    }
-    
-    // Verify data types and fix if needed
-    const data = faqSheet.getDataRange().getValues();
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const rowNum = i + 1;
       
-      // Fix status
-      const statusCol = headers.indexOf("status");
-      if (statusCol !== -1) {
-        const status = row[statusCol];
-        if (!status || !["active", "pending", "archived"].includes(status)) {
-          faqSheet.getRange(rowNum, statusCol + 1).setValue("active");
+      // Count activities by date
+      for (let i = 1; i < activityData.length; i++) {
+        const timestamp = activityData[i][timestampCol];
+        if (!timestamp) continue;
+        
+        let activityDate;
+        if (timestamp instanceof Date) {
+          activityDate = timestamp;
+        } else {
+          try {
+            activityDate = new Date(timestamp);
+            if (isNaN(activityDate.getTime())) continue; // Invalid date
+          } catch (e) {
+            continue; // Skip invalid timestamps
+          }
+        }
+        
+        // Check if activity falls within the last 7 days
+        for (const day of last7Days) {
+          if (activityDate >= day.date && activityDate <= day.endDate) {
+            day.count++;
+            break;
+          }
         }
       }
       
-      // Fix priority
-      const priorityCol = headers.indexOf("priority");
-      if (priorityCol !== -1) {
-        const priority = parseInt(row[priorityCol]);
-        if (isNaN(priority) || priority < 1 || priority > 5) {
-          faqSheet.getRange(rowNum, priorityCol + 1).setValue(3);
-        }
-      }
+      // Populate analytics object with real data
+      analytics.userActivity.labels = last7Days.map(day => day.label);
+      analytics.userActivity.data = last7Days.map(day => day.count);
       
-      // Fix category
-      const categoryCol = headers.indexOf("category");
-      if (categoryCol !== -1) {
-        const category = row[categoryCol];
-        if (!category) {
-          faqSheet.getRange(rowNum, categoryCol + 1).setValue("general");
-        }
+      Logger.log("User activity data generated successfully");
+    } catch (error) {
+      Logger.log("Error processing user activity data: " + error.toString());
+      // Fall back to empty data rather than random numbers
+      const today = new Date();
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        analytics.userActivity.labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        analytics.userActivity.data.push(0);
       }
     }
     
-    Logger.log("FAQ sheet structure verified and fixed");
-    return faqSheet;
-  } catch (error) {
-    Logger.log("ERROR in verifyAndFixFAQStructure: " + error.toString());
-    throw error;
-  }
-}
-
-// Password reset handler functions
-function handleForgotPassword(params, sheet) {
-  try {
-    if (!params || !params.email) {
-      Logger.log("Forgot password failed: Missing email parameter");
-      return createJsonResponse({
-        success: false,
-        message: "Missing email parameter"
-      });
-    }
-    
-    const email = params.email.toLowerCase().trim();
-    Logger.log("Handling forgot password request for email: " + email);
-    
-    // Validate email domain
-    if (!isValidDHVSUEmail(email)) {
-      Logger.log("Forgot password failed: Invalid email domain");
-      return createJsonResponse({
-        success: false,
-        message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed"
-      });
-    }
-    
-    // Check if email exists
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const emailCol = headers.indexOf("email");
-    const usernameCol = headers.indexOf("username");
-    const resetTokenCol = headers.indexOf("reset_token");
-    const tokenExpiryCol = headers.indexOf("token_expiry");
-    
-    if (emailCol === -1) {
-      Logger.log("Forgot password failed: Email column not found");
-      return createJsonResponse({
-        success: false,
-        message: "System error: Email column not found"
-      });
-    }
-    
-    // Look for user with matching email
-    let userRow = -1;
-    let username = '';
-    for (let i = 1; i < data.length; i++) {
-      const storedEmail = String(data[i][emailCol]).toLowerCase().trim();
-      if (storedEmail === email) {
-        userRow = i + 1; // +1 because sheets are 1-indexed
-        username = data[i][usernameCol];
-        break;
-      }
-    }
-    
-    if (userRow === -1) {
-      Logger.log("Forgot password failed: Email not found - " + email);
-      return createJsonResponse({
-        success: false,
-        message: "No account found with this email address"
-      });
-    }
-    
-    // Generate reset token and set expiry (1 hour from now)
-    const token = Utilities.getUuid();
-    const expiry = new Date();
-    expiry.setHours(expiry.getHours() + 1);
-    const expiryString = expiry.toISOString();
-    
-    // Update user record with token and expiry
-    if (resetTokenCol !== -1) {
-      sheet.getRange(userRow, resetTokenCol + 1).setValue(token);
-    } else {
-      Logger.log("Creating reset_token column");
-      const lastCol = sheet.getLastColumn();
-      sheet.getRange(1, lastCol + 1).setValue("reset_token");
-      sheet.getRange(userRow, lastCol + 1).setValue(token);
-    }
-    
-    if (tokenExpiryCol !== -1) {
-      sheet.getRange(userRow, tokenExpiryCol + 1).setValue(expiryString);
-    } else {
-      Logger.log("Creating token_expiry column");
-      const lastCol = sheet.getLastColumn();
-      sheet.getRange(1, lastCol + 1).setValue("token_expiry");
-      sheet.getRange(userRow, lastCol + 1).setValue(expiryString);
-    }
-    
-    // Get the script URL from the deployment
-    const scriptUrl = ScriptApp.getService().getUrl();
-    const baseUrl = params.resetUrl || "https://your-actual-website-domain.com/";
-    
-    // Make sure we're not using localhost/127.0.0.1 in the reset link
-    let resetLinkBase = baseUrl;
-    if (resetLinkBase.includes('127.0.0.1') || resetLinkBase.includes('localhost')) {
-      // Fall back to a hardcoded production URL if resetUrl is localhost
-      resetLinkBase = "https://ren-code23.github.io/Honorian-Askbot/";
-    }
-    
-    const resetLink = `${resetLinkBase}reset_password.html?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
-    
-    // Send reset email using MailApp
+    // Get actual FAQ performance data from conversations
     try {
-      const subject = "Pampanga State University AskBot - Password Reset";
-      const htmlBody = `
-        <html>
-          <head>
-            <style>
-              body { font-family: Arial, sans-serif; line-height: 1.6; }
-              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-              .header { background-color: #003366; color: white; padding: 15px; text-align: center; }
-              .content { padding: 20px; border: 1px solid #ddd; }
-              .button { background-color: #003366; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; }
-              .footer { margin-top: 20px; font-size: 12px; color: #666; text-align: center; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <div class="header">
-                <h2>Pampanga State University AskBot</h2>
-              </div>
-              <div class="content">
-                <p>Hello ${username || "User"},</p>
-                <p>We received a request to reset your password for the Pampanga State University AskBot. If you didn't make this request, you can ignore this email.</p>
-                <p>To reset your password, please click the button below (link expires in 1 hour):</p>
-                <p style="text-align: center;">
-                  <a href="${resetLink}" class="button">Reset Your Password</a>
-                </p>
-                <p>Or copy and paste this link in your browser:</p>
-                <p>${resetLink}</p>
-                <p>If you're having trouble, please contact our support team.</p>
-                <p>Best regards,<br>Pampanga State University</p>
-              </div>
-              <div class="footer">
-                <p>This is an automated message, please do not reply to this email.</p>
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
+      const conversationData = conversationSheet.getDataRange().getValues();
+      const conversationHeaders = conversationData[0];
+      const questionCol = conversationHeaders.indexOf("question");
+      const timestampCol = conversationHeaders.indexOf("timestamp");
       
-      MailApp.sendEmail({
-        to: email,
-        subject: subject,
-        htmlBody: htmlBody,
-        name: "Pampanga State University AskBot",
-        replyTo: "no-reply@pampangastate.edu.ph"
-      });
+      if (questionCol === -1) {
+        Logger.log("Error: Conversation question column missing");
+        throw new Error("Conversation question column missing");
+      }
       
-      Logger.log("Password reset email sent successfully to: " + email);
-    } catch (emailError) {
-      Logger.log("Failed to send password reset email: " + emailError.toString());
-      // Continue even if email fails - we'll still return success to not reveal email sending failures
-    }
-    
-    // Log the activity
-    logActivity(username || email, "password_reset_request");
-    
-    // Return success
-    return createJsonResponse({
-      success: true,
-      message: "Password reset instructions have been sent to your email address. Please check your inbox and spam folder."
-    });
-  } catch (error) {
-    Logger.log("ERROR in handleForgotPassword: " + error.toString());
-    return handleError(error, "forgot_password");
-  }
-}
-
-function validateResetToken(params, sheet) {
-  try {
-    if (!params || !params.email || !params.token) {
-      Logger.log("Token validation failed: Missing required parameters");
-      return createJsonResponse({
-        success: false,
-        message: "Missing required parameters"
-      });
-    }
-    
-    const email = params.email.toLowerCase().trim();
-    const token = params.token;
-    
-    Logger.log("Validating reset token for email: " + email);
-    
-    // Get user data
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const emailCol = headers.indexOf("email");
-    const resetTokenCol = headers.indexOf("reset_token");
-    const tokenExpiryCol = headers.indexOf("token_expiry");
-    
-    if (emailCol === -1 || resetTokenCol === -1 || tokenExpiryCol === -1) {
-      Logger.log("Token validation failed: Required columns missing");
-      return createJsonResponse({
-        success: false,
-        message: "System error: Required columns missing"
-      });
-    }
-    
-    // Find user with matching email
-    let userRow = -1;
-    let storedToken = '';
-    let tokenExpiry = null;
-    
-    for (let i = 1; i < data.length; i++) {
-      const storedEmail = String(data[i][emailCol]).toLowerCase().trim();
-      if (storedEmail === email) {
-        userRow = i;
-        storedToken = data[i][resetTokenCol];
-        tokenExpiry = data[i][tokenExpiryCol];
-        break;
+      // Count questions in conversations (actual usage frequency)
+      const faqCounts = {};
+      
+      // Get list of FAQs to match against
+      const faqData = faqSheet.getDataRange().getValues();
+      const faqHeaders = faqData[0];
+      const faqQuestionCol = faqHeaders.indexOf("question");
+      const faqIdCol = faqHeaders.indexOf("id");
+      
+      if (faqQuestionCol === -1) {
+        Logger.log("Error: FAQ question column missing");
+        throw new Error("FAQ question column missing");
       }
-    }
-    
-    if (userRow === -1) {
-      Logger.log("Token validation failed: Email not found - " + email);
-      return createJsonResponse({
-        success: false,
-        message: "No account found with this email address"
-      });
-    }
-    
-    // Check if token matches
-    if (!storedToken || storedToken !== token) {
-      Logger.log("Token validation failed: Invalid token");
-      return createJsonResponse({
-        success: false,
-        message: "Invalid or expired reset token"
-      });
-    }
-    
-    // Check if token has expired
-    if (!tokenExpiry) {
-      Logger.log("Token validation failed: No expiry time set");
-      return createJsonResponse({
-        success: false,
-        message: "Invalid or expired reset token"
-      });
-    }
-    
-    const expiryTime = new Date(tokenExpiry).getTime();
-    const currentTime = new Date().getTime();
-    
-    if (currentTime > expiryTime) {
-      Logger.log("Token validation failed: Token expired");
-      return createJsonResponse({
-        success: false,
-        message: "This reset link has expired. Please request a new one."
-      });
-    }
-    
-    // Token is valid
-    Logger.log("Token validation successful for email: " + email);
-    return createJsonResponse({
-      success: true,
-      message: "Token is valid"
-    });
-  } catch (error) {
-    Logger.log("ERROR in validateResetToken: " + error.toString());
-    return handleError(error, "validate_reset_token");
-  }
-}
-
-function handleResetPassword(params, sheet) {
-  try {
-    if (!params || !params.email || !params.token || !params.password) {
-      Logger.log("Reset password failed: Missing required parameters");
-      return createJsonResponse({
-        success: false,
-        message: "Missing required parameters"
-      });
-    }
-    
-    const email = params.email.toLowerCase().trim();
-    const token = params.token;
-    const newPassword = params.password;
-    
-    Logger.log("Handling password reset for email: " + email);
-    
-    // First validate the token
-    const validationResponse = validateResetToken(params, sheet);
-    const validationResult = JSON.parse(validationResponse.getContent());
-    
-    if (!validationResult.success) {
-      Logger.log("Reset password failed: Token validation failed");
-      return createJsonResponse({
-        success: false,
-        message: validationResult.message
-      });
-    }
-    
-    // Get user data
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const emailCol = headers.indexOf("email");
-    const passwordCol = headers.indexOf("password");
-    const resetTokenCol = headers.indexOf("reset_token");
-    const tokenExpiryCol = headers.indexOf("token_expiry");
-    const usernameCol = headers.indexOf("username");
-    
-    if (emailCol === -1 || passwordCol === -1) {
-      Logger.log("Reset password failed: Required columns missing");
-      return createJsonResponse({
-        success: false,
-        message: "System error: Required columns missing"
-      });
-    }
-    
-    // Find user with matching email
-    let userRow = -1;
-    let username = '';
-    
-    for (let i = 1; i < data.length; i++) {
-      const storedEmail = String(data[i][emailCol]).toLowerCase().trim();
-      if (storedEmail === email) {
-        userRow = i + 1; // +1 because sheets are 1-indexed
-        username = data[i][usernameCol];
-        break;
+      
+      // Create a map of FAQ questions for faster lookup
+      const faqMap = {};
+      for (let i = 1; i < faqData.length; i++) {
+        const question = faqData[i][faqQuestionCol];
+        if (question) {
+          const faqId = faqIdCol !== -1 ? faqData[i][faqIdCol] : `faq_${i}`;
+          faqMap[question.toLowerCase()] = {
+            id: faqId,
+            question: question,
+            count: 0
+          };
+        }
       }
+      
+      // Count occurrences of each FAQ in conversations
+      // We'll use a fuzzy matching approach to count related questions
+      for (let i = 1; i < conversationData.length; i++) {
+        const question = conversationData[i][questionCol];
+        if (!question) continue;
+        
+        // Only count recent conversations (last 30 days)
+        if (timestampCol !== -1) {
+          const timestamp = conversationData[i][timestampCol];
+          if (timestamp) {
+            let convDate;
+            if (timestamp instanceof Date) {
+              convDate = timestamp;
+            } else {
+              try {
+                convDate = new Date(timestamp);
+                if (isNaN(convDate.getTime())) continue; // Invalid date
+              } catch (e) {
+                continue; // Skip invalid timestamps
+              }
+            }
+            
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            if (convDate < thirtyDaysAgo) continue; // Skip older conversations
+          }
+        }
+        
+        // Check for exact or partial matches with FAQs
+        const normalizedQuestion = question.toLowerCase();
+        let matched = false;
+        
+        // First try exact match
+        if (faqMap[normalizedQuestion]) {
+          faqMap[normalizedQuestion].count++;
+          matched = true;
+          continue;
+        }
+        
+        // Then try fuzzy matching
+        for (const faqQuestion in faqMap) {
+          // Check if the conversation question contains the FAQ question or vice versa
+          if (normalizedQuestion.includes(faqQuestion) || faqQuestion.includes(normalizedQuestion)) {
+            faqMap[faqQuestion].count++;
+            matched = true;
+            break;
+          }
+          
+          // Check for word overlap (more than 50% of words match)
+          const questionWords = normalizedQuestion.split(/\s+/);
+          const faqWords = faqQuestion.split(/\s+/);
+          let matchCount = 0;
+          for (const word of questionWords) {
+            if (word.length > 3 && faqWords.includes(word)) { // Only count meaningful words
+              matchCount++;
+            }
+          }
+          const matchPercentage = questionWords.length > 0 ? matchCount / questionWords.length : 0;
+          if (matchPercentage >= 0.5) {
+            faqMap[faqQuestion].count++;
+            matched = true;
+            break;
+          }
+        }
+        
+        // If no match found, add to generic count
+        if (!matched) {
+          if (!faqCounts["Other Questions"]) {
+            faqCounts["Other Questions"] = { count: 0 };
+          }
+          faqCounts["Other Questions"].count++;
+        }
+      }
+      
+      // Convert the FAQ map to array and sort by count
+      const faqCountsArray = Object.values(faqMap)
+        .filter(item => item.count > 0)
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5); // Get top 5 FAQs
+      
+      // Populate FAQ performance chart data
+      if (faqCountsArray.length > 0) {
+        analytics.faqPerformance.labels = faqCountsArray.map(item => 
+          item.question.length > 20 ? item.question.substring(0, 20) + '...' : item.question
+        );
+        analytics.faqPerformance.data = faqCountsArray.map(item => item.count);
+      }
+      
+      Logger.log("FAQ performance data generated successfully: " + JSON.stringify(analytics.faqPerformance));
+    } catch (error) {
+      Logger.log("Error processing FAQ performance data: " + error.toString());
+      // Fall back to empty array rather than random numbers
+      analytics.faqPerformance.labels = [];
+      analytics.faqPerformance.data = [];
     }
     
-    if (userRow === -1) {
-      Logger.log("Reset password failed: Email not found - " + email);
-      return createJsonResponse({
-        success: false,
-        message: "No account found with this email address"
-      });
+    // Get actual feedback ratings
+    try {
+      const feedbackData = feedbackSheet.getDataRange().getValues();
+      const feedbackHeaders = feedbackData[0];
+      const feedbackTypeCol = feedbackHeaders.indexOf("feedbackType");
+      
+      // Count by feedback type
+      if (feedbackTypeCol !== -1) {
+        let positiveCount = 0;
+        let negativeCount = 0;
+        
+        for (let i = 1; i < feedbackData.length; i++) {
+          const feedbackType = feedbackData[i][feedbackTypeCol];
+          if (feedbackType === 'positive' || feedbackType === 'helpful') {
+            positiveCount++;
+          } else if (feedbackType === 'negative' || feedbackType === 'not_helpful') {
+            negativeCount++;
+          }
+        }
+        
+        analytics.ratings[0] = positiveCount;
+        analytics.ratings[1] = negativeCount;
+        
+        Logger.log("Feedback ratings data generated successfully: " + JSON.stringify(analytics.ratings));
+      }
+    } catch (error) {
+      Logger.log("Error processing feedback ratings data: " + error.toString());
     }
     
-    // Update password
-    sheet.getRange(userRow, passwordCol + 1).setValue(newPassword);
-    
-    // Clear token and expiry
-    if (resetTokenCol !== -1) {
-      sheet.getRange(userRow, resetTokenCol + 1).setValue("");
-    }
-    
-    if (tokenExpiryCol !== -1) {
-      sheet.getRange(userRow, tokenExpiryCol + 1).setValue("");
-    }
-    
-    // Log the activity
-    logActivity(username || email, "password_reset_success");
-    
-    // Return success
     return createJsonResponse({
       success: true,
-      message: "Your password has been successfully reset."
+      analytics: analytics
     });
   } catch (error) {
-    Logger.log("ERROR in handleResetPassword: " + error.toString());
-    return handleError(error, "reset_password");
+    Logger.log("Error in handleGetAnalytics: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error generating analytics: " + error.toString()
+    });
   }
 }

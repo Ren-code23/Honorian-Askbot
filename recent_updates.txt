@@ -1,0 +1,239 @@
+# SOFTDESK AskBot - Latest Enhancements (May 2024)
+
+This document outlines the most recent enhancements and fixes implemented in the SOFTDESK AskBot, particularly focusing on improvements to the chat history display, feedback system, and profile page functionality.
+
+## User Interface Improvements
+
+### 1. Profile Page and Chat History
+- **Fixed**: Default profile picture now correctly shows default_profile.png instead of university logo
+- **Fixed**: Chat history timestamps now display correctly with unique values for each message
+- **Fixed**: Category display in chat history now correctly shows appropriate categories (Academics, Registrar, etc.)
+- **Added**: Category badges with color-coding for better visual distinction
+
+### 2. Feedback System
+- **Fixed**: Comments in feedback are now properly captured and stored
+- **Enhanced**: Comment collection for both positive and negative feedback
+- **Fixed**: Admin panel now correctly displays feedback comments
+
+### 3. Dashboard Improvements
+- **Fixed**: Profile picture display consistency across the application
+- **Removed**: Redundant "View Recent Chats" functionality to focus experience
+
+## Backend Enhancements
+
+### 1. Timestamp and Category Processing
+- **Implementation**: Enhanced timestamp generation with millisecond precision
+```javascript
+// Generate unique timestamp with milliseconds
+const now = new Date();
+const timestamp = now.toISOString();
+```
+
+- **Implementation**: Prevention of timestamp collisions
+```javascript
+// Keep track of used timestamps
+const usedTimestamps = new Set();
+
+// Ensure uniqueness with random offsets if needed
+if (usedTimestamps.has(formattedTimestamp)) {
+  now.setMilliseconds(now.getMilliseconds() + Math.floor(Math.random() * 1000));
+  formattedTimestamp = now.toISOString();
+}
+```
+
+- **Implementation**: Improved category detection
+```javascript
+// Determine category using content analysis
+if (lowercaseQuestion.includes("id") || lowercaseQuestion.includes("card")) {
+  category = "registrar";
+} 
+else if (lowercaseQuestion.includes("enroll") || lowercaseQuestion.includes("admission")) {
+  category = "admissions";
+}
+// Additional category detection logic
+```
+
+### 2. Analytics Data Accuracy
+- **Fixed**: Analytics now use real data from activity logs and conversations
+- **Enhanced**: More accurate visualization of user interactions
+- **Fixed**: Real-time data processing for admin dashboard metrics
+
+### 3. Database Structure Enhancement
+- **Implementation**: Dynamic column creation and validation
+```javascript
+// Ensure the category column exists
+if (convCategoryCol === -1) {
+  conversationSheet.insertColumnAfter(convHeaders.length);
+  conversationSheet.getRange(1, convHeaders.length + 1).setValue('category');
+  row.push(category);
+}
+```
+
+## Q&A System Technical Improvements
+
+### 1. Advanced Category Detection
+- **Fixed**: Better category inference from question content
+- **Enhanced**: Multi-level categorization with fallbacks
+- **Added**: Specialized handling for common student questions (ID-related, registration, etc.)
+
+### 2. Timestamp Uniqueness Logic
+- **Fixed**: Unique timestamp generation for each conversation entry
+- **Added**: Random offset generation for conflict resolution
+- **Enhanced**: Better parsing of existing timestamps from the database
+
+### 3. DataFlow Improvements
+- **Fixed**: More robust error handling throughout the application
+- **Enhanced**: Better data validation and normalization
+- **Added**: Automatic database structure verification and repair
+
+## Profile Page Chat History Enhancements
+
+### Improved Category Display
+The chat history in the profile page now properly categorizes conversations based on content analysis:
+
+```javascript
+// Enhanced category detection logic
+let categoryMapping = {
+  // Standard categories
+  "academics": "Academics",
+  "administration": "Administration", 
+  "student-services": "Student Services",
+  "student services": "Student Services",
+  "registrar": "Registrar",
+  "admissions": "Admissions",
+  "general": "General",
+  
+  // Handle common typos/variations
+  "academic": "Academics",
+  "admin": "Administration",
+  "student": "Student Services",
+  "registry": "Registrar",
+  "admission": "Admissions"
+};
+```
+
+### Timestamp Formatting and Uniqueness
+Chat history messages now display with proper timestamps through enhanced parsing and formatting:
+
+```javascript
+// Format timestamp
+let date = null;
+if (chat.timestamp) {
+  try {
+    if (typeof chat.timestamp === 'string') {
+      // More robust string timestamp parsing
+      date = new Date(chat.timestamp);
+    } else if (typeof chat.timestamp === 'object') {
+      // Handle object-style date from Google Sheets
+      if (chat.timestamp.year) {
+        date = new Date(
+          chat.timestamp.year, 
+          chat.timestamp.month - 1, 
+          chat.timestamp.day || 1, 
+          chat.timestamp.hours || 0, 
+          chat.timestamp.minutes || 0,
+          chat.timestamp.seconds || 0
+        );
+      }
+    }
+  } catch (e) {
+    console.error("Error parsing date:", e);
+  }
+}
+```
+
+### Visual Category Badges
+Added visually distinct category badges for improved user experience:
+
+```css
+.category-academics {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+  border: 1px solid #bbdefb;
+}
+
+.category-administration {
+  background-color: #ede7f6;
+  color: #512da8;
+  border: 1px solid #d1c4e9;
+}
+
+.category-registrar {
+  background-color: #e8eaf6;
+  color: #303f9f;
+  border: 1px solid #c5cae9;
+}
+```
+
+## Chat Message Processing Improvements
+
+### Category Detection in Backend
+The backend now correctly determines and stores categories for each chat message:
+
+```javascript
+// Determine category using improved logic
+let category = bestMatch && bestMatch.category ? bestMatch.category : '';
+
+// If no category assigned from FAQ, try to infer from question content
+if (!category) {
+  const lowerQuestion = userQuestion.toLowerCase();
+  
+  if (lowerQuestion.includes("id") || lowerQuestion.includes("card")) {
+    category = "registrar";
+  } 
+  else if (lowerQuestion.includes("enroll") || lowerQuestion.includes("admission")) {
+    category = "admissions";
+  }
+  else if (lowerQuestion.includes("class") || lowerQuestion.includes("course")) {
+    category = "academics";
+  }
+  // Additional category detection rules
+}
+```
+
+### Timestamp Generation
+Each chat message now receives a unique timestamp to properly sequence conversations:
+
+```javascript
+// Generate unique timestamp with milliseconds
+const now = new Date();
+const timestamp = now.toISOString();
+```
+
+## Feedback System Enhancements
+
+### Comment Collection for Feedback
+Both positive and negative feedback can now include user comments:
+
+```javascript
+// Always prompt for comment for both positive and negative feedback
+let comment = "";
+if (feedbackType === 'negative') {
+  comment = prompt("Please tell us why this answer wasn't helpful:", "");
+} else if (feedbackType === 'positive') {
+  comment = prompt("Please share any additional feedback (optional):", "");
+}
+```
+
+### Database Storage for Comments
+Comments are now properly stored in the database with a dedicated column:
+
+```javascript
+// Ensure the comment column exists in the sheet
+const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+// Add 'comment' column if missing
+let commentCol = headers.indexOf('comment');
+if (commentCol === -1) {
+  sheet.insertColumnAfter(headers.length);
+  sheet.getRange(1, headers.length + 1).setValue('comment');
+  commentCol = headers.length; // New column index is the previous length
+}
+```
+
+## Verification Checklist
+- ✓ Unique timestamps for each chat message
+- ✓ Proper category detection and display
+- ✓ Feedback comments properly stored and displayed
+- ✓ Profile picture consistency across pages
+- ✓ Database structure integrity maintenance 

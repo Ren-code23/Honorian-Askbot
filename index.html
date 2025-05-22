@@ -1056,8 +1056,8 @@
     <header>
         <div class="header-content">
             <div class="logo-container">
-                <!-- Temporary: Using DHVSU logo until Pampanga State University branding is finalized -->
-                <img src="Don_Honorio_Ventura_State_University_logo.png" alt="University Logo" class="logo">
+                <!-- Logo for Pampanga State University -->
+                <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Pampanga State University Logo" class="logo">
                 <div class="title-container">
                     <div class="university-name">Pampanga State University</div>
                     <div class="tagline">Honorian AskBot</div>
@@ -1244,65 +1244,61 @@
             messageContainer.className = '';
             messageContainer.style.display = 'block';
             
-            // Use FormData for compatibility with Apps Script
-            const formData = new FormData();
-            formData.append('action', 'connectionTest');
-            formData.append('test', 'connection');
+            // Function to display messages safely
+            function displayMessage(container, message, type) {
+                container.textContent = message;
+                container.className = type || '';
+                container.style.display = 'block';
+            }
             
-            // Set a timeout for the request
-            const timeoutDuration = 10000; // 10 seconds
-            
-            // Create a timeout promise
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => {
-                    reject(new Error('Connection timed out'));
-                }, timeoutDuration);
-            });
-            
-            // Create fetch promise
-            const fetchPromise = fetch(SCRIPT_URL, { 
-                method: 'POST',
-                body: formData
-            });
-            
-            // Race between fetch and timeout
-            Promise.race([fetchPromise, timeoutPromise])
-                .then(res => {
-                    if (!res.ok) {
-                        throw new Error(`HTTP error! Status: ${res.status}`);
-                    }
-                    return res.text();
-                })
-                .then(txt => {
-                    console.log('Backend connectivity test response:', txt);
-                    
-                    try {
-                        // Try to parse as JSON (might be JSON or plain text)
-                        const response = JSON.parse(txt);
-                        if (response.success) {
-                            // Connection successful
-                            console.log('Backend connection successful:', response);
-                            messageContainer.style.display = 'none';
-                            return;
-                        }
-                    } catch (e) {
-                        // Not valid JSON, continue with text analysis
-                    }
-                    
-                    // Check if response contains error or is too short
-                    if (txt.toLowerCase().includes('error') || txt.length < 5) {
-                        showMessage('message-container', '⚠️ Server connection issue. Please refresh the page or try again later.', 'error');
-                        console.error('Backend connection issue. Response:', txt);
-                    } else {
-                        // Connection seems OK
-                        console.log('Backend connectivity OK:', txt);
+            // Try to proceed anyway after a delay even if connection fails
+            setTimeout(() => {
+                if (messageContainer.textContent === 'Checking server connection...') {
+                    displayMessage(messageContainer, '⚠️ Connection check timed out. You may still try to log in.', 'warning');
+                    setTimeout(() => {
                         messageContainer.style.display = 'none';
-                    }
+                    }, 3000);
+                }
+            }, 5000);
+            
+            // Use FormData for compatibility with Apps Script
+            try {
+                const formData = new FormData();
+                formData.append('action', 'ping'); // Try a simpler action name
+                
+                // Set a timeout for the request
+                fetch(SCRIPT_URL, { 
+                    method: 'POST',
+                    body: formData,
+                    timeout: 8000
+                })
+                .then(res => {
+                    return res.text().then(txt => {
+                        console.log('Backend connectivity test response:', txt);
+                        
+                        try {
+                            // Hide the message anyway - connection worked even if action not recognized
+                            messageContainer.style.display = 'none';
+                        } catch (e) {
+                            console.error('Error handling response:', e);
+                            displayMessage(messageContainer, '⚠️ Connection check completed with warnings. You may proceed.', 'warning');
+                            setTimeout(() => {
+                                messageContainer.style.display = 'none';
+                            }, 3000);
+                        }
+                    });
                 })
                 .catch(err => {
                     console.error('Backend connection error:', err);
-                    showMessage('message-container', '⚠️ Cannot connect to the server. Please check your internet connection or contact administrator.', 'error');
+                    displayMessage(messageContainer, '⚠️ Cannot connect to server. You may still try to log in.', 'error');
+                    setTimeout(() => {
+                        messageContainer.style.display = 'none';
+                    }, 3000);
                 });
+            } catch (e) {
+                console.error('Error during connection check:', e);
+                messageContainer.style.display = 'none';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -1344,22 +1340,17 @@
 
             function showMessage(containerId, message, type) {
                 const container = document.getElementById(containerId);
+                if (!container) {
+                    console.error('Message container not found:', containerId);
+                    return;
+                }
                 container.textContent = message;
-                container.className = type;
+                container.className = type || '';
                 container.style.display = 'block';
                 
-                container.classList.add('slide-in');
-                
+                // Auto-hide after 5 seconds
                 setTimeout(() => {
-                    container.classList.remove('slide-in');
-                }, 500);
-
-                setTimeout(() => {
-                    container.classList.add('slide-out');
-                    setTimeout(() => {
-                        container.style.display = 'none';
-                        container.classList.remove('slide-out');
-                    }, 500);
+                    container.style.display = 'none';
                 }, 5000);
             }
 

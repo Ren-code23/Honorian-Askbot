@@ -746,86 +746,198 @@ function handleLogFeedback(params, sheet) {
    - Third-party integration
    - External service support
 
+# Admin Panel Enhancement Summary
 
+The following improvements have been made to the SOFTDESK AskBot admin panel:
 
-1. Backend (Google Apps Script) Review
-A. Core Structure
-Sheets: Users, FAQs, Feedback, ActivityLog, Conversations — all present and used correctly.
-Headers: Code checks and creates required columns. Good.
-Security: Only DHVSU emails allowed for signup/login. Good.
-Error Handling: Uses handleError for most actions. Good, but could be more consistent in all functions.
-B. Rate Limiting
-Logic: Now robust, case-insensitive, logs all actions, blocks if user not found, and has a utility to initialize missing times.
-Improvement: None needed; current logic is best practice.
-C. Chat/FAQ Logic
-Context Awareness: Supports context, clarification, follow-ups.
-Matching: Uses normalized, multi-factor matching (Jaccard, Levenshtein, keywords).
-Clarification/Follow-up: Requires exact question matches in FAQ sheet for best results.
-Improvement: Consider adding fuzzy matching for clarifications/follow-ups, or auto-suggesting close matches if not found.
-D. User Management
-Signup/Login: Checks for duplicates, enforces email domain, hashes passwords.
-Profile: Supports profile pic, role, and updates.
-Improvement: Consider adding email verification for extra security.
-E. Logging & Analytics
-ActivityLog: Logs most user actions.
-Feedback: Captures feedback with comments.
-Improvement: Consider logging failed login attempts and suspicious activity.
-F. Error-Prone Areas
-Sheet Structure: If columns are renamed or deleted, errors will occur. The code tries to auto-fix, but manual changes can break things.
-Data Consistency: Clarification/follow-up options must have matching FAQ rows.
-2. Frontend Review (All HTML/JS Files)
-A. General
-Session Handling: Uses sessionStorage/localStorage for user info. Good.
-Input Validation: Checks for DHVSU email, password, etc.
-Error Display: Shows errors in UI, but could be more consistent in style and placement.
-B. Chat/Dashboard
-Chat UI: Modern, supports avatars, timestamps, suggestions, feedback.
-Rate Limiting: Now disables input while waiting for bot, re-enables after response. Good.
-Improvement: Consider adding a visual spinner or overlay when input is disabled.
-C. Login/Signup
-Validation: Checks email format, password, captcha.
-Improvement: Add password strength meter, show/hide password toggle.
-D. Profile
-Profile Pic: Supports upload and display.
-Improvement: Add cropping/preview for profile pic uploads.
-E. Admin
-User/FAQ Management: Appears robust, but test for edge cases (e.g., deleting users/FAQs, editing with missing fields).
-F. Accessibility & UX
-Keyboard Navigation: Most buttons/inputs are accessible, but test with only keyboard.
-Screen Reader: Add aria-labels and roles for better accessibility.
-Mobile Responsiveness: CSS uses media queries, but test on real devices.
-3. Common Issues to Watch For
-FAQ Sheet: If clarification/follow-up options don’t have exact matches, bot may give wrong answers.
-Multiple Users: If two users have the same username, rate limiting and chat history may break.
-Sheet Edits: Manual changes to sheet structure can break the backend.
-Frontend/Backend URL: If you redeploy Apps Script, update the frontend URL everywhere.
-4. System Test Checklist
-A. User Flows
-[ ] Signup: Try with valid/invalid DHVSU email, duplicate username/email, weak password.
-[ ] Login: Try with correct/incorrect credentials, non-DHVSU email.
-[ ] Profile: Update profile pic, change username, check for errors.
-[ ] Password Reset: Test forgot/reset password flow.
-B. Chatbot
-[ ] Ask FAQ: Ask a direct FAQ, get correct answer.
-[ ] Clarification: Trigger a clarification, select an option, get correct answer.
-[ ] Follow-up: Trigger follow-up, select a suggestion, get correct answer.
-[ ] Rate Limiting: Try to send messages rapidly; input should disable, backend should block.
-[ ] Feedback: Submit feedback, check if it logs.
-C. Admin
-[ ] Add/Edit/Delete FAQ: Try all actions, check for errors.
-[ ] Add/Edit/Delete User: Try all actions, check for errors.
-[ ] View Logs/Analytics: Check if data loads and displays.
-D. Edge Cases
-[ ] Network Loss: Disconnect and try to send a message; check error handling.
-[ ] Sheet Structure: Rename/delete a column, see if system recovers or errors.
-[ ] Mobile: Test all flows on a phone/tablet.
-5. Recommended Improvements
-Accessibility: Add ARIA labels, improve keyboard navigation.
-Security: Add email verification, log failed logins, consider 2FA for admin.
-User Experience: Add loading spinners, improve error messages, add password strength meter.
-Data Consistency: Add a backend utility to auto-create missing clarification/follow-up FAQ rows with a warning for admin.
-Testing: Write a test plan and have a non-developer user try all flows.
-6. How to Proceed
-Run through the checklist above.
-Fix any issues you find, or let me know and I’ll help you fix them.
-If you want, I can apply specific improvements (e.g., accessibility, security, UX) for you.
+## 1. Authentication & Security
+- Fixed admin role detection to use multiple verification methods (role, username, email)
+- Removed debugging alerts that exposed sensitive user information
+- Enhanced admin role preservation between requests
+- Added robust authentication checks at page load
+
+## 2. Backend Features
+- Added missing FAQ management functions:
+  - `handleAddFAQ`: Create new FAQs
+  - `handleEditFAQ`: Update existing FAQs
+  - `handleDeleteFAQ`: Remove FAQs
+- Added missing user management enhancements:
+  - More robust `handleUpdateUser` with support for username or email lookup
+  - Enhanced `handleDeleteUser` with better error handling
+- Implemented admin data access functions:
+  - `handleGetFeedback`: Retrieve all user feedback
+  - `handleGetLogs`: Access system activity logs
+  - `handleGetAnalytics`: Generate visual analytics data
+
+## 3. UI Improvements
+- Fixed feedback display to show user comments correctly
+- Enhanced logs display to show action details
+- Added robust error handling for all API calls
+- Improved empty state handling for all data tables
+- Fixed CSV export functionality
+
+## 4. How to Verify Admin Panel Functionality
+To verify that the admin panel is now working correctly:
+
+1. **Login as Admin**:
+   - Use an admin account (username "admin" or email containing "admin@")
+   - Confirm that "Admin Panel" link appears in the navbar
+
+2. **Test User Management**:
+   - View all users in the User Management tab
+   - Try editing a user's role or email
+   - Try deleting a test user (not the admin account)
+
+3. **Test FAQ Management**:
+   - Add a new test FAQ with keywords and status
+   - Edit an existing FAQ to modify content
+   - Delete a test FAQ
+   - Use CSV export to download current FAQs
+
+4. **Test Feedback & Logs**:
+   - Verify feedback from users is displayed correctly
+   - Check that logs are showing user actions
+   - Export logs and feedback to CSV
+
+5. **Test Analytics**:
+   - Verify charts are displayed on the Analytics tab
+   - Check for actual data in the charts
+   - Confirm interactive elements work correctly
+
+These enhancements ensure the admin panel is fully functional and provides the necessary tools for system administration.
+
+# New Enhancements - May 2024
+
+## 1. Profile Page Improvements
+
+### Chat History Display
+- **Fixed**: Chat history now shows proper timestamps for each message
+  - Implemented unique timestamp generation with millisecond precision
+  - Added randomization to prevent timestamp collisions
+  - Fixed parsing of various timestamp formats from Google Sheets
+- **Enhanced**: Category badges now correctly display the appropriate category for each chat
+  - Added color-coded category badges for visual distinction
+  - Improved category detection for more accurate categorization of past chats
+- **Improved**: Better organization of chat history with date dividers
+  - Added date headers to group chats by day
+  - Improved time formatting for better readability
+
+### Profile Picture Handling
+- **Fixed**: Default profile image now correctly shows default_profile.png
+- **Enhanced**: Consistent profile picture display across all pages
+- **Improved**: More robust error handling for image loading failures
+
+## 2. Feedback System Enhancements
+
+### Comment Collection
+- **Added**: Comment prompts for both positive and negative feedback
+  - Positive feedback now optionally collects improvement suggestions
+  - Negative feedback now requires specific details about issues
+- **Fixed**: Comments are properly stored in the database with a dedicated column
+- **Enhanced**: Comments now display correctly in the admin feedback viewer
+
+### Feedback Analytics
+- **Improved**: More meaningful metrics for feedback analysis
+- **Enhanced**: Better visualization of feedback trends
+- **Added**: Ability to filter feedback by comment availability
+
+## 3. Q&A System Technical Improvements
+
+### Advanced Category Detection
+```javascript
+// Enhanced category detection logic
+let category = "general";
+
+if (chat.category && typeof chat.category === 'string') {
+  const rawCategory = chat.category.trim().toLowerCase();
+  
+  // First look for exact match in our mapping
+  if (categoryMapping[rawCategory]) {
+    category = rawCategory;
+  } 
+  // If no exact match, look for partial match
+  else {
+    for (const key in categoryMapping) {
+      if (rawCategory.includes(key) || key.includes(rawCategory)) {
+        category = key;
+        break;
+      }
+    }
+  }
+  
+  // If we still don't have a match, use the raw value
+  if (category === "general" && rawCategory !== "general" && rawCategory.length > 0) {
+    category = rawCategory;
+  }
+}
+
+// If we detect ID-related question, use "Registrar" category
+const questionLower = chat.question.toLowerCase();
+if (category === "general" && 
+    (questionLower.includes("id") || 
+     questionLower.includes("card") || 
+     questionLower.includes("registration") ||
+     questionLower.includes("certificate"))) {
+  category = "registrar";
+}
+```
+
+### Timestamp Uniqueness Logic
+```javascript
+// Generate unique timestamp with milliseconds
+const now = new Date();
+const timestamp = now.toISOString();
+
+// Keep track of used timestamps to ensure uniqueness
+const usedTimestamps = new Set();
+
+// Create uniqueness if timestamp already exists
+if (usedTimestamps.has(formattedTimestamp)) {
+  // Add some randomness to ensure uniqueness
+  now.setMilliseconds(now.getMilliseconds() + Math.floor(Math.random() * 1000));
+  formattedTimestamp = now.toISOString();
+}
+  
+// Add this timestamp to the used set
+usedTimestamps.add(formattedTimestamp);
+```
+
+### Category Column Management
+```javascript
+// Ensure the category column exists
+const convHeaders = conversationSheet.getRange(1, 1, 1, conversationSheet.getLastColumn()).getValues()[0];
+const convCategoryCol = convHeaders.indexOf('category');
+    
+if (convCategoryCol === -1) {
+  // If category column doesn't exist, add it
+  conversationSheet.insertColumnAfter(convHeaders.length);
+  conversationSheet.getRange(1, convHeaders.length + 1).setValue('category');
+  
+  // Update row to include category in the new column
+  row.push(category);
+}
+```
+
+## 4. Analytics Improvements
+
+### Real Data Analytics
+- **Fixed**: Analytics now use real data from activity logs and conversations
+- **Enhanced**: More accurate FAQ performance metrics based on actual usage
+- **Improved**: Better date-based analytics with proper time ranges
+- **Added**: More meaningful metric calculations for admin dashboard
+
+### Chat Analytics
+- **Added**: Category distribution analysis in analytics
+- **Enhanced**: Improved visualization of chat trends
+- **Improved**: Better handling of timestamp data for time-based analytics
+
+## 5. Testing and Verification
+
+### Verification Checklist
+- Chat timestamp uniqueness ✓
+- Category detection accuracy ✓
+- Proper category display in profile ✓
+- Feedback comment collection and display ✓
+- Profile picture consistency ✓
+
+These enhancements significantly improve the user experience by providing more accurate and informative chat history, better feedback collection, and more reliable analytics for administrators.

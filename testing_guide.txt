@@ -1,0 +1,304 @@
+# SOFTDESK AskBot Testing Guide and Checklist
+
+This document provides a comprehensive testing guide for the SOFTDESK AskBot, covering both student and administrator perspectives. Please follow the steps sequentially and mark each test as PASS or FAIL in your documentation.
+
+## SECTION A: STUDENT USER PERSPECTIVE
+
+### A1. ACCOUNT CREATION AND AUTHENTICATION
+
+#### A1.1. Signup Process
+1. Open the AskBot in a web browser (index.html)
+2. Click "Sign Up" button
+3. Verify CAPTCHA appears correctly
+4. Try submitting with invalid email (not @dhvsu.edu.ph) - should show error
+5. Try submitting with short password (< 6 chars) - should show error
+6. Try submitting with non-matching passwords - should show error
+7. Complete signup form with valid @dhvsu.edu.ph email and valid password
+8. Verify successful account creation message
+
+#### A1.2. Login Process
+1. Click "Login" on the main page
+2. Try submitting with incorrect credentials - should show error
+3. Submit with correct credentials created in A1.1
+4. Verify successful login and redirection to dashboard
+
+#### A1.3. Password Recovery
+1. Click "Forgot Password" on login page
+2. Enter the email address used in A1.1
+3. Check email for password reset link
+4. Open the reset link
+5. Enter new password
+6. Verify successful password change message
+7. Login with the new password
+8. Verify successful login
+
+### A2. CHAT AND FAQ FEATURES
+
+#### A2.1. Basic Chat Functionality
+1. On the dashboard, locate the chat interface
+2. Type a general question (e.g., "What are the enrollment requirements?")
+3. Verify response appears within 3 seconds
+4. Verify response contains relevant information
+5. Look for suggestions or follow-up questions
+6. Click on one of the suggestions
+7. Verify a new relevant response appears
+
+#### A2.2. Category-Specific Questions
+Test different category questions and verify correct categorization:
+
+1. Academic question: "What programs are offered in the College of Engineering?"
+2. Registrar question: "How do I get my ID card?"
+3. Admissions question: "What are the admission requirements for freshmen?"
+4. Administration question: "Who is the university president?"
+5. Student services question: "How can I apply for a scholarship?"
+
+#### A2.3. Feedback System
+1. After receiving an answer, click the "Helpful" button
+2. Verify prompt for optional feedback appears
+3. Submit feedback with a comment
+4. Ask another question, then click "Not Helpful"
+5. Verify prompt for comment appears (required)
+6. Submit feedback with reason why not helpful
+
+### A3. USER PROFILE MANAGEMENT
+
+#### A3.1. Profile Page Access and Display
+1. Click on Profile link in the navigation bar
+2. Verify profile page loads with your username and email
+3. Verify any default profile picture is displaying correctly
+
+#### A3.2. Profile Information Management
+1. Change username to a new valid username (at least 5 characters)
+2. Verify success message
+3. Upload a profile picture (or URL)
+4. Verify profile picture updates correctly
+5. Verify the same profile picture appears in the navbar
+
+#### A3.3. Chat History Review
+1. On profile page, locate the chat history section
+2. Verify the recent chats display correctly (questions and answers)
+3. Verify timestamps are showing correctly (each message has unique timestamp)
+4. Verify categories are correctly displayed (with appropriate color badges)
+5. Click "View All" to see complete chat history
+6. Verify older chats are visible with correct categorization
+
+## SECTION B: ADMINISTRATOR PERSPECTIVE
+
+### B1. ADMIN ACCESS AND AUTHENTICATION
+
+#### B1.1. Admin Login
+1. Login with administrator credentials
+2. Verify "Admin Panel" link appears in the navigation
+3. Click on "Admin Panel"
+4. Verify successful access to admin dashboard
+
+### B2. USER MANAGEMENT
+
+#### B2.1. View and Search Users
+1. Navigate to the "User Management" tab in admin panel
+2. Verify list of users loads correctly with all columns
+3. Search for a specific user by email or username
+4. Verify search results filter correctly
+
+#### B2.2. User Editing
+1. Locate a test user (not your admin account)
+2. Click "Edit" button for that user
+3. Change the user's role from "student" to "admin"
+4. Save changes
+5. Verify changes are reflected in the user list
+6. Change role back to "student"
+7. Verify changes are saved
+
+#### B2.3. User Deletion
+1. Locate a test user (not your admin account)
+2. Click "Delete" button for that user
+3. Confirm deletion prompt
+4. Verify user is removed from the list
+
+### B3. FAQ MANAGEMENT
+
+#### B3.1. Add New FAQ
+1. Navigate to "FAQ Management" tab
+2. Click "Add New FAQ" button
+3. Complete all fields:
+   - Question
+   - Answer
+   - Keywords (comma separated)
+   - Category (select appropriate)
+   - Status (approved)
+   - Priority (1-5)
+4. Save the FAQ
+5. Verify new FAQ appears in the list
+
+#### B3.2. Edit Existing FAQ
+1. Locate the FAQ created in B3.1
+2. Click "Edit" button
+3. Modify answer and keywords
+4. Save changes
+5. Verify changes are reflected in the FAQ list
+
+#### B3.3. Delete FAQ
+1. Locate the FAQ created in B3.1
+2. Click "Delete" button
+3. Confirm deletion prompt
+4. Verify FAQ is removed from the list
+
+#### B3.4. Test Added/Edited FAQ
+1. Go back to chat interface (dashboard)
+2. Ask a question related to the FAQ added in B3.1
+3. Verify the updated answer appears correctly
+
+### B4. FEEDBACK REVIEW
+
+#### B4.1. Access Feedback
+1. Navigate to "Feedback" tab in admin panel
+2. Verify list of feedback entries with all columns displays
+3. Verify both "Helpful" and "Not Helpful" feedback appears
+4. Verify the comment column shows user comments
+
+#### B4.2. Filter Feedback
+1. Use search/filter option to show only negative feedback
+2. Verify only "Not Helpful" entries are displayed
+3. Filter for feedback containing specific text in comments
+4. Verify results match the search criteria
+
+### B5. ACTIVITY LOGS
+
+#### B5.1. Log Review
+1. Navigate to "Activity Logs" tab in admin panel
+2. Verify logs display with user, action, timestamp columns
+3. Verify your recent login and other actions appear in the logs
+4. Use search/filter options to find specific activity types
+5. Verify filtering works correctly
+
+### B6. ANALYTICS DASHBOARD
+
+#### B6.1. Analytics View
+1. Navigate to the "Analytics" tab in admin panel
+2. Verify charts and metrics load correctly
+3. Verify User Activity chart displays data
+4. Verify FAQ Performance metrics are shown
+5. Verify Feedback Ratings chart displays properly
+6. Ensure real data (not placeholder) is being displayed
+
+## SECTION C: CROSS-CUTTING CONCERNS
+
+### C1. RESPONSIVENESS AND UI
+
+#### C1.1. Mobile Responsiveness
+1. Open the AskBot on a mobile device or using browser developer tools mobile view
+2. Test login, dashboard, chat, and profile pages
+3. Verify all content is appropriately sized and usable
+4. Verify navigation works correctly on small screens
+
+#### C1.2. Browser Compatibility
+1. Test the application in at least two different browsers (Chrome, Firefox, Safari, Edge)
+2. Verify consistent functionality and appearance across browsers
+
+### C2. ERROR HANDLING
+
+#### C2.1. Network Error Handling
+1. Temporarily disconnect from the internet
+2. Perform an action requiring server communication
+3. Verify appropriate error message appears
+4. Reconnect to the internet
+5. Verify functionality resumes correctly
+
+#### C2.2. Input Validation
+1. Test various forms with invalid inputs (special characters, excessively long text, etc.)
+2. Verify appropriate validation messages appear
+3. Verify system prevents submission of invalid data
+
+## COMPLETE TESTING CHECKLIST
+
+### Student Features
+- [ ] Signup with @dhvsu.edu.ph email
+- [ ] Login with correct credentials
+- [ ] Password reset via email
+- [ ] Ask general questions in chat
+- [ ] Receive relevant answers
+- [ ] Submit positive feedback with comments
+- [ ] Submit negative feedback with comments
+- [ ] View and update profile information
+- [ ] Upload/change profile picture
+- [ ] View chat history with correct timestamps
+- [ ] Verify category badges in chat history
+- [ ] Test different category questions
+- [ ] Use follow-up suggestions
+- [ ] Logout successfully
+
+### Admin Features
+- [ ] Login as admin
+- [ ] Access admin panel
+- [ ] View all users
+- [ ] Search for specific users
+- [ ] Edit user role
+- [ ] Delete test user
+- [ ] Add new FAQ
+- [ ] Edit existing FAQ
+- [ ] Delete FAQ
+- [ ] Test FAQs in chat interface
+- [ ] View feedback submissions with comments
+- [ ] Filter feedback by type
+- [ ] Review activity logs
+- [ ] View analytics dashboard with real data
+
+### Technical Verification
+- [ ] Unique timestamps for each chat message
+- [ ] Proper category assignment for questions
+- [ ] Feedback comments stored and displayed
+- [ ] Profile pictures display consistently
+- [ ] Mobile responsiveness
+- [ ] Cross-browser compatibility
+- [ ] Error handling for network issues
+- [ ] Form validation for all inputs
+
+## Special Test Cases
+
+### 1. Category Detection Test
+Ask these questions and verify they are categorized correctly:
+- "How do I get a new ID?" (should be Registrar)
+- "When is enrollment for the new semester?" (should be Admissions)
+- "What courses are required for Computer Science?" (should be Academics)
+- "Who is the dean of Engineering?" (should be Administration)
+- "How do I apply for a scholarship?" (should be Student Services)
+
+### 2. Timestamp Uniqueness Test
+- Send 3-4 questions in quick succession
+- Check profile page chat history
+- Verify each message has a unique timestamp (not identical times)
+
+### 3. Feedback Comment Test
+- Provide positive feedback with detailed comment
+- Provide negative feedback with detailed comment
+- Check in admin panel that both comments appear correctly
+
+### 4. Profile Picture Test
+- Upload a profile picture
+- Verify it appears in:
+  - Profile page
+  - Navbar
+  - Any other locations where user avatar is displayed
+
+### 5. Admin Role Test
+- Change a test user to admin role
+- Log in as that user
+- Verify admin panel access works
+- Change back to student role
+- Verify admin panel access is removed
+
+## Issue Reporting Instructions
+
+If any test fails, please document the following information:
+1. Test ID and description
+2. Expected behavior
+3. Actual behavior
+4. Browser and device used
+5. Screenshots (if applicable)
+6. Steps to reproduce the issue
+
+Submit all testing results and issues to the project lead for review.
+
+---
+
+For any questions or clarification about testing procedures, please contact the development team. 

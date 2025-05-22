@@ -344,48 +344,56 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.85rem;
-            color: #888;
-            padding-top: 0.8rem;
+            margin-top: 8px;
+            padding-top: 5px;
             border-top: 1px solid #f0f0f0;
         }
         .chat-time {
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
+            color: #777;
+            font-size: 12px;
+            margin-right: 10px;
         }
         .chat-time i {
             font-size: 0.9rem;
         }
         .chat-category {
-            padding: 0.2em 0.6em;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: #f0f0f0;
+            color: #333;
         }
         .category-academics {
-            background: rgba(76, 175, 80, 0.1);
-            color: #2e7d32;
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #bbdefb;
         }
         .category-administration {
-            background: rgba(33, 150, 243, 0.1);
-            color: #1565c0;
+            background-color: #ede7f6;
+            color: #512da8;
+            border: 1px solid #d1c4e9;
         }
         .category-student-services {
-            background: rgba(156, 39, 176, 0.1);
-            color: #7b1fa2;
+            background-color: #e8f5e9;
+            color: #1b5e20;
+            border: 1px solid #c8e6c9;
         }
         .category-registrar {
-            background: rgba(255, 152, 0, 0.1);
-            color: #ef6c00;
+            background-color: #e8eaf6;
+            color: #303f9f;
+            border: 1px solid #c5cae9;
         }
         .category-admissions {
-            background: rgba(244, 67, 54, 0.1);
-            color: #c62828;
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+            border: 1px solid #e1bee7;
         }
         .category-general {
-            background: rgba(128, 0, 0, 0.1);
-            color: var(--dhvsu-maroon);
+            background-color: #f5f5f5;
+            color: #424242;
+            border: 1px solid #e0e0e0;
         }
         .chat-feedback {
             position: absolute;
@@ -577,8 +585,9 @@
                             navbarAvatar.src = data.profile.profilePic;
                             sessionStorage.setItem('profilePic', data.profile.profilePic);
                         } else {
-                            setProfilePicFromCache();
+                            profilePic.src = 'default_profile.png';
                             navbarAvatar.src = 'default_profile.png';
+                            sessionStorage.setItem('profilePic', 'default_profile.png');
                         }
                         // Stats
                         const dateCreated = new Date(data.profile.dateCreated);
@@ -696,22 +705,41 @@
                         chatItem.className = 'chat-item';
                         
                         // Format timestamp
-                        let date = chat.timestamp ? new Date(chat.timestamp) : null;
-                        let isValidDate = date && !isNaN(date.getTime());
-                        const timeString = isValidDate ? date.toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                        }) : '—';
-                        const dateString = isValidDate ? date.toLocaleDateString([], { 
-                            weekday: 'short',
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                        }) : '';
+                        let date = null;
+                        if (chat.timestamp) {
+                            try {
+                                if (typeof chat.timestamp === 'string') {
+                                    // More robust string timestamp parsing
+                                    date = new Date(chat.timestamp);
+                                } else if (typeof chat.timestamp === 'object') {
+                                    // Handle object-style date from Google Sheets
+                                    if (chat.timestamp.year) {
+                                        date = new Date(
+                                            chat.timestamp.year, 
+                                            chat.timestamp.month - 1, 
+                                            chat.timestamp.day || 1, 
+                                            chat.timestamp.hours || 0, 
+                                            chat.timestamp.minutes || 0,
+                                            chat.timestamp.seconds || 0
+                                        );
+                                    }
+                                }
+                            } catch (e) {
+                                console.error("Error parsing date:", e);
+                            }
+                        }
+                        
+                        // Use current date if timestamp is invalid
+                        if (!date || isNaN(date.getTime())) {
+                            console.log("Invalid timestamp found, using current date");
+                            date = new Date(); // Fallback to current date
+                        }
+                        
+                        const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                        const dateString = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
                         
                         // Add date divider if date changes
-                        if (currentDate !== dateString) {
+                        if (currentDate !== dateString && dateString) {
                             const divider = document.createElement('div');
                             divider.className = 'chat-date-divider';
                             divider.innerHTML = `<span class="chat-date-label">${dateString}</span>`;
@@ -719,14 +747,71 @@
                             currentDate = dateString;
                         }
                         
-                        // Determine category and its class
-                        const category = chat.category || 'General';
-                        const categoryClass = `category-${category.toLowerCase().replace(/\s+/g, '-')}`;
+                        // Enhanced category detection logic
+                        let categoryMapping = {
+                            // Standard categories
+                            "academics": "Academics",
+                            "administration": "Administration", 
+                            "student-services": "Student Services",
+                            "student services": "Student Services",
+                            "registrar": "Registrar",
+                            "admissions": "Admissions",
+                            "general": "General",
+                            
+                            // Handle common typos/variations
+                            "academic": "Academics",
+                            "admin": "Administration",
+                            "student": "Student Services",
+                            "registry": "Registrar",
+                            "admission": "Admissions"
+                        };
+                        
+                        // Determine category - with better fallback mechanics
+                        let category = "general";
+                        
+                        if (chat.category && typeof chat.category === 'string') {
+                            const rawCategory = chat.category.trim().toLowerCase();
+                            
+                            // First look for exact match in our mapping
+                            if (categoryMapping[rawCategory]) {
+                                category = rawCategory;
+                            } 
+                            // If no exact match, look for partial match
+                            else {
+                                for (const key in categoryMapping) {
+                                    if (rawCategory.includes(key) || key.includes(rawCategory)) {
+                                        category = key;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // If we still don't have a match, use the raw value
+                            if (category === "general" && rawCategory !== "general" && rawCategory.length > 0) {
+                                category = rawCategory;
+                            }
+                        }
+                        
+                        // If we detect ID-related question, use "Registrar" category
+                        const questionLower = chat.question.toLowerCase();
+                        if (category === "general" && 
+                            (questionLower.includes("id") || 
+                             questionLower.includes("card") || 
+                             questionLower.includes("registration") ||
+                             questionLower.includes("certificate"))) {
+                            category = "registrar";
+                        }
+                        
+                        // Get display name
+                        const displayCategory = categoryMapping[category] || 
+                            category.charAt(0).toUpperCase() + category.slice(1);
+                        
+                        // Determine CSS class
+                        const normalizedCategory = category.replace(/\s+/g, '-');
+                        const categoryClass = `category-${normalizedCategory}`;
                         
                         // Get feedback status if available
                         const feedbackStatus = chat.feedback || '';
-                        const feedbackClass = feedbackStatus === 'positive' ? 'positive' : 
-                                            feedbackStatus === 'negative' ? 'negative' : '';
                         
                         chatItem.innerHTML = `
                             <div class="chat-feedback">
@@ -747,7 +832,7 @@
                                     <i class="far fa-clock"></i>
                                     ${timeString}
                                 </div>
-                                <div class="chat-category ${categoryClass}">${category}</div>
+                                <div class="chat-category ${categoryClass}">${displayCategory}</div>
                             </div>
                         `;
                         chatHistory.appendChild(chatItem);
@@ -904,22 +989,41 @@
                         chatItem.className = 'chat-item';
                         
                         // Format timestamp
-                        let date = chat.timestamp ? new Date(chat.timestamp) : null;
-                        let isValidDate = date && !isNaN(date.getTime());
-                        const timeString = isValidDate ? date.toLocaleTimeString([], { 
-                            hour: '2-digit', 
-                            minute: '2-digit',
-                            hour12: true 
-                        }) : '—';
-                        const dateString = isValidDate ? date.toLocaleDateString([], { 
-                            weekday: 'short',
-                            month: 'short', 
-                            day: 'numeric',
-                            year: 'numeric'
-                        }) : '';
+                        let date = null;
+                        if (chat.timestamp) {
+                            try {
+                                if (typeof chat.timestamp === 'string') {
+                                    // More robust string timestamp parsing
+                                    date = new Date(chat.timestamp);
+                                } else if (typeof chat.timestamp === 'object') {
+                                    // Handle object-style date from Google Sheets
+                                    if (chat.timestamp.year) {
+                                        date = new Date(
+                                            chat.timestamp.year, 
+                                            chat.timestamp.month - 1, 
+                                            chat.timestamp.day || 1, 
+                                            chat.timestamp.hours || 0, 
+                                            chat.timestamp.minutes || 0,
+                                            chat.timestamp.seconds || 0
+                                        );
+                                    }
+                                }
+                            } catch (e) {
+                                console.error("Error parsing date:", e);
+                            }
+                        }
+                        
+                        // Use current date if timestamp is invalid
+                        if (!date || isNaN(date.getTime())) {
+                            console.log("Invalid timestamp found, using current date");
+                            date = new Date(); // Fallback to current date
+                        }
+                        
+                        const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+                        const dateString = date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
                         
                         // Add date divider if date changes
-                        if (currentDate !== dateString) {
+                        if (currentDate !== dateString && dateString) {
                             const divider = document.createElement('div');
                             divider.className = 'chat-date-divider';
                             divider.innerHTML = `<span class="chat-date-label">${dateString}</span>`;
@@ -927,14 +1031,71 @@
                             currentDate = dateString;
                         }
                         
-                        // Determine category and its class
-                        const category = chat.category || 'General';
-                        const categoryClass = `category-${category.toLowerCase().replace(/\s+/g, '-')}`;
+                        // Enhanced category detection logic
+                        let categoryMapping = {
+                            // Standard categories
+                            "academics": "Academics",
+                            "administration": "Administration", 
+                            "student-services": "Student Services",
+                            "student services": "Student Services",
+                            "registrar": "Registrar",
+                            "admissions": "Admissions",
+                            "general": "General",
+                            
+                            // Handle common typos/variations
+                            "academic": "Academics",
+                            "admin": "Administration",
+                            "student": "Student Services",
+                            "registry": "Registrar",
+                            "admission": "Admissions"
+                        };
+                        
+                        // Determine category - with better fallback mechanics
+                        let category = "general";
+                        
+                        if (chat.category && typeof chat.category === 'string') {
+                            const rawCategory = chat.category.trim().toLowerCase();
+                            
+                            // First look for exact match in our mapping
+                            if (categoryMapping[rawCategory]) {
+                                category = rawCategory;
+                            } 
+                            // If no exact match, look for partial match
+                            else {
+                                for (const key in categoryMapping) {
+                                    if (rawCategory.includes(key) || key.includes(rawCategory)) {
+                                        category = key;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // If we still don't have a match, use the raw value
+                            if (category === "general" && rawCategory !== "general" && rawCategory.length > 0) {
+                                category = rawCategory;
+                            }
+                        }
+                        
+                        // If we detect ID-related question, use "Registrar" category
+                        const questionLower = chat.question.toLowerCase();
+                        if (category === "general" && 
+                            (questionLower.includes("id") || 
+                             questionLower.includes("card") || 
+                             questionLower.includes("registration") ||
+                             questionLower.includes("certificate"))) {
+                            category = "registrar";
+                        }
+                        
+                        // Get display name
+                        const displayCategory = categoryMapping[category] || 
+                            category.charAt(0).toUpperCase() + category.slice(1);
+                        
+                        // Determine CSS class
+                        const normalizedCategory = category.replace(/\s+/g, '-');
+                        const categoryClass = `category-${normalizedCategory}`;
                         
                         // Get feedback status if available
                         const feedbackStatus = chat.feedback || '';
-                        const feedbackClass = feedbackStatus === 'positive' ? 'positive' : 
-                                            feedbackStatus === 'negative' ? 'negative' : '';
                         
                         chatItem.innerHTML = `
                             <div class="chat-feedback">
@@ -955,7 +1116,7 @@
                                     <i class="far fa-clock"></i>
                                     ${timeString}
                                 </div>
-                                <div class="chat-category ${categoryClass}">${category}</div>
+                                <div class="chat-category ${categoryClass}">${displayCategory}</div>
                             </div>
                         `;
                         chatHistory.appendChild(chatItem);

@@ -858,6 +858,18 @@
     .typing-indicator {
         opacity: 0.7;
     }
+
+    /* Add CSS for category badges */
+    .category-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border-radius: 12px;
+        margin-top: 6px;
+        background-color: rgba(128, 0, 0, 0.1);
+        color: #800000;
+    }
     </style>
 </head>
 
@@ -950,14 +962,6 @@
         &copy; 2025 Pampanga State University. All Rights Reserved.
     </footer>
 
-    <div id="chat-history-modal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.25);z-index:9999;align-items:center;justify-content:center;">
-      <div style="background:#fff;max-width:400px;width:95%;border-radius:12px;padding:2em;box-shadow:0 8px 32px rgba(128,0,0,0.13);position:relative;">
-        <h3 style="color:#800000;margin-bottom:1em;">My Recent Chats</h3>
-        <div id="chat-history-list" style="max-height:300px;overflow-y:auto;"></div>
-        <button onclick="document.getElementById('chat-history-modal').style.display='none'" style="margin-top:1em;">Close</button>
-      </div>
-    </div>
-
     <script src="https://kit.fontawesome.com/7b2b2c7e2a.js" crossorigin="anonymous"></script>
     <script>
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
@@ -965,12 +969,56 @@
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             fetchAndRenderUserProfilePicNavbar();
-            loadChatHistory();
+            
+            // Improved admin panel link detection with fallback checks
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            if (currentUser) {
+                console.log('Current user:', currentUser);
+                const isAdmin = 
+                    (currentUser.role === 'admin') || 
+                    (currentUser.username === 'admin') ||
+                    (currentUser.email && currentUser.email.includes('admin@'));
+                    
+                if (isAdmin) {
+                    // Add admin panel link if not already present
+                    if (!document.querySelector('.navbar-link[href="admin.html"]')) {
+                        const adminLink = document.createElement('a');
+                        adminLink.href = 'admin.html';
+                        adminLink.className = 'navbar-link';
+                        adminLink.textContent = 'Admin Panel';
+                        document.querySelector('.navbar-links').prepend(adminLink);
+                        console.log('Added admin panel link to navbar');
+                        
+                        // Update the user role in session storage to maintain consistency
+                        if (currentUser.role !== 'admin') {
+                            currentUser.role = 'admin';
+                            sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                            console.log('Updated user role to admin in session storage');
+                        }
+                    }
+                }
+            }
             
             // Add welcome message
             setTimeout(() => {
                 addMessageToChat('bot', 'Hello! 👋 I\'m your Pampanga State University Assistant. How can I help you today?');
             }, 1000);
+
+            // Add CSS for category badges
+            const categoryBadgeStyle = document.createElement('style');
+            categoryBadgeStyle.textContent = `
+                .category-badge {
+                    display: inline-block;
+                    padding: 2px 8px;
+                    font-size: 0.8rem;
+                    font-weight: 500;
+                    border-radius: 12px;
+                    margin-top: 6px;
+                    background-color: rgba(128, 0, 0, 0.1);
+                    color: #800000;
+                }
+            `;
+            document.head.appendChild(categoryBadgeStyle);
         });
 
         function setupEventListeners() {
@@ -1198,35 +1246,11 @@
             return messageDiv;
         }
 
-        function loadChatHistory() {
-            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
-            if (!currentUser) return;
-
-            const formData = new FormData();
-            formData.append('action', 'getUserChatHistory');
-            formData.append('username', currentUser.username);
-
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.history) {
-                    data.history.forEach(msg => {
-                        addMessageToChat('user', msg.question);
-                        addMessageToChat('bot', msg.answer);
-                    });
-                }
-            })
-            .catch(error => console.error('Error loading chat history:', error));
-        }
-
         function setNavbarAvatarFromCache() {
             const avatar = document.getElementById('navbar-profile-avatar');
             const cachedPic = sessionStorage.getItem('profilePic');
-            avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'Don_Honorio_Ventura_State_University_logo.png';
-            avatar.onerror = function() { this.src = 'Don_Honorio_Ventura_State_University_logo.png'; };
+            avatar.src = cachedPic && cachedPic !== '' ? cachedPic : 'default_profile.png';
+            avatar.onerror = function() { this.src = 'default_profile.png'; };
         }
 
         function fetchAndRenderUserProfilePicNavbar() {

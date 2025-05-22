@@ -290,11 +290,20 @@ function submitFeedback(question, answer, feedbackType) {
     return;
   }
   
+  // Always prompt for comment for both positive and negative feedback
+  let comment = "";
+  if (feedbackType === 'negative') {
+    comment = prompt("Please tell us why this answer wasn't helpful:", "");
+  } else if (feedbackType === 'positive') {
+    comment = prompt("Please share any additional feedback (optional):", "");
+  }
+  
   const formData = new FormData();
   formData.append('action', 'logFeedback');
   formData.append('username', username);
   formData.append('message', question);
   formData.append('feedbackType', feedbackType);
+  formData.append('comment', comment || "");
   
   fetch(SCRIPT_URL, {
     method: 'POST',
