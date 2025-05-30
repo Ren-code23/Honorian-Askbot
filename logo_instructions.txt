@@ -1,0 +1,26 @@
+IMPORTANT: How to Add Your Custom AskBot Logo
+==================================
+
+The AskBot logo (askbot_logo.png) needs to be manually uploaded by you:
+
+1. Prepare your logo image:
+   - Create a square image (recommended 200x200 pixels)
+   - Save it as PNG format with the filename "askbot_logo.png"
+   - Make sure it has a transparent background for best results
+
+2. Upload the file to your GitHub repository:
+   - Go to your GitHub repository: https://github.com/Ren-code23/Honorian-Askbot
+   - Click "Add file" → "Upload files"
+   - Drag and drop your askbot_logo.png file
+   - Add a commit message like "Add custom AskBot logo"
+   - Click "Commit changes"
+
+3. Verify the file is uploaded:
+   - Refresh your GitHub repository page
+   - You should see the askbot_logo.png file in the file list
+   
+That's it! Your website should now use your custom AskBot logo instead of the default university logo.
+
+Note: If you're still seeing the university logo, try clearing your browser cache:
+- Press Ctrl+F5 (Windows/Linux) or Cmd+Shift+R (Mac) while on your website
+- Or try opening the site in an incognito/private browsing window 
