@@ -497,6 +497,7 @@
                 <img id="profile-pic" src="default_profile.png" alt="Profile Picture" class="profile-pic">
                 <input type="file" id="profile-pic-file" accept="image/*" style="margin-bottom:0.7em;">
                 <div style="font-size:0.95em;color:#555;margin-bottom:0.7em;">Change your profile picture (JPG, PNG, GIF, WEBP).</div>
+                <div id="profile-pic-message" class="message" style="display:none;"></div>
                 <form id="username-form">
                     <label for="profile-username" class="profile-label">Username</label>
                     <input type="text" id="profile-username" minlength="5" required autocomplete="off">
@@ -863,47 +864,124 @@
         document.getElementById('profile-pic-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (file) {
+                // Show uploading message
+                const messageEl = document.getElementById('profile-pic-message');
+                messageEl.textContent = 'Uploading image...';
+                messageEl.className = 'message';
+                messageEl.style.display = 'block';
+                
+                // Check file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    messageEl.textContent = 'Image is too large. Maximum size is 5MB.';
+                    messageEl.className = 'message error';
+                    return;
+                }
+                
+                // Check file type
+                const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                if (!validTypes.includes(file.type)) {
+                    messageEl.textContent = 'Invalid file type. Please use JPG, PNG, GIF or WEBP.';
+                    messageEl.className = 'message error';
+                    return;
+                }
+                
                 uploadProfilePicToCloudinaryAndSave(file);
             }
         });
         function uploadProfilePicToCloudinaryAndSave(file) {
+            const messageEl = document.getElementById('profile-pic-message');
             const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            
+            // Show loading indicator on the profile pic
+            const profilePic = document.getElementById('profile-pic');
+            const originalSrc = profilePic.src;
+            profilePic.style.opacity = '0.5';
+            
             fetch(url, {
                 method: 'POST',
                 body: formData
             })
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! Status: ${res.status}`);
+                }
+                return res.json();
+            })
             .then(data => {
                 if (data.secure_url) {
-                    sessionStorage.setItem('profilePic', data.secure_url); // Cache immediately
+                    // Update the profile pic immediately
+                    profilePic.src = data.secure_url;
+                    profilePic.style.opacity = '1';
+                    
+                    // Cache the URL
+                    sessionStorage.setItem('profilePic', data.secure_url);
+                    
+                    // Update navbar avatar
                     setNavbarAvatarFromCache();
+                    
+                    // Save to backend
                     saveProfilePicUrlToBackend(data.secure_url);
+                    
+                    // Show success message
+                    messageEl.textContent = 'Profile picture updated successfully!';
+                    messageEl.className = 'message success';
+                    
+                    // Hide message after 3 seconds
+                    setTimeout(() => {
+                        messageEl.style.display = 'none';
+                    }, 3000);
                 } else {
-                    alert('Failed to upload image to Cloudinary.');
+                    throw new Error('No secure URL in response');
                 }
             })
-            .catch(() => alert('Failed to upload image. Please try again.'));
+            .catch(error => {
+                console.error('Upload error:', error);
+                profilePic.src = originalSrc;
+                profilePic.style.opacity = '1';
+                messageEl.textContent = 'Failed to upload image. Please try again.';
+                messageEl.className = 'message error';
+            });
         }
         function saveProfilePicUrlToBackend(url) {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
+            
+            const messageEl = document.getElementById('profile-pic-message');
             const formData = new FormData();
             formData.append('action', 'updateUserProfile');
             formData.append('identifier', currentUser.username);
             formData.append('profilePic', url);
-            fetch(SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        fetchAndRenderUserProfile();
-                        fetchAndRenderUserProfilePicNavbar();
-                    } else {
-                        alert('Failed to save profile picture.');
-                    }
-                });
+            
+            fetch(SCRIPT_URL, { 
+                method: 'POST', 
+                body: formData 
+            })
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! Status: ${res.status}`);
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Backend update successful, now fetch profile to ensure consistency
+                    fetchAndRenderUserProfile();
+                    fetchAndRenderUserProfilePicNavbar();
+                } else {
+                    // If backend save fails, still keep the local cache but show warning
+                    console.warn('Backend save failed:', data.message);
+                    messageEl.textContent = 'Profile picture saved locally but may not persist after logout.';
+                    messageEl.className = 'message warning';
+                }
+            })
+            .catch(error => {
+                console.error('Backend save error:', error);
+                messageEl.textContent = 'Profile picture saved locally but may not persist after logout.';
+                messageEl.className = 'message warning';
+            });
         }
         function fetchAndRenderUserProfilePicNavbar() {
             setNavbarAvatarFromCache(); // Show cached image instantly
