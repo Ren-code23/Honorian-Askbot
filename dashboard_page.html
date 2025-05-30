@@ -965,7 +965,8 @@
     <script src="https://kit.fontawesome.com/7b2b2c7e2a.js" crossorigin="anonymous"></script>
     <script>
         const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
-        
+        const BOT_AVATAR_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAAErUlEQVR4nO2ZbUwbZRjH/9cWylsoLzJwvEyB8TZxbiCMlyhxblM/oEz8JiaaLPELcTNRlzjmgiaKMZlL1A8GJiZGlCzGKdkyg2MMRsYqysbGunIgXKHQcrQdt17be37mNlYGtGtvXdbl/pKb3HN33/t/7nmee+6aI8YYeIrBPZAyA1ZTZsBqSg2wtI5fC4mRbg6fCGsD7shGXAwxQedJ9xAkH0I6gnm5B1onZCAxWq97d3a3Gtaqn3v0iVwDVCRP2szshav+ZMPdnheYRwUQBaczwtZcON7S8NxvCuycQXY6+5kB6wMZ4JKK2bpGb0/DxsLzOMvcFYoi1L9UNION2PS6vVRZmxXGAJvp4WsnnvhKjR3a/HxlsLdfyK07Xnx5MkiFdlhh2eEF6ohJ/3jo5e1Zu++xnBm7GtA9lHUi8WeYG9C0RUZS7IvFjFqpYrgFy8/MrEDyxFRaR7RG+nQn1qVrgLPbBJf7FIw8Lbm5ND6CyZCN4MQmzNu/jjipQuLeCJV5B2JzLbm5FF5M5mBNbsXyie2UaC9Mkx/B5U1BIhml5nK1NaFv2FPXqbGW1lV8HSPuZkx4J+ETPoTduQiE94AhnYix4IafIJKzojXvgii+hbGgi+jvfxui4nkqbJYlhypRX6+WSrYnESbRMXUKE36o27LVC6c0JqY9Q6g0bQBIiO2metcw0J4SPWGKQbHgFPb0nkBlUR2MggiM5Kk4dj85eO0YOKn8M1glGdIf+xNj7oskJzaABEfrJf7c9TI2Fb+ENZYSlQPIswCjiWcYOUMefgut0vH8ms/hFK9DJIGEXdg6V8jM0BA+s4G5jk2ZR1htyCAFsxSn9R5nipS/FpZPqLnUx3GaN7EeYp5KJCO9KCxTaB87IBSnU+7bgwA0PQgG1SBWjBD+GDmO+zv/zZKCQcJevl+50jZEq5KFjU0XINGCzdkIWCew2pPwMBLNQAzzBOFx8ORx5KWfvM8OzqpcdH36I+anXD5zL1RqMFF1SolSBjO/4mnjt9kEZqRhs/W8XEYJZSxPAieb8VBJx31zpKasx+BJmp/zVKpOXwPXpu9TYvBM/DitSE+M+JJ1PxOvqkDz5o5lyeHVTTj61Ol754kt6/Gq7RClQrOw3nh06FbkDHj5TkzOVLs1aeXq4hgnifn2ZyUeWbv2QQe6P/gJxNC95sMePofB/qm7NN4cQQMkRnC8+6XwGUiM6F+Tpvat/qE7dR520TOQGPUrMXjzK8JnIDHrAv3yhbtXb6wuLXyVGvd7xPpdhr7vJ8JnIF609fXvT8qxC4qrIuprwGFU/oXyZvReoMYzc5uUpl0AMiutdx1fKHHnVmLwyMiGfUrvkv8bickZ21xOTamRK63LnUh+f4dSg2eOqeJvntv1nhK9MEzRhFn9fmPIHp3ojSPyXRRfuIOpZvZCry26JCgg69bPHjk9MzGkSa9Kk6MTxpuYzUBidOZ47eflt/KhZ3VO6da54tsLf/aZexpfhD6YkKMTshdaM+t28j3Ln3vqza4XSOfj42MWNDjkFw+zexpc41NrnRwutl5olkjaR7zQQsoMWM3/3sAfoSHstIKI9KIAAAAASUVORK5CYII=';
+
         document.addEventListener('DOMContentLoaded', function() {
             setupEventListeners();
             fetchAndRenderUserProfilePicNavbar();
@@ -1057,11 +1058,6 @@
             const sendButton = document.querySelector('.send-button');
             chatInput.disabled = true;
             sendButton.disabled = true;
-            function enableInput() {
-                chatInput.disabled = false;
-                sendButton.disabled = false;
-                chatInput.focus();
-            }
 
             // Show typing indicator
             const typingIndicator = showTypingIndicator();
@@ -1074,54 +1070,32 @@
             };
             sessionStorage.setItem('lastConversationContext', JSON.stringify(conversationContext));
 
-            const formData = new FormData();
-            formData.append('action', 'chatMessage');
-            formData.append('username', currentUser.username);
-            formData.append('email', currentUser.email);
-            formData.append('question', question);
+            // Prepare form data for iframe submission
+            document.getElementById('chat-username').value = currentUser.username;
+            document.getElementById('chat-email').value = currentUser.email;
+            document.getElementById('chat-question').value = question;
+            
             // Add context from previous conversation if available
             const lastContext = sessionStorage.getItem('lastConversationContext');
             if (lastContext) {
-                formData.append('context', lastContext);
+                document.getElementById('chat-context').value = lastContext;
             }
 
+            // Add small delay for natural conversation feel
             setTimeout(() => {
-                fetch(APPS_SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    typingIndicator.remove();
-                    if (data.success) {
-                        // Always show the bot's answer
-                        addMessageToChat('bot', data.answer || '');
-                        // Show clarification options if present
-                        if (data.type === 'clarification' && data.clarificationOptions && Array.isArray(data.clarificationOptions)) {
-                            showClarificationOptions(data.clarificationOptions);
-                        }
-                        // Show follow-up questions if present
-                        if ((data.type === 'follow_up' || data.type === 'direct_answer') && data.followUpQuestions && Array.isArray(data.followUpQuestions) && data.followUpQuestions.length > 0) {
-                            showFollowUpQuestions(data.followUpQuestions);
-                        }
-                        // Show feedback widget for direct answers
-                        if (data.type === 'direct_answer') {
-                            showFeedbackWidget(question, data.answer);
-                        }
-                        // Re-enable input immediately after bot answers
-                        enableInput();
-                    } else {
-                        handleErrorResponse(data);
-                        // Re-enable input immediately after error
-                        enableInput();
+                // Submit the form to iframe
+                document.getElementById('chatbot-form').submit();
+                
+                // Set a timeout for fallback response in case server doesn't respond
+                setTimeout(() => {
+                    if (document.querySelector('.typing-indicator')) {
+                        typingIndicator.remove();
+                        addMessageToChat('bot', 'I\'m having trouble connecting to the server right now. Please try again or check your questions in our FAQ section.');
+                        chatInput.disabled = false;
+                        sendButton.disabled = false;
                     }
-                })
-                .catch(error => {
-                    typingIndicator.remove();
-                    handleErrorResponse({ message: 'An error occurred. Please try again later.' });
-                    enableInput();
-                });
-            }, Math.random() * 1000 + 500); // Artificial delay for natural feel
+                }, 10000); // 10-second timeout
+            }, Math.random() * 1000 + 500);
         }
 
         function handleErrorResponse(data) {
@@ -1201,9 +1175,8 @@
             const avatar = document.createElement('img');
             avatar.className = `chat-avatar ${type}`;
             if (type === 'bot') {
-                avatar.src = 'bot_avatar.png'; // Bot avatar
+                avatar.src = BOT_AVATAR_BASE64; // Use base64 bot avatar
                 avatar.alt = 'Bot';
-                avatar.onerror = function() { this.src = 'https://img.icons8.com/fluency/48/robot-2.png'; };
             } else {
                 // Use a user icon or profile picture
                 const cachedPic = sessionStorage.getItem('profilePic');
@@ -1258,22 +1231,11 @@
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
 
-            const formData = new FormData();
-            formData.append('action', 'getUserProfile');
-            formData.append('identifier', currentUser.username);
-
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success && data.profile && data.profile.profilePic) {
-                    sessionStorage.setItem('profilePic', data.profile.profilePic);
-                    setNavbarAvatarFromCache();
-                }
-            })
-            .catch(error => console.error('Error fetching profile:', error));
+            // Prepare form data for iframe submission
+            document.getElementById('profile-username').value = currentUser.username;
+            
+            // Submit the form to iframe
+            document.getElementById('profile-form').submit();
         }
 
         function filterByCategory(category) {
@@ -1394,18 +1356,14 @@
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
 
-            const formData = new FormData();
-            formData.append('action', 'logFeedback');
-            formData.append('username', currentUser.username);
-            formData.append('message', question);
-            formData.append('feedbackType', type);
-            formData.append('comment', comment || '');
-
-            // Submit feedback asynchronously without waiting for response
-            fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            }).catch(error => console.error('Error submitting feedback:', error));
+            // Prepare form data for iframe submission
+            document.getElementById('feedback-username').value = currentUser.username;
+            document.getElementById('feedback-message').value = question;
+            document.getElementById('feedback-type').value = type;
+            document.getElementById('feedback-comment').value = comment || '';
+            
+            // Submit the form to iframe
+            document.getElementById('feedback-form').submit();
         }
 
         function showThankYouFeedback() {
@@ -1461,16 +1419,101 @@
         function removeSuggestions() {
             document.querySelectorAll('.suggestions-container').forEach(el => el.remove());
         }
+
+        // Global callback handlers for iframe responses
+        window.handleChatResponse = function(response) {
+            try {
+                // Process chat response
+                console.log("Received chat response:", response);
+                const typingIndicator = document.querySelector('.typing-indicator');
+                if (typingIndicator) typingIndicator.remove();
+                
+                // Re-enable input
+                const chatInput = document.querySelector('.chat-input');
+                const sendButton = document.querySelector('.send-button');
+                chatInput.disabled = false;
+                sendButton.disabled = false;
+                chatInput.focus();
+                
+                // Show answer
+                if (response && (response.success || response.answer)) {
+                    // Always show the bot's answer
+                    addMessageToChat('bot', response.answer || 'I found information related to your question.');
+                    
+                    // Show clarification options if present
+                    if (response.type === 'clarification' && response.clarificationOptions && Array.isArray(response.clarificationOptions)) {
+                        showClarificationOptions(response.clarificationOptions);
+                    }
+                    
+                    // Show follow-up questions if present
+                    if ((response.type === 'follow_up' || response.type === 'direct_answer') && response.followUpQuestions && Array.isArray(response.followUpQuestions) && response.followUpQuestions.length > 0) {
+                        showFollowUpQuestions(response.followUpQuestions);
+                    }
+                    
+                    // Show feedback widget for direct answers
+                    if (response.type === 'direct_answer') {
+                        const lastQuestion = document.getElementById('chat-question').value;
+                        showFeedbackWidget(lastQuestion, response.answer);
+                    }
+                } else {
+                    // Handle error
+                    handleErrorResponse(response || { message: 'No response from server' });
+                }
+            } catch (error) {
+                console.error("Error handling chat response:", error);
+                handleErrorResponse({ message: 'An error occurred processing the response.' });
+            }
+        };
+        
+        window.handleProfileResponse = function(response) {
+            try {
+                console.log("Received profile response:", response);
+                if (response && response.success && response.profile && response.profile.profilePic) {
+                    sessionStorage.setItem('profilePic', response.profile.profilePic);
+                    setNavbarAvatarFromCache();
+                }
+            } catch (error) {
+                console.error("Error handling profile response:", error);
+            }
+        };
+        
+        window.handleFeedbackResponse = function(response) {
+            try {
+                console.log("Received feedback response:", response);
+                // No need to do anything with feedback response
+            } catch (error) {
+                console.error("Error handling feedback response:", error);
+            }
+        };
     </script>
 </body>
 
-</html>
+<!-- Add hidden iframe and forms for cross-domain communication -->
+<iframe id="hidden-iframe" name="hidden-iframe" style="display:none;"></iframe>
 
-<!-- Team Members:
-    Magat Ren Jay S.
-    Olaybar, Vlademiere
-    Dela Cruz, Eugene Mark
-    Kabiling Abegail
-    Matic, Britany
-    Hazel, Placer
--->
+<!-- Form for chat message submission -->
+<form id="chatbot-form" target="hidden-iframe" method="post" action="https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec" style="display:none;">
+    <input type="hidden" name="action" value="chatMessage">
+    <input type="hidden" id="chat-username" name="username">
+    <input type="hidden" id="chat-email" name="email">
+    <input type="hidden" id="chat-question" name="question">
+    <input type="hidden" id="chat-context" name="context">
+    <input type="hidden" name="callback" value="handleChatResponse">
+</form>
+
+<!-- Form for profile info retrieval -->
+<form id="profile-form" target="hidden-iframe" method="post" action="https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec" style="display:none;">
+    <input type="hidden" name="action" value="getUserProfile">
+    <input type="hidden" id="profile-username" name="identifier">
+    <input type="hidden" name="callback" value="handleProfileResponse">
+</form>
+
+<!-- Form for feedback submission -->
+<form id="feedback-form" target="hidden-iframe" method="post" action="https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec" style="display:none;">
+    <input type="hidden" name="action" value="logFeedback">
+    <input type="hidden" id="feedback-username" name="username">
+    <input type="hidden" id="feedback-message" name="message">
+    <input type="hidden" id="feedback-type" name="feedbackType">
+    <input type="hidden" id="feedback-comment" name="comment">
+    <input type="hidden" name="callback" value="handleFeedbackResponse">
+</form>
