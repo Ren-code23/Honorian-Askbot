@@ -33,7 +33,7 @@
         header {
             background: linear-gradient(135deg, var(--dhvsu-maroon) 0%, #5e0000 100%);
             color: white;
-            padding: 2.2rem 1.2rem 1.2rem 1.2rem;
+            padding: 1.5rem;
             text-align: center;
             box-shadow: 0 3px 10px rgba(0,0,0,0.13);
             position: relative;
@@ -56,93 +56,74 @@
         
         .header-content {
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
-            gap: 18px;
             position: relative;
             z-index: 1;
+            max-width: 960px;
+            margin: 0 auto;
+            background: rgba(128, 0, 0, 0.2);
+            border-radius: 50px;
+            padding: 0.8rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         }
         
         .logo-container {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 18px;
-            padding: 0.5rem 1.5rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            gap: 24px;
         }
         
         .logo {
-            width: 80px;
-            height: 80px;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.13));
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             background: #fff;
-            padding: 4px;
-            opacity: 0;
-            transform: scale(0.95);
-            animation: logoFadeIn 1.2s ease 0.2s forwards;
-            border: 2px solid rgba(255, 215, 0, 0.2);
-        }
-        
-        .askbot-logo {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 50%;
-        }
-        
-        @keyframes logoFadeIn {
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            padding: 2px;
+            border: 2px solid var(--dhvsu-gold);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
         
         .title-container {
             text-align: left;
             position: relative;
-            padding-left: 1rem;
+            display: flex;
+            align-items: center;
         }
         
         .title-container::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 3px;
-            height: 70%;
-            background: var(--dhvsu-gold);
-            border-radius: 3px;
+            content: '|';
+            color: var(--dhvsu-gold);
+            font-size: 2.5rem;
+            margin: 0 16px;
         }
         
         .university-name {
-            font-size: 2.1rem;
+            font-size: 1.8rem;
             font-weight: bold;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.13);
-            margin-bottom: 5px;
-            background: linear-gradient(to right, #fff, #f0f0f0);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 0.5px;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+            margin-bottom: 0;
         }
         
         .tagline {
             font-size: 1.1rem;
             color: var(--dhvsu-gold);
-            letter-spacing: 1px;
-            font-style: italic;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.13);
-            position: relative;
-            display: inline-block;
+            font-weight: 600;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            background: rgba(128, 0, 0, 0.3);
+            border-radius: 4px;
             padding: 0.2rem 0.8rem;
-            background: rgba(255, 215, 0, 0.1);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
+            margin-left: 16px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            display: flex;
+            align-items: center;
+        }
+        
+        .tagline::before {
+            content: '🤖';
+            margin-right: 0.5rem;
         }
         
         .main-container {
@@ -1073,10 +1054,8 @@
     <header>
         <div class="header-content">
             <div class="logo-container">
-                <!-- New AskBot logo -->
-                <div class="logo">
-                    <img src="default_profile.png" alt="Honorian AskBot Logo" class="askbot-logo" id="askbot-logo">
-                </div>
+                <!-- University logo -->
+                <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Pampanga State University Logo" class="logo">
                 <div class="title-container">
                     <div class="university-name">Pampanga State University</div>
                     <div class="tagline">Honorian AskBot</div>
@@ -1088,7 +1067,7 @@
         <div class="login-container" role="main">
             <form id="login-form" class="active-form" autocomplete="on" aria-label="Login form">
                 <div class="login-header">
-                    <img src="default_profile.png" alt="AskBot Logo" class="login-logo" id="login-logo">
+                    <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Pampanga State University Logo" class="login-logo" id="login-logo">
                     <div class="welcome-title" style="font-size:1.25rem; color:#800000; font-weight:700; margin-bottom:0.7em; text-align:center; letter-spacing:0.5px;">
                         Welcome to Honorian AskBot!
                     </div>
@@ -1970,37 +1949,6 @@
                     strengthText.textContent = 'Strong password';
                 }
             });
-        });
-
-        // Add code to update the logo once available
-        document.addEventListener('DOMContentLoaded', function() {
-            // Base64 encoded SVG logo data
-            const ASKBOT_LOGO_DATA_URL = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCI+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIxMDAiIGZpbGw9IndoaXRlIi8+CiAgCiAgPCEtLSBSb2JvdCBIZWFkIC0tPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjcwIiByPSIyNSIgZmlsbD0iIzgwMDAwMCIgc3Ryb2tlPSIjNWUwMDAwIiBzdHJva2Utd2lkdGg9IjQiLz4KICAKICA8IS0tIFJvYm90IEJvZHkgLS0+CiAgPHJlY3QgeD0iNjIuNSIgeT0iOTAiIHdpZHRoPSI3NSIgaGVpZ2h0PSI2MCIgcng9IjEwIiByeT0iMTAiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgCiAgPCEtLSBSb2JvdCBBbnRlbm5hIC0tPgogIDxyZWN0IHg9Ijk1IiB5PSI0MCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjIwIiByeD0iMiIgcnk9IjIiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMzUiIHI9IjciIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgCiAgPCEtLSBSb2JvdCBFYXJzIC0tPgogIDxyZWN0IHg9IjQ1IiB5PSI2NSIgd2lkdGg9IjEyIiBoZWlnaHQ9IjI1IiByeD0iNSIgcnk9IjUiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHJlY3QgeD0iMTQzIiB5PSI2NSIgd2lkdGg9IjEyIiBoZWlnaHQ9IjI1IiByeD0iNSIgcnk9IjUiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgCiAgPCEtLSBSb2JvdCBFeWVzIC0tPgogIDxjaXJjbGUgY3g9Ijg1IiBjeT0iNzAiIHI9IjgiIGZpbGw9IiNGRkQ3MDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICA8Y2lyY2xlIGN4PSIxMTUiIGN5PSI3MCIgcj0iOCIgZmlsbD0iI0ZGRDcwMCIgc3Ryb2tlPSIjNWUwMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIAogIDwhLS0gUm9ib3QgTW91dGgvU3BlYWtlciAtLT4KICA8cmVjdCB4PSI5MCIgeT0iMTEwIiB3aWR0aD0iMjAiIGhlaWdodD0iMTAiIHJ4PSIyIiByeT0iMiIgZmlsbD0iI0ZGRDcwMCIgc3Ryb2tlPSIjNWUwMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIAogIDwhLS0gSCBMZXR0ZXIgLS0+CiAgPHRleHQgeD0iMTAwIiB5PSIxMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIzMCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNGRkQ3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIj5IPC90ZXh0Pgo8L3N2Zz4=`;
-    
-            // Set the logo in all relevant places
-            const askbotLogo = document.getElementById('askbot-logo');
-            const loginLogo = document.getElementById('login-logo');
-            
-            if (askbotLogo) {
-                askbotLogo.src = ASKBOT_LOGO_DATA_URL;
-            }
-            
-            if (loginLogo) {
-                loginLogo.src = ASKBOT_LOGO_DATA_URL;
-            }
-            
-            // Remove the emoji from tagline
-            const tagline = document.querySelector('.tagline');
-            if (tagline) {
-                tagline.innerHTML = 'Honorian AskBot';
-            }
-            
-            // Generate a favicon dynamically
-            const faviconLink = document.createElement('link');
-            faviconLink.rel = 'icon';
-            faviconLink.type = 'image/svg+xml';
-            faviconLink.href = ASKBOT_LOGO_DATA_URL;
-            document.head.appendChild(faviconLink);
         });
     </script>
 </body>
