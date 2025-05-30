@@ -742,46 +742,82 @@
             fetchAndRenderUserProfilePicNavbar();
         });
         
-        function loadAdminStats() {
-            const formData = new FormData();
-            formData.append('action', 'getAdminStats');
+        // Helper function to make API calls that work around CORS
+        function apiCall(actionName, params = {}, successCallback, errorCallback) {
+            // Create XMLHttpRequest object
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', SCRIPT_URL, true);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+            xhr.timeout = 15000; // 15 second timeout
             
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById('total-users').textContent = data.stats.totalUsers;
-                    document.getElementById('total-faqs').textContent = data.stats.totalFAQs;
-                    document.getElementById('total-chats').textContent = data.stats.totalChats;
+            // Build request parameters
+            let formData = `action=${encodeURIComponent(actionName)}`;
+            for (const [key, value] of Object.entries(params)) {
+                formData += `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
+            }
+            
+            // Handle successful response
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        if (successCallback) successCallback(response);
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                        if (errorCallback) errorCallback(new Error('Invalid response format'));
+                    }
+                } else {
+                    if (errorCallback) errorCallback(new Error('Server error: ' + xhr.status));
                 }
-            })
-            .catch(error => {
-                console.error('Error loading admin stats:', error);
-                showMessage('Error loading admin statistics', 'error');
-            });
+            };
+            
+            // Handle errors
+            xhr.onerror = function() {
+                console.error('Request failed');
+                if (errorCallback) errorCallback(new Error('Network error'));
+            };
+            
+            // Handle timeouts
+            xhr.ontimeout = function() {
+                console.error('Request timed out');
+                if (errorCallback) errorCallback(new Error('Request timed out'));
+            };
+            
+            // Send request
+            xhr.send(formData);
+            
+            return xhr; // Return XHR object in case caller wants to abort
+        }
+        
+        function loadAdminStats() {
+            apiCall('getAdminStats', {}, 
+                function(data) {
+                    if (data.success) {
+                        document.getElementById('total-users').textContent = data.stats.totalUsers;
+                        document.getElementById('total-faqs').textContent = data.stats.totalFAQs;
+                        document.getElementById('total-chats').textContent = data.stats.totalChats;
+                    }
+                },
+                function(error) {
+                    console.error('Error loading admin stats:', error);
+                    showMessage('Error loading admin statistics', 'error');
+                }
+            );
         }
         
         let usersList = [];
         function loadUsers(filter = '') {
-            const formData = new FormData();
-            formData.append('action', 'getAllUsers');
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    usersList = data.users;
-                    renderUsersTable(filter);
+            apiCall('getAllUsers', {}, 
+                function(data) {
+                    if (data.success) {
+                        usersList = data.users;
+                        renderUsersTable(filter);
+                    }
+                },
+                function(error) {
+                    showMessage('Error loading users', 'error');
                 }
-            })
-            .catch(error => {
-                showMessage('Error loading users', 'error');
-            });
+            );
         }
         
         function renderUsersTable(filter = '') {
@@ -845,52 +881,40 @@
         
         function deleteUser(username) {
             if (confirm(`Are you sure you want to delete user ${username}?`)) {
-                const formData = new FormData();
-                formData.append('action', 'deleteUser');
-                formData.append('username', username);
-                
-                fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage('User deleted successfully', 'success');
-                        loadUsers();
-                        loadAdminStats();
-                    } else {
-                        throw new Error(data.message);
+                apiCall('deleteUser', { username: username }, 
+                    function(data) {
+                        if (data.success) {
+                            showMessage('User deleted successfully', 'success');
+                            loadUsers();
+                            loadAdminStats();
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    },
+                    function(error) {
+                        console.error('Error deleting user:', error);
+                        showMessage('Error deleting user', 'error');
                     }
-                })
-                .catch(error => {
-                    console.error('Error deleting user:', error);
-                    showMessage('Error deleting user', 'error');
-                });
+                );
             }
         }
         
         function loadFAQs() {
-            const formData = new FormData();
-            formData.append('action', 'getFAQs');
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    window.faqsList = data.faqs;
-                    renderFAQsTable(data.faqs);
-                } else {
+            apiCall('getFAQs', {},
+                function(data) {
+                    if (data.success) {
+                        window.faqsList = data.faqs;
+                        renderFAQsTable(data.faqs);
+                    } else {
+                        renderFAQsTable([]);
+                    }
+                },
+                function(error) {
+                    console.error('Error loading FAQs:', error);
+                    showMessage('Error loading FAQs', 'error');
                     renderFAQsTable([]);
                 }
-            })
-            .catch(error => {
-                console.error('Error loading FAQs:', error);
-                showMessage('Error loading FAQs', 'error');
-                renderFAQsTable([]);
-            });
+            );
         }
         
         function renderFAQsTable(faqs) {
@@ -929,181 +953,166 @@
         window.renderFAQsTable = renderFAQsTable;
         
         function loadFeedback() {
-            const formData = new FormData();
-            formData.append('action', 'getFeedback');
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('feedback-table-body');
-                tbody.innerHTML = '';
-                if (data.success && data.feedbacks && data.feedbacks.length > 0) {
-                    data.feedbacks.forEach(item => {
-                        const tr = document.createElement('tr');
-                        // Convert feedback type to user-friendly format
-                        let feedbackTypeText = '-';
-                        if (item.feedbackType === 'positive') {
-                            feedbackTypeText = '<span style="color:#4CAF50;font-weight:bold;">Helpful</span>';
-                        } else if (item.feedbackType === 'negative') {
-                            feedbackTypeText = '<span style="color:#F44336;font-weight:bold;">Not Helpful</span>';
-                        } else if (item.feedbackType) {
-                            feedbackTypeText = item.feedbackType;
-                        }
-                        
-                        // Format date if available
-                        let dateStr = '-';
-                        if (item.timestamp) {
-                            try {
-                                const date = new Date(item.timestamp);
-                                dateStr = date.toLocaleString();
-                            } catch (e) {
-                                dateStr = item.timestamp;
+            apiCall('getFeedback', {},
+                function(data) {
+                    const tbody = document.getElementById('feedback-table-body');
+                    tbody.innerHTML = '';
+                    if (data.success && data.feedbacks && data.feedbacks.length > 0) {
+                        data.feedbacks.forEach(item => {
+                            const tr = document.createElement('tr');
+                            // Convert feedback type to user-friendly format
+                            let feedbackTypeText = '-';
+                            if (item.feedbackType === 'positive') {
+                                feedbackTypeText = '<span style="color:#4CAF50;font-weight:bold;">Helpful</span>';
+                            } else if (item.feedbackType === 'negative') {
+                                feedbackTypeText = '<span style="color:#F44336;font-weight:bold;">Not Helpful</span>';
+                            } else if (item.feedbackType) {
+                                feedbackTypeText = item.feedbackType;
                             }
-                        }
-                        
-                        // Display comment with placeholder if empty
-                        const commentText = item.comment && item.comment.trim() ? 
-                            item.comment : 
-                            '<span style="color:#999;font-style:italic;">No comment provided</span>';
-                        
-                        tr.innerHTML = `
-                            <td>${item.username || '-'}</td>
-                            <td>${item.message || '-'}</td>
-                            <td>${feedbackTypeText}</td>
-                            <td>${commentText}</td>
-                            <td>${dateStr}</td>
-                        `;
+                            
+                            // Format date if available
+                            let dateStr = '-';
+                            if (item.timestamp) {
+                                try {
+                                    const date = new Date(item.timestamp);
+                                    dateStr = date.toLocaleString();
+                                } catch (e) {
+                                    dateStr = item.timestamp;
+                                }
+                            }
+                            
+                            // Display comment with placeholder if empty
+                            const commentText = item.comment && item.comment.trim() ? 
+                                item.comment : 
+                                '<span style="color:#999;font-style:italic;">No comment provided</span>';
+                            
+                            tr.innerHTML = `
+                                <td>${item.username || '-'}</td>
+                                <td>${item.message || '-'}</td>
+                                <td>${feedbackTypeText}</td>
+                                <td>${commentText}</td>
+                                <td>${dateStr}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `<td colspan="5" style="text-align:center;">No feedback found.</td>`;
                         tbody.appendChild(tr);
-                    });
-                } else {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="5" style="text-align:center;">No feedback found.</td>`;
-                    tbody.appendChild(tr);
+                    }
+                },
+                function(error) {
+                    console.error('Error loading feedback:', error);
+                    showMessage('Error loading feedback', 'error');
                 }
-            })
-            .catch(error => {
-                console.error('Error loading feedback:', error);
-                showMessage('Error loading feedback', 'error');
-            });
+            );
         }
         
         function loadLogs() {
-            const formData = new FormData();
-            formData.append('action', 'getLogs');
-            
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const tbody = document.getElementById('logs-table-body');
-                tbody.innerHTML = '';
-                
-                if (data.success && data.logs && data.logs.length > 0) {
-                    data.logs.forEach(log => {
+            apiCall('getLogs', {},
+                function(data) {
+                    const tbody = document.getElementById('logs-table-body');
+                    tbody.innerHTML = '';
+                    
+                    if (data.success && data.logs && data.logs.length > 0) {
+                        data.logs.forEach(log => {
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : '-'}</td>
+                                <td>${log.username || '-'}</td>
+                                <td>${log.action || '-'}</td>
+                                <td>${log.details || '-'}</td>
+                            `;
+                            tbody.appendChild(tr);
+                        });
+                    } else {
                         const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${log.timestamp ? new Date(log.timestamp).toLocaleString() : '-'}</td>
-                            <td>${log.username || '-'}</td>
-                            <td>${log.action || '-'}</td>
-                            <td>${log.details || '-'}</td>
-                        `;
+                        tr.innerHTML = `<td colspan="4" style="text-align:center;">No logs found.</td>`;
                         tbody.appendChild(tr);
-                    });
-                } else {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td colspan="4" style="text-align:center;">No logs found.</td>`;
-                    tbody.appendChild(tr);
+                    }
+                },
+                function(error) {
+                    console.error('Error loading logs:', error);
+                    showMessage('Error loading logs', 'error');
                 }
-            })
-            .catch(error => {
-                console.error('Error loading logs:', error);
-                showMessage('Error loading logs', 'error');
-            });
+            );
         }
         
         function loadAnalytics() {
-            const formData = new FormData();
-            formData.append('action', 'getAnalytics');
             // Show loading state
             document.getElementById('analytics-tab').innerHTML = '<div style="text-align:center;padding:2em;">Loading analytics...</div>';
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.analytics) {
-                    // Restore analytics tab content (re-render charts)
-                    document.getElementById('analytics-tab').innerHTML = `
-                        <div class="chart-container">
-                            <h2 class="chart-title">User Activity</h2>
-                            <canvas id="user-activity-chart"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <h2 class="chart-title">FAQ Performance</h2>
-                            <canvas id="faq-performance-chart"></canvas>
-                        </div>
-                        <div class="chart-container">
-                            <h2 class="chart-title">Response Ratings</h2>
-                            <canvas id="ratings-chart"></canvas>
-                        </div>
-                    `;
-                    // User Activity Chart
-                    new Chart(document.getElementById('user-activity-chart'), {
-                        type: 'line',
-                        data: {
-                            labels: data.analytics.userActivity.labels,
-                            datasets: [{
-                                label: 'Active Users',
-                                data: data.analytics.userActivity.data,
-                                borderColor: '#800000',
-                                tension: 0.4
-                            }]
-                        },
-                        options: { responsive: true, plugins: { legend: { position: 'top' } } }
-                    });
-                    // FAQ Performance Chart
-                    new Chart(document.getElementById('faq-performance-chart'), {
-                        type: 'bar',
-                        data: {
-                            labels: data.analytics.faqPerformance.labels,
-                            datasets: [{
-                                label: 'Times Asked',
-                                data: data.analytics.faqPerformance.data,
-                                backgroundColor: '#800000'
-                            }]
-                        },
-                        options: { responsive: true, plugins: { legend: { position: 'top' } } }
-                    });
-                    // Ratings Chart
-                    new Chart(document.getElementById('ratings-chart'), {
-                        type: 'pie',
-                        data: {
-                            labels: ['Helpful', 'Not Helpful', '3 Stars', '2 Stars', '1 Star'],
-                            datasets: [{
-                                data: data.analytics.ratings,
-                                backgroundColor: [
-                                    '#4CAF50',
-                                    '#F44336',
-                                    '#FFC107',
-                                    '#FF9800',
-                                    '#9E9E9E'
-                                ]
-                            }]
-                        },
-                        options: { responsive: true, plugins: { legend: { position: 'top' } } }
-                    });
-                } else {
-                    document.getElementById('analytics-tab').innerHTML = '<div style="color:#721c24;background:#f8d7da;padding:1em;border-radius:8px;">No analytics data available.</div>';
+            
+            apiCall('getAnalytics', {},
+                function(data) {
+                    if (data.success && data.analytics) {
+                        // Restore analytics tab content (re-render charts)
+                        document.getElementById('analytics-tab').innerHTML = `
+                            <div class="chart-container">
+                                <h2 class="chart-title">User Activity</h2>
+                                <canvas id="user-activity-chart"></canvas>
+                            </div>
+                            <div class="chart-container">
+                                <h2 class="chart-title">FAQ Performance</h2>
+                                <canvas id="faq-performance-chart"></canvas>
+                            </div>
+                            <div class="chart-container">
+                                <h2 class="chart-title">Response Ratings</h2>
+                                <canvas id="ratings-chart"></canvas>
+                            </div>
+                        `;
+                        // User Activity Chart
+                        new Chart(document.getElementById('user-activity-chart'), {
+                            type: 'line',
+                            data: {
+                                labels: data.analytics.userActivity.labels,
+                                datasets: [{
+                                    label: 'Active Users',
+                                    data: data.analytics.userActivity.data,
+                                    borderColor: '#800000',
+                                    tension: 0.4
+                                }]
+                            },
+                            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                        });
+                        // FAQ Performance Chart
+                        new Chart(document.getElementById('faq-performance-chart'), {
+                            type: 'bar',
+                            data: {
+                                labels: data.analytics.faqPerformance.labels,
+                                datasets: [{
+                                    label: 'Times Asked',
+                                    data: data.analytics.faqPerformance.data,
+                                    backgroundColor: '#800000'
+                                }]
+                            },
+                            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                        });
+                        // Ratings Chart
+                        new Chart(document.getElementById('ratings-chart'), {
+                            type: 'pie',
+                            data: {
+                                labels: ['Helpful', 'Not Helpful', '3 Stars', '2 Stars', '1 Star'],
+                                datasets: [{
+                                    data: data.analytics.ratings,
+                                    backgroundColor: [
+                                        '#4CAF50',
+                                        '#F44336',
+                                        '#FFC107',
+                                        '#FF9800',
+                                        '#9E9E9E'
+                                    ]
+                                }]
+                            },
+                            options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                        });
+                    } else {
+                        document.getElementById('analytics-tab').innerHTML = '<div style="color:#721c24;background:#f8d7da;padding:1em;border-radius:8px;">No analytics data available.</div>';
+                    }
+                },
+                function(error) {
+                    document.getElementById('analytics-tab').innerHTML = '<div style="color:#721c24;background:#f8d7da;padding:1em;border-radius:8px;">Error loading analytics.</div>';
                 }
-            })
-            .catch(error => {
-                document.getElementById('analytics-tab').innerHTML = '<div style="color:#721c24;background:#f8d7da;padding:1em;border-radius:8px;">Error loading analytics.</div>';
-            });
+            );
         }
         
         function setupTabs() {
@@ -1189,28 +1198,21 @@
         
         function deleteFAQ(id) {
             if (confirm('Are you sure you want to delete this FAQ?')) {
-                const formData = new FormData();
-                formData.append('action', 'deleteFAQ');
-                formData.append('id', id);
-                
-                fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: formData
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage('FAQ deleted successfully', 'success');
-                        loadFAQs();
-                        loadAdminStats();
-                    } else {
-                        throw new Error(data.message);
+                apiCall('deleteFAQ', { id: id },
+                    function(data) {
+                        if (data.success) {
+                            showMessage('FAQ deleted successfully', 'success');
+                            loadFAQs();
+                            loadAdminStats();
+                        } else {
+                            throw new Error(data.message);
+                        }
+                    },
+                    function(error) {
+                        console.error('Error deleting FAQ:', error);
+                        showMessage('Error deleting FAQ', 'error');
                     }
-                })
-                .catch(error => {
-                    console.error('Error deleting FAQ:', error);
-                    showMessage('Error deleting FAQ', 'error');
-                });
+                );
             }
         }
         
@@ -1353,17 +1355,18 @@
             setNavbarAvatarFromCache(); // Show cached image instantly
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
-            const formData = new FormData();
-            formData.append('action', 'getUserProfile');
-            formData.append('username', currentUser.username);
-            fetch(SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
+            
+            apiCall('getUserProfile', { username: currentUser.username },
+                function(data) {
                     if (data.success && data.profile && data.profile.profilePic) {
                         sessionStorage.setItem('profilePic', data.profile.profilePic);
                         setNavbarAvatarFromCache();
                     }
-                });
+                },
+                function(error) {
+                    console.error('Error fetching profile picture:', error);
+                }
+            );
         }
 
         // --- CSV Export Utility ---
@@ -1403,26 +1406,40 @@
         });
 
         // --- Bulk FAQ Import ---
+        let bulkImportCounter = 0;
+        let bulkImportTotal = 0;
         document.getElementById('import-faqs-csv').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(evt) {
                 const lines = evt.target.result.split('\n');
+                bulkImportTotal = lines.length - 1;
+                bulkImportCounter = 0;
+                
+                showMessage(`Starting import of ${bulkImportTotal} FAQs...`, 'info');
+                
                 for (let i = 1; i < lines.length; i++) {
-                    const [question, answer, keywords] = lines[i].split(',');
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const [question, answer, keywords] = line.split(',');
                     if (question && answer) {
-                        const formData = new FormData();
-                        formData.append('action', 'addFAQ');
-                        formData.append('question', question.trim());
-                        formData.append('answer', answer.trim());
-                        formData.append('keywords', keywords ? keywords.trim() : '');
-                        fetch(SCRIPT_URL, { method: 'POST', body: formData });
+                        apiCall('addFAQ', {
+                            question: question.trim(),
+                            answer: answer.trim(),
+                            keywords: keywords ? keywords.trim() : ''
+                        }, 
+                        function() {
+                            bulkImportCounter++;
+                            if (bulkImportCounter >= bulkImportTotal) {
+                                showMessage('Bulk FAQ import completed', 'success');
+                                setTimeout(refreshFAQs, 1000);
+                            }
+                        });
                     }
                 }
-                showMessage('Bulk FAQ import started. Please refresh after a few seconds.', 'success');
                 logAdminAction('import_faqs_csv');
-                setTimeout(refreshFAQs, 2000);
             };
             reader.readAsText(file);
         });
@@ -1430,26 +1447,28 @@
         // --- FAQ Approval Workflow ---
         function approveFAQ(id) {
             if (!confirm('Approve this FAQ?')) return;
-            const formData = new FormData();
-            formData.append('action', 'editFAQ');
             const faq = (window.faqsList || []).find(f => f.id === id);
             if (!faq) return;
-            formData.append('id', id);
-            formData.append('question', faq.question);
-            formData.append('answer', faq.answer);
-            formData.append('keywords', faq.keywords || '');
-            formData.append('status', 'approved');
-            fetch(SCRIPT_URL, { method: 'POST', body: formData })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        showMessage('FAQ approved.', 'success');
-                        logAdminAction('approve_faq', id);
-                        loadFAQs();
-                    } else {
-                        showMessage('Error approving FAQ', 'error');
-                    }
-                });
+            
+            apiCall('editFAQ', {
+                id: id,
+                question: faq.question,
+                answer: faq.answer,
+                keywords: faq.keywords || '',
+                status: 'approved'
+            },
+            function(data) {
+                if (data.success) {
+                    showMessage('FAQ approved.', 'success');
+                    logAdminAction('approve_faq', id);
+                    loadFAQs();
+                } else {
+                    showMessage('Error approving FAQ', 'error');
+                }
+            },
+            function(error) {
+                showMessage('Error approving FAQ', 'error');
+            });
         }
         function rejectFAQ(id) {
             if (!confirm('Reject and delete this FAQ?')) return;
@@ -1461,12 +1480,12 @@
         function logAdminAction(action, details = '') {
             const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
             if (!currentUser) return;
-            const formData = new FormData();
-            formData.append('action', 'logActivity');
-            formData.append('username', currentUser.username);
-            formData.append('actionType', action);
-            formData.append('details', details);
-            fetch(SCRIPT_URL, { method: 'POST', body: formData });
+            
+            apiCall('logActivity', {
+                username: currentUser.username,
+                actionType: action,
+                details: details
+            });
         }
 
         // --- Accessibility: Focus trap for modals, ESC to close ---

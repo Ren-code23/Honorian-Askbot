@@ -37,38 +37,92 @@ function doPost(e) {
       });
     }
 
-    // Try to parse parameters from both e.parameter and e.postData
+    // Try to parse parameters from multiple sources
     let params = {};
-    if (e.parameter) {
-      params = e.parameter;
+    
+    // 1. First check for direct URL parameters - these are most reliable
+    if (e.parameter && Object.keys(e.parameter).length > 0) {
+      Logger.log("Found parameters in e.parameter");
+      params = Object.assign({}, e.parameter);
     }
-    if (e.postData && e.postData.contents) {
+    
+    // 2. Then try FormData - how FormData is usually received
+    if (Object.keys(params).length === 0 && e.postData && e.postData.type === "application/x-www-form-urlencoded") {
+      Logger.log("Found form-urlencoded data");
       try {
+        if (e.postData.contents) {
+          // Parse form data
+          const formDataPairs = e.postData.contents.split('&');
+          formDataPairs.forEach(pair => {
+            const [key, value] = pair.split('=').map(decodeURIComponent);
+            if (key && value !== undefined) {
+              params[key] = value;
+            }
+          });
+          Logger.log("Parsed form data: " + JSON.stringify(params));
+        }
+      } catch (formError) {
+        Logger.log("Warning: Error parsing form data: " + formError.toString());
+      }
+    }
+    
+    // 3. Try multipart form data
+    if (Object.keys(params).length === 0 && e.postData && e.postData.type && e.postData.type.indexOf("multipart/form-data") !== -1) {
+      Logger.log("Found multipart form data, parameters should be in e.parameter");
+      // Parameters from multipart form data should already be in e.parameter
+      // This is just a fallback check
+    }
+    
+    // 4. Finally try JSON data
+    if (Object.keys(params).length === 0 && e.postData && e.postData.contents) {
+      try {
+        Logger.log("Attempting to parse postData.contents as JSON");
         const postData = JSON.parse(e.postData.contents);
-        params = { ...params, ...postData };
+        params = Object.assign({}, postData);
+        Logger.log("Successfully parsed postData as JSON");
       } catch (parseError) {
-        Logger.log("Warning: Could not parse postData contents: " + parseError.toString());
+        Logger.log("Warning: Could not parse postData contents as JSON: " + parseError.toString());
       }
     }
 
+    Logger.log("Final parsed parameters: " + JSON.stringify(params));
+
+    // Check if this is a callback request (for iframe approach)
+    const callback = params.callback;
+    const isIframeRequest = callback === 'parent';
+    
     if (Object.keys(params).length === 0) {
-      Logger.log("ERROR: No parameters found in request");
-      return createJsonResponse({
+      const errorResponse = {
         success: false,
-        message: "No parameters found in request",
+        message: "No parameters found in request. If you're using FormData, make sure you're not setting Content-Type manually.",
         error: "MISSING_PARAMETERS"
-      });
+      };
+      
+      if (isIframeRequest) {
+        return ContentService.createTextOutput(
+          `<html><body><script>parent.postMessage({action:"signup_response", success:false, message:"No parameters found in request"}, "*");</script></body></html>`
+        ).setMimeType(ContentService.MimeType.HTML);
+      }
+      
+      return createJsonResponse(errorResponse);
     }
 
     const action = params.action;
     
     if (!action) {
-      Logger.log("ERROR: No action specified in request");
-      return createJsonResponse({
+      const errorResponse = {
         success: false,
         message: "No action specified",
         error: "MISSING_ACTION"
-      });
+      };
+      
+      if (isIframeRequest) {
+        return ContentService.createTextOutput(
+          `<html><body><script>parent.postMessage({action:"signup_response", success:false, message:"No action specified"}, "*");</script></body></html>`
+        ).setMimeType(ContentService.MimeType.HTML);
+      }
+      
+      return createJsonResponse(errorResponse);
     }
     
     Logger.log("Action requested: " + action + " with parameters: " + JSON.stringify(params));
@@ -77,7 +131,7 @@ function doPost(e) {
     let ss;
     try {
       ss = SpreadsheetApp.getActiveSpreadsheet();
-    } catch (error) {
+    } catch (error) { 
       Logger.log("ERROR: Failed to access spreadsheet: " + error.toString());
       return createJsonResponse({
         success: false,
@@ -122,6 +176,13 @@ function doPost(e) {
     // Handle different actions with enhanced error handling
     try {
       switch (action) {
+        case "test":
+          // Simple test endpoint for connection testing
+          return createJsonResponse({
+            success: true,
+            message: "Backend connection test successful",
+            timestamp: new Date().toISOString()
+          });
         case "login":
           return handleLogin(params, userSheet);
         case "signup":
@@ -170,6 +231,8 @@ function doPost(e) {
           return handleLogConversation(params, conversationSheet);
         case "chatMessage":
           return handleChatMessage(e, conversationSheet, faqSheet);
+        case "checkEmailExists":
+          return handleCheckEmailExists(params, userSheet);
         default:
           Logger.log("Unknown action: " + action);
           return createJsonResponse({
@@ -312,168 +375,265 @@ function getOrCreateSheet(ss, sheetName, headers) {
 
 // Helper function to create JSON response
 function createJsonResponse(data) {
-  Logger.log("Response sent: " + JSON.stringify(data));
-  return ContentService.createTextOutput(JSON.stringify(data))
+  try {
+    Logger.log("Response data: " + JSON.stringify(data));
+    
+    // Check if this is a callback request (for iframe approach)
+    if (data && data._callback) {
+      const callback = data._callback;
+      delete data._callback; // Remove from the data object
+      
+      // Return HTML with script to call the parent window's callback function
+      const scriptContent = `
+        <html><body><script>
+          try {
+            if (window.parent && window.parent.${callback}) {
+              window.parent.${callback}(${JSON.stringify(data)});
+            } else {
+              window.parent.postMessage(${JSON.stringify(data)}, "*");
+            }
+          } catch(e) {
+            console.error("Error posting message to parent", e);
+            window.parent.postMessage(${JSON.stringify(data)}, "*");
+          }
+        </script></body></html>
+      `;
+      
+      return ContentService.createTextOutput(scriptContent)
+        .setMimeType(ContentService.MimeType.HTML);
+    }
+    
+    const output = ContentService.createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+    
+    // Enhanced CORS headers for better compatibility
+    output.addHeader('Access-Control-Allow-Origin', '*');
+    output.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    output.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    output.addHeader('Access-Control-Max-Age', '3600');
+    output.addHeader('X-Content-Type-Options', 'nosniff');
+    
+    return output;
+  } catch (error) {
+    Logger.log("ERROR creating JSON response: " + error.toString());
+    const fallbackOutput = ContentService.createTextOutput(JSON.stringify({
+      success: false,
+      message: "Error creating response: " + error.message
+    }))
     .setMimeType(ContentService.MimeType.JSON);
+    
+    fallbackOutput.addHeader('Access-Control-Allow-Origin', '*');
+    fallbackOutput.addHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    fallbackOutput.addHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    return fallbackOutput;
+  }
 }
 
 // Helper function to validate DHVSU email domain
 function isValidDHVSUEmail(email) {
   if (!email) return false;
   email = email.toLowerCase().trim();
-  return email.endsWith('@dhvsu.edu.ph');
+  return email.endsWith('@dhvsu.edu.ph') && email.indexOf('@') > 0;
 }
 
 function handleSignup(params, sheet) {
-  if (!params) throw new Error('This function must be called via web request with parameters.');
-  const username = params.username;
-  const email = params.email;
-  const password = params.password;
-  
-  Logger.log("Processing signup for: " + username + ", " + email);
-  
-  // Validate required parameters
-  if (!username || !email || !password) {
-    Logger.log("Signup failed: Missing required parameters");
-    return createJsonResponse({
-      success: false,
-      message: "All fields are required"
-    });
-  }
-
-  // Validate email domain using helper function
-  if (!isValidDHVSUEmail(email)) {
-    Logger.log("Signup failed: Invalid email domain");
-    return createJsonResponse({
-      success: false,
-      message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed"
-    });
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  const usernameCol = headers.indexOf("username");
-  const emailCol = headers.indexOf("email");
-
-  // Check for existing username or email
-  for (let i = 1; i < data.length; i++) {
-    if (data[i][usernameCol] === username) {
-      Logger.log("Signup failed: Username already exists");
+  try {
+    if (!params || !params.username || !params.email || !params.password) {
       return createJsonResponse({
         success: false,
-        message: "Username already exists. Please choose another one."
+        message: "All fields are required"
       });
     }
-    if (data[i][emailCol] === email) {
-      Logger.log("Signup failed: Email already registered");
+
+    const username = params.username.trim();
+    const email = params.email.toLowerCase().trim();
+    const hashedPassword = params.password.trim(); // This is already SHA-256 hashed from the frontend
+
+    // Validate email format
+    if (!isValidDHVSUEmail(email)) {
       return createJsonResponse({
         success: false,
-        message: "Email already registered. Please use another email."
+        message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed"
       });
     }
-  }
 
-  // Create new user
-  const newId = Utilities.getUuid();
-  const dateCreated = new Date().toISOString();
-  sheet.appendRow([newId, username, email, password, dateCreated, "", "", "", "student", ""]);
-  
-  Logger.log("Signup successful for: " + email);
-  
-  // Log the signup activity
-  logActivity(email, "signup", "New user registration");
-  
-  return createJsonResponse({
-    success: true,
-    message: "User registered successfully"
-  });
-}
+    // Get all data at once
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const usernameCol = headers.indexOf("username");
+    const emailCol = headers.indexOf("email");
 
-function handleLogin(params, sheet) {
-  if (!params) throw new Error('This function must be called via web request with parameters.');
-  if (!params || !params.email || !params.password) {
-    Logger.log("Login failed: Missing email or password in params");
-    return createJsonResponse({
-      success: false,
-      message: "Missing email or password"
-    });
-  }
+    if (usernameCol === -1 || emailCol === -1) {
+      return createJsonResponse({
+        success: false,
+        message: "System error: Required columns missing"
+      });
+    }
 
-  const email = params.email.toLowerCase().trim();
-  const hashedPassword = params.password; // This is already hashed from frontend
-  
-  Logger.log("Attempting login for email: " + email);
-
-  // Validate email domain
-  if (!isValidDHVSUEmail(email)) {
-    Logger.log("Login failed: Invalid email domain");
-    return createJsonResponse({
-      success: false,
-      message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed"
-    });
-  }
-
-  const data = sheet.getDataRange().getValues();
-  const headers = data[0];
-  const emailCol = headers.indexOf("email");
-  const passwordCol = headers.indexOf("password");
-  const usernameCol = headers.indexOf("username");
-  const roleCol = headers.indexOf("role");
-
-  if (emailCol === -1 || passwordCol === -1 || usernameCol === -1) {
-    Logger.log("Login failed: Required columns missing");
-    return createJsonResponse({
-      success: false,
-      message: "System error: Required columns missing"
-    });
-  }
-
-  for (let i = 1; i < data.length; i++) {
-    const storedEmail = String(data[i][emailCol]).toLowerCase().trim();
-    const storedPassword = String(data[i][passwordCol]);
-    const username = data[i][usernameCol];
-
-    Logger.log("Comparing emails: '" + storedEmail + "' vs '" + email + "'");
-    Logger.log("Password lengths - stored: " + storedPassword.length + ", provided: " + hashedPassword.length);
-
-    if (storedEmail === email) {
-      if (storedPassword === hashedPassword) {
-        // Check if this should be an admin user and update their role if needed
-        let userRole = roleCol !== -1 ? (data[i][roleCol] || "student") : "student";
-        
-        // For admin users, ensure admin role is set and preserved
-        if (username === "admin" || email.includes("admin@")) {
-          ensureAdminRole(email, username);
-          userRole = "admin";
-          Logger.log("Admin login detected. Role is set to: " + userRole);
-        }
-        
-        // Log the successful login
-        logActivity(email, "login");
-        Logger.log("Login successful for: " + email);
-        
-        return createJsonResponse({
-          success: true,
-          message: "Login successful",
-          username: username,
-          email: email,
-          role: userRole
-        });
-      } else {
-        Logger.log("Login failed: Password mismatch for " + email);
+    // Check for existing username or email - case insensitive for email
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      if (String(row[usernameCol]).trim() === username) {
         return createJsonResponse({
           success: false,
-          message: "Invalid password"
+          message: "Username already exists"
+        });
+      }
+      if (String(row[emailCol]).toLowerCase().trim() === email) {
+        return createJsonResponse({
+          success: false,
+          message: "Email already registered"
         });
       }
     }
+
+    // Prepare new user data
+    const newRow = Array(headers.length).fill("");
+    const idCol = headers.indexOf("id");
+    const passwordCol = headers.indexOf("password");
+    const dateCol = headers.indexOf("dateCreated");
+    const roleCol = headers.indexOf("role");
+
+    // Generate a unique ID
+    const newId = Utilities.getUuid();
+    
+    // Fill in the user data - storing the already hashed password
+    if (idCol !== -1) newRow[idCol] = newId;
+    if (usernameCol !== -1) newRow[usernameCol] = username;
+    if (emailCol !== -1) newRow[emailCol] = email;
+    if (passwordCol !== -1) newRow[passwordCol] = hashedPassword;
+    if (dateCol !== -1) newRow[dateCol] = new Date().toISOString();
+    if (roleCol !== -1) newRow[roleCol] = "student";
+
+    // Append the new user
+    sheet.appendRow(newRow);
+
+    // Verify the user was actually created
+    const verifyData = sheet.getDataRange().getValues();
+    let userCreated = false;
+    
+    for (let i = 1; i < verifyData.length; i++) {
+      const row = verifyData[i];
+      if (String(row[emailCol]).toLowerCase().trim() === email) {
+        userCreated = true;
+        break;
+      }
+    }
+
+    if (!userCreated) {
+      throw new Error("Failed to verify user creation");
+    }
+
+    // Log the signup
+    try {
+      logActivity(email, "signup", "New user registration");
+    } catch (e) {
+      console.error("Signup log error:", e);
+    }
+
+    return createJsonResponse({
+      success: true,
+      message: "User registered successfully",
+      username: username,
+      email: email
+    });
+
+  } catch (error) {
+    console.error("Signup error:", error);
+    return createJsonResponse({
+      success: false,
+      message: "Server error: " + error.message
+    });
   }
-  
-  Logger.log("Login failed: Email not found - " + email);
-  return createJsonResponse({
-    success: false,
-    message: "Email not found"
-  });
+}
+
+function handleLogin(params, sheet) {
+  try {
+    if (!params || !params.email || !params.password) {
+      return createJsonResponse({
+        success: false,
+        message: "Missing email or password"
+      });
+    }
+
+    const email = params.email.toLowerCase().trim();
+    const hashedPassword = params.password; // This is already SHA-256 hashed from the frontend
+    
+    // Validate email format first
+    if (!isValidDHVSUEmail(email)) {
+      return createJsonResponse({
+        success: false,
+        message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed"
+      });
+    }
+
+    // Get all data at once for faster processing
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const emailCol = headers.indexOf("email");
+    const passwordCol = headers.indexOf("password");
+    const usernameCol = headers.indexOf("username");
+    const roleCol = headers.indexOf("role");
+
+    if (emailCol === -1 || passwordCol === -1 || usernameCol === -1) {
+      return createJsonResponse({
+        success: false,
+        message: "System error: Required columns missing"
+      });
+    }
+
+    // Find user by email - case insensitive comparison
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const storedEmail = String(row[emailCol]).toLowerCase().trim();
+      const storedPassword = String(row[passwordCol]).trim();
+      
+      if (storedEmail === email) {
+        // Compare passwords exactly as stored - both should already be SHA-256 hashed
+        if (storedPassword === hashedPassword) {
+          const username = String(row[usernameCol]).trim();
+          const role = roleCol !== -1 ? (String(row[roleCol]).trim() || "student") : "student";
+          
+          // Log successful login
+          try {
+            logActivity(email, "login", "Successful login");
+          } catch (e) {
+            console.error("Login log error:", e);
+          }
+
+          return createJsonResponse({
+            success: true,
+            message: "Login successful",
+            username: username,
+            email: email,
+            role: role
+          });
+        } else {
+          // Log failed attempt but don't expose details
+          console.log("Password mismatch for " + email);
+          console.log("Expected hash: " + storedPassword);
+          console.log("Received hash: " + hashedPassword);
+          
+          return createJsonResponse({
+            success: false,
+            message: "Invalid password"
+          });
+        }
+      }
+    }
+
+    return createJsonResponse({
+      success: false,
+      message: "Email not found"
+    });
+
+  } catch (error) {
+    console.error("Login error:", error);
+    return createJsonResponse({
+      success: false,
+      message: "Server error: " + error.message
+    });
+  }
 }
 
 function handleGetUserProfile(sheet, identifier) {
@@ -3391,5 +3551,624 @@ function handleGetAnalytics(faqSheet, feedbackSheet) {
       success: false,
       message: "Error generating analytics: " + error.toString()
     });
+  }
+}
+
+// Add this new function to check if an email exists in the database
+function handleCheckEmailExists(params, sheet) {
+  try {
+    // Validate parameters
+    if (!params || !params.email) {
+      Logger.log("Email existence check failed: Missing email parameter");
+      return createJsonResponse({
+        success: false,
+        message: "Email parameter is required",
+        exists: false
+      });
+    }
+
+    const email = params.email.toLowerCase().trim();
+    
+    // Validate email format
+    if (!isValidDHVSUEmail(email)) {
+      Logger.log("Email existence check failed: Invalid email format");
+      return createJsonResponse({
+        success: false,
+        message: "Invalid email format",
+        exists: false
+      });
+    }
+    
+    Logger.log("Checking if email exists: " + email);
+    
+    // Get data from sheet
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const emailCol = headers.indexOf("email");
+    
+    if (emailCol === -1) {
+      Logger.log("Email existence check failed: Email column not found");
+      return createJsonResponse({
+        success: false,
+        message: "Database error: Email column not found",
+        exists: false
+      });
+    }
+    
+    // Search for the email
+    for (let i = 1; i < data.length; i++) {
+      const storedEmail = String(data[i][emailCol]).toLowerCase().trim();
+      
+      if (storedEmail === email) {
+        Logger.log("Email found: " + email);
+        return createJsonResponse({
+          success: true,
+          message: "Email exists in the database",
+          exists: true
+        });
+      }
+    }
+    
+    // Email not found
+    Logger.log("Email not found: " + email);
+    return createJsonResponse({
+      success: true,
+      message: "Email does not exist in the database",
+      exists: false
+    });
+  } catch (error) {
+    Logger.log("Error in handleCheckEmailExists: " + error.toString());
+    return createJsonResponse({
+      success: false,
+      message: "Error checking email existence: " + error.message,
+      exists: false
+    });
+  }
+}
+
+function handleForgotPassword(params, userSheet) {
+  try {
+    if (!params || !params.email) {
+      return createJsonResponse({
+        success: false,
+        message: "Email is required"
+      });
+    }
+
+    const email = params.email.toLowerCase().trim();
+    const resetUrl = params.resetUrl || '';
+    const callback = params.callback || '';
+
+    // Log all parameters for debugging
+    Logger.log("Forgot password request params: " + JSON.stringify({
+      email: email,
+      resetUrl: resetUrl,
+      callback: callback
+    }));
+
+    // Validate email format
+    if (!isValidDHVSUEmail(email)) {
+      const response = {
+        success: false,
+        message: "Only DHVSU email addresses (@dhvsu.edu.ph) are allowed"
+      };
+
+      // Add callback if provided for iframe response
+      if (callback) {
+        response._callback = callback;
+        response.action = "forgot_password_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    // Find the user by email
+    const data = userSheet.getDataRange().getValues();
+    const headers = data[0];
+    const emailCol = headers.indexOf("email");
+
+    if (emailCol === -1) {
+      const response = {
+        success: false,
+        message: "System error: Email column not found"
+      };
+      
+      if (callback) {
+        response._callback = callback;
+        response.action = "forgot_password_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    let found = false;
+    let userRow = -1;
+
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][emailCol].toLowerCase().trim() === email) {
+        found = true;
+        userRow = i + 1; // 1-indexed row
+        break;
+      }
+    }
+
+    if (!found) {
+      const response = {
+        success: false,
+        message: "Email not found in our records"
+      };
+      
+      if (callback) {
+        response._callback = callback;
+        response.action = "forgot_password_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    // Generate reset token
+    const resetToken = Utilities.getUuid();
+    const tokenExpiry = new Date();
+    tokenExpiry.setHours(tokenExpiry.getHours() + 1); // Token valid for 1 hour
+
+    // Update user record with token
+    const tokenCol = headers.indexOf("reset_token");
+    const expiryCol = headers.indexOf("token_expiry");
+
+    if (tokenCol === -1 || expiryCol === -1) {
+      // Need to add the columns
+      if (tokenCol === -1) {
+        userSheet.insertColumnAfter(userSheet.getLastColumn());
+        userSheet.getRange(1, userSheet.getLastColumn() + 1).setValue("reset_token");
+      }
+      if (expiryCol === -1) {
+        userSheet.insertColumnAfter(userSheet.getLastColumn());
+        userSheet.getRange(1, userSheet.getLastColumn() + 1).setValue("token_expiry");
+      }
+      
+      // Refresh the data
+      const refreshedData = userSheet.getDataRange().getValues();
+      const refreshedHeaders = refreshedData[0];
+      const refreshedTokenCol = refreshedHeaders.indexOf("reset_token");
+      const refreshedExpiryCol = refreshedHeaders.indexOf("token_expiry");
+      
+      // Update the token
+      userSheet.getRange(userRow, refreshedTokenCol + 1).setValue(resetToken);
+      userSheet.getRange(userRow, refreshedExpiryCol + 1).setValue(tokenExpiry.toISOString());
+    } else {
+      // Update existing columns
+      userSheet.getRange(userRow, tokenCol + 1).setValue(resetToken);
+      userSheet.getRange(userRow, expiryCol + 1).setValue(tokenExpiry.toISOString());
+    }
+
+    // Construct reset URL - ensure it has correct protocol
+    let formattedResetUrl = resetUrl;
+    if (formattedResetUrl && !formattedResetUrl.startsWith('http')) {
+      formattedResetUrl = 'https://' + formattedResetUrl.replace(/^\/+/, '');
+    }
+    if (!formattedResetUrl.endsWith('/')) {
+      formattedResetUrl += '/';
+    }
+    
+    const resetLink = `${formattedResetUrl}reset_password.html?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    Logger.log("Generated reset link: " + resetLink);
+    
+    // Try to send email
+    let emailSent = false;
+    let emailError = null;
+    try {
+      // Get the active user's email to see who's sending this
+      const activeUserEmail = Session.getActiveUser().getEmail();
+      Logger.log("Sending email as: " + (activeUserEmail || "unknown user"));
+      
+      const subject = "Pampanga State University Password Reset";
+      const body = `
+        <p>Dear User,</p>
+        <p>We received a request to reset your password for your Pampanga State University Askbot account.</p>
+        <p>Please click the link below to reset your password:</p>
+        <p><a href="${resetLink}">${resetLink}</a></p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you did not request a password reset, please ignore this email.</p>
+        <p>Best regards,</p>
+        <p>Pampanga State University Askbot Team</p>
+      `;
+      
+      try {
+        // Try the standard MailApp first
+        MailApp.sendEmail({
+          to: email,
+          subject: subject,
+          htmlBody: body
+        });
+        emailSent = true;
+        Logger.log("Password reset email sent via MailApp to: " + email);
+      } catch (mailAppError) {
+        Logger.log("MailApp failed: " + mailAppError.toString());
+        emailError = mailAppError.toString();
+        
+        // Try GmailApp as fallback if MailApp fails
+        try {
+          GmailApp.sendEmail(email, subject, "Please view this email in HTML format", {
+            htmlBody: body
+          });
+          emailSent = true;
+          Logger.log("Password reset email sent via GmailApp to: " + email);
+        } catch (gmailError) {
+          Logger.log("GmailApp also failed: " + gmailError.toString());
+          emailError = emailError + "; GmailApp error: " + gmailError.toString();
+        }
+      }
+    } catch (outerEmailError) {
+      Logger.log("Error sending password reset email: " + outerEmailError.toString());
+      emailError = outerEmailError.toString();
+    }
+
+    // Log the activity
+    logActivity(email, "forgot_password", "Password reset requested");
+    
+    const response = {
+      success: true,
+      message: emailSent 
+        ? "Password reset link has been sent to your email" 
+        : "Password reset link generated but email delivery failed. Use the link below to reset your password.",
+      resetLink: resetLink,
+      token: resetToken,
+      emailSent: emailSent,
+      debug: {
+        emailError: emailError,
+        script: ScriptApp.getScriptId(),
+        user: Session.getEffectiveUser().getEmail()
+      }
+    };
+    
+    // Add callback if provided for iframe response
+    if (callback) {
+      response._callback = callback;
+      response.action = "forgot_password_response";
+    }
+    
+    return createJsonResponse(response);
+    
+  } catch (error) {
+    Logger.log("Error in handleForgotPassword: " + error.toString());
+    Logger.log("Stack trace: " + error.stack);
+    
+    const response = {
+      success: false,
+      message: "Server error: " + error.message,
+      debug: {
+        error: error.toString(),
+        stack: error.stack
+      }
+    };
+    
+    // Add callback if provided
+    if (params && params.callback) {
+      response._callback = params.callback;
+      response.action = "forgot_password_response";
+    }
+    
+    return createJsonResponse(response);
+  }
+}
+
+function validateResetToken(params, sheet) {
+  try {
+    if (!params || !params.email || !params.token) {
+      const response = {
+        success: false,
+        message: "Email and token are required"
+      };
+      
+      // Add callback if provided
+      if (params && params.callback) {
+        response._callback = params.callback;
+        response.action = "validate_token_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    const email = params.email.toLowerCase().trim();
+    const token = params.token.trim();
+    const callback = params.callback || '';
+
+    // Find the user by email
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const emailCol = headers.indexOf("email");
+    const tokenCol = headers.indexOf("reset_token");
+    const expiryCol = headers.indexOf("token_expiry");
+
+    if (emailCol === -1 || tokenCol === -1 || expiryCol === -1) {
+      const response = {
+        success: false,
+        message: "System error: Required columns not found"
+      };
+      
+      if (callback) {
+        response._callback = callback;
+        response.action = "validate_token_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    // Search for the user and validate token
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][emailCol].toLowerCase().trim() === email) {
+        const storedToken = data[i][tokenCol];
+        const expiryStr = data[i][expiryCol];
+        
+        if (!storedToken || storedToken !== token) {
+          const response = {
+            success: false,
+            message: "Invalid reset token"
+          };
+          
+          if (callback) {
+            response._callback = callback;
+            response.action = "validate_token_response";
+          }
+          
+          return createJsonResponse(response);
+        }
+        
+        // Check if token has expired
+        if (!expiryStr) {
+          const response = {
+            success: false,
+            message: "Token expiry not set"
+          };
+          
+          if (callback) {
+            response._callback = callback;
+            response.action = "validate_token_response";
+          }
+          
+          return createJsonResponse(response);
+        }
+        
+        try {
+          const expiry = new Date(expiryStr);
+          const now = new Date();
+          
+          if (now > expiry) {
+            const response = {
+              success: false,
+              message: "Reset token has expired. Please request a new password reset."
+            };
+            
+            if (callback) {
+              response._callback = callback;
+              response.action = "validate_token_response";
+            }
+            
+            return createJsonResponse(response);
+          }
+        } catch (dateError) {
+          Logger.log("Error parsing date: " + dateError.toString());
+          const response = {
+            success: false,
+            message: "Error validating token expiry"
+          };
+          
+          if (callback) {
+            response._callback = callback;
+            response.action = "validate_token_response";
+          }
+          
+          return createJsonResponse(response);
+        }
+        
+        // Token is valid
+        const response = {
+          success: true,
+          message: "Token is valid"
+        };
+        
+        if (callback) {
+          response._callback = callback;
+          response.action = "validate_token_response";
+        }
+        
+        return createJsonResponse(response);
+      }
+    }
+
+    // User not found
+    const response = {
+      success: false,
+      message: "User not found"
+    };
+    
+    if (callback) {
+      response._callback = callback;
+      response.action = "validate_token_response";
+    }
+    
+    return createJsonResponse(response);
+    
+  } catch (error) {
+    Logger.log("Error in validateResetToken: " + error.toString());
+    
+    const response = {
+      success: false,
+      message: "Server error: " + error.message
+    };
+    
+    // Add callback if provided
+    if (params && params.callback) {
+      response._callback = params.callback;
+      response.action = "validate_token_response";
+    }
+    
+    return createJsonResponse(response);
+  }
+}
+
+function handleResetPassword(params, sheet) {
+  try {
+    if (!params || !params.email || !params.token || !params.password) {
+      const response = {
+        success: false,
+        message: "Email, token, and password are required"
+      };
+      
+      // Add callback if provided
+      if (params && params.callback) {
+        response._callback = params.callback;
+        response.action = "reset_password_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    const email = params.email.toLowerCase().trim();
+    const token = params.token.trim();
+    const password = params.password.trim();
+    const callback = params.callback || '';
+
+    // Find the user by email
+    const data = sheet.getDataRange().getValues();
+    const headers = data[0];
+    const emailCol = headers.indexOf("email");
+    const passwordCol = headers.indexOf("password");
+    const tokenCol = headers.indexOf("reset_token");
+    const expiryCol = headers.indexOf("token_expiry");
+
+    if (emailCol === -1 || passwordCol === -1 || tokenCol === -1 || expiryCol === -1) {
+      const response = {
+        success: false,
+        message: "System error: Required columns not found"
+      };
+      
+      if (callback) {
+        response._callback = callback;
+        response.action = "reset_password_response";
+      }
+      
+      return createJsonResponse(response);
+    }
+
+    // Search for the user and validate token
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][emailCol].toLowerCase().trim() === email) {
+        const storedToken = data[i][tokenCol];
+        const expiryStr = data[i][expiryCol];
+        
+        if (!storedToken || storedToken !== token) {
+          const response = {
+            success: false,
+            message: "Invalid reset token"
+          };
+          
+          if (callback) {
+            response._callback = callback;
+            response.action = "reset_password_response";
+          }
+          
+          return createJsonResponse(response);
+        }
+        
+        // Check if token has expired
+        if (!expiryStr) {
+          const response = {
+            success: false,
+            message: "Token expiry not set"
+          };
+          
+          if (callback) {
+            response._callback = callback;
+            response.action = "reset_password_response";
+          }
+          
+          return createJsonResponse(response);
+        }
+        
+        try {
+          const expiry = new Date(expiryStr);
+          const now = new Date();
+          
+          if (now > expiry) {
+            const response = {
+              success: false,
+              message: "Reset token has expired. Please request a new password reset."
+            };
+            
+            if (callback) {
+              response._callback = callback;
+              response.action = "reset_password_response";
+            }
+            
+            return createJsonResponse(response);
+          }
+        } catch (dateError) {
+          Logger.log("Error parsing date: " + dateError.toString());
+          const response = {
+            success: false,
+            message: "Error validating token expiry"
+          };
+          
+          if (callback) {
+            response._callback = callback;
+            response.action = "reset_password_response";
+          }
+          
+          return createJsonResponse(response);
+        }
+        
+        // Update the password
+        sheet.getRange(i + 1, passwordCol + 1).setValue(password);
+        
+        // Clear the token and expiry
+        sheet.getRange(i + 1, tokenCol + 1).setValue("");
+        sheet.getRange(i + 1, expiryCol + 1).setValue("");
+        
+        // Log the activity
+        logActivity(email, "reset_password", "Password reset successful");
+        
+        const response = {
+          success: true,
+          message: "Password has been reset successfully"
+        };
+        
+        if (callback) {
+          response._callback = callback;
+          response.action = "reset_password_response";
+        }
+        
+        return createJsonResponse(response);
+      }
+    }
+
+    // User not found
+    const response = {
+      success: false,
+      message: "User not found"
+    };
+    
+    if (callback) {
+      response._callback = callback;
+      response.action = "reset_password_response";
+    }
+    
+    return createJsonResponse(response);
+    
+  } catch (error) {
+    Logger.log("Error in handleResetPassword: " + error.toString());
+    
+    const response = {
+      success: false,
+      message: "Server error: " + error.message
+    };
+    
+    // Add callback if provided
+    if (params && params.callback) {
+      response._callback = params.callback;
+      response.action = "reset_password_response";
+    }
+    
+    return createJsonResponse(response);
   }
 }

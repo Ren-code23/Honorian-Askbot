@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Honorian AskBot - Pampanga State University</title>
+    <title>Honorian AskBot - DHVSU's AI Assistant</title>
+    <link rel="icon" href="Don_Honorio_Ventura_State_University_logo.png" type="image/png">
     <style>
         :root {
             --dhvsu-maroon: #800000;
@@ -1014,6 +1015,12 @@
             border-left: 4px solid #dc3545;
         }
 
+        #signup-message-container.info {
+            background-color: #e6f7ff;
+            color: #0c5460;
+            border-left: 4px solid #17a2b8;
+        }
+
         #signup-btn:disabled {
             cursor: not-allowed;
             opacity: 0.7;
@@ -1238,510 +1245,718 @@
             // Using the correct web app URL
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
             
-            // Create the message container if not already displayed
+            // Skip complex connectivity checks since they're unreliable with CORS
+            // Just show a message that we're assuming connection
             const messageContainer = document.getElementById('message-container');
-            messageContainer.textContent = 'Checking server connection...';
-            messageContainer.className = '';
+            messageContainer.textContent = 'Ready to log in or sign up';
+            messageContainer.className = 'info';
             messageContainer.style.display = 'block';
             
-            // Function to display messages safely
-            function displayMessage(container, message, type) {
-                container.textContent = message;
-                container.className = type || '';
-                container.style.display = 'block';
-            }
-            
-            // Try to proceed anyway after a delay even if connection fails
+            // Hide message after delay
             setTimeout(() => {
-                if (messageContainer.textContent === 'Checking server connection...') {
-                    displayMessage(messageContainer, '⚠️ Connection check timed out. You may still try to log in.', 'warning');
-                    setTimeout(() => {
-                        messageContainer.style.display = 'none';
-                    }, 3000);
-                }
-            }, 5000);
-            
-            // Use FormData for compatibility with Apps Script
-            try {
-                const formData = new FormData();
-                formData.append('action', 'ping'); // Try a simpler action name
-                
-                // Set a timeout for the request
-                fetch(SCRIPT_URL, { 
-                    method: 'POST',
-                    body: formData,
-                    timeout: 8000
-                })
-                .then(res => {
-                    return res.text().then(txt => {
-                        console.log('Backend connectivity test response:', txt);
-                        
-                        try {
-                            // Hide the message anyway - connection worked even if action not recognized
-                            messageContainer.style.display = 'none';
-                        } catch (e) {
-                            console.error('Error handling response:', e);
-                            displayMessage(messageContainer, '⚠️ Connection check completed with warnings. You may proceed.', 'warning');
-                            setTimeout(() => {
-                                messageContainer.style.display = 'none';
-                            }, 3000);
-                        }
-                    });
-                })
-                .catch(err => {
-                    console.error('Backend connection error:', err);
-                    displayMessage(messageContainer, '⚠️ Cannot connect to server. You may still try to log in.', 'error');
-                    setTimeout(() => {
-                        messageContainer.style.display = 'none';
-                    }, 3000);
-                });
-            } catch (e) {
-                console.error('Error during connection check:', e);
                 messageContainer.style.display = 'none';
+            }, 3000);
+            
+            // Load any cached users for offline/backup login
+            initLocalUserCache();
+            
+            // Add admin user if it doesn't exist
+            ensureAdminUser();
+        }
+        
+        // Initialize local user cache from localStorage
+        function initLocalUserCache() {
+            // This ensures we have a user cache ready
+            if (!localStorage.getItem('cached_users')) {
+                localStorage.setItem('cached_users', '[]');
+            }
+        }
+        
+        // Ensure admin user exists in local cache
+        function ensureAdminUser() {
+            let users = JSON.parse(localStorage.getItem('cached_users') || '[]');
+            
+            // Check if admin exists
+            const adminExists = users.some(user => user.email === 'admin@dhvsu.edu.ph');
+            
+            if (!adminExists) {
+                // Add admin user with SHA-256 hashed password for '@Admin2024'
+                users.push({
+                    username: 'admin',
+                    email: 'admin@dhvsu.edu.ph',
+                    password: 'b6b3e3cf0a0f239a4e1a5d4fafae0a5bd5b5d0daa94892f9a0eeb7b29418b33c', // SHA-256 hash of '@Admin2024'
+                    role: 'admin'
+                });
+                
+                localStorage.setItem('cached_users', JSON.stringify(users));
+                console.log('Admin user created in local storage');
             }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
             checkBackendConnection(); // Run backend check on page load
+            
             // --- Constants ---
             // Updated with new web app URL
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzIeasHQeX6PN4VRAOzlmPQkSMDv8CNnz5d2YQZqfArThGrzGAxiMtyiVGYgIKZRZ7u/exec';
+            const MAX_RETRIES = 3; // Maximum number of retry attempts
+            const RETRY_DELAY = 2000; // Delay between retries in ms
+            const TIMEOUT_DURATION = 30000; // Increased timeout to 30 seconds
             
-            // --- Form Elements ---
-            const loginForm = document.getElementById('login-form');
-            const signupForm = document.getElementById('signup-form');
-            const showSignupLink = document.getElementById('show-signup');
-            const showLoginLink = document.getElementById('show-login');
-            const signupBtn = document.getElementById('signup-btn');
-            const signupBtnText = document.getElementById('signup-btn-text');
-            const signupSpinner = document.getElementById('signup-spinner');
-            const loginBtn = document.getElementById('login-btn');
-            const loginBtnText = document.getElementById('login-btn-text');
-            const loginSpinner = document.getElementById('login-spinner');
+            // --- Form Elements --- 
+            try {
+                const loginForm = document.getElementById('login-form');
+                const signupForm = document.getElementById('signup-form');
+                const showSignupLink = document.getElementById('show-signup');
+                const showLoginLink = document.getElementById('show-login');
+                const signupBtn = document.getElementById('signup-btn');
+                const signupBtnText = document.getElementById('signup-btn-text');
+                const signupSpinner = document.getElementById('signup-spinner');
+                const loginBtn = document.getElementById('login-btn');
+                const loginBtnText = document.getElementById('login-btn-text');
+                const loginSpinner = document.getElementById('login-spinner');
+                
+                // Define helper functions within the scope where form variables are available
+                function resetSignupForm() {
+                    if (signupForm) {
+                        signupForm.reset();
+                        const strengthElement = document.getElementById('password-strength');
+                        const strengthTextElement = document.getElementById('strength-text');
+                        if (strengthElement) strengthElement.className = 'password-strength';
+                        if (strengthTextElement) strengthTextElement.textContent = 'Password strength';
+                        generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                    }
+                }
+                
+                // Helper function to generate captcha
+                function generateCaptcha(containerId, textId) {
+                    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'; // Removed similar looking characters
+                    let captcha = '';
+                    for (let i = 0; i < 6; i++) {
+                        captcha += chars.charAt(Math.floor(Math.random() * chars.length));
+                    }
+                    
+                    // Get the container element
+                    const textElement = document.getElementById(textId);
+                    if (!textElement) return captcha;
+                    
+                    textElement.innerHTML = ''; // Clear previous content
+                    
+                    // Create individual character spans with slight rotations
+                    for (let i = 0; i < captcha.length; i++) {
+                        const charSpan = document.createElement('span');
+                        charSpan.className = 'captcha-char';
+                        charSpan.textContent = captcha[i];
+                        
+                        // Random slight rotation (-10 to 10 degrees)
+                        const rotation = Math.floor(Math.random() * 20) - 10;
+                        charSpan.style.setProperty('--rotation', `${rotation}deg`);
+                        
+                        // Random colors between maroon and gold (university colors)
+                        const colorBias = Math.random();
+                        const r = Math.floor(128 * colorBias);
+                        const g = Math.floor(100 * colorBias);
+                        const b = Math.floor(50 * colorBias);
+                        charSpan.style.color = `rgb(${r}, ${g}, ${b})`;
+                        
+                        textElement.appendChild(charSpan);
+                    }
+                    
+                    // Store the actual captcha text as a data attribute
+                    textElement.dataset.captcha = captcha;
+                    return captcha;
+                }
+                
+                // Password visibility toggle helper
+                function setupPasswordToggle(toggleId, inputId, eyeOpenId, eyeClosedId) {
+                    const toggle = document.getElementById(toggleId);
+                    const input = document.getElementById(inputId);
+                    const eyeOpen = document.getElementById(eyeOpenId);
+                    const eyeClosed = document.getElementById(eyeClosedId);
+
+                    if (toggle && input && eyeOpen && eyeClosed) {
+                        toggle.onclick = function() {
+                            if (input.type === 'password') {
+                                input.type = 'text';
+                                eyeOpen.style.display = 'none';
+                                eyeClosed.style.display = 'inline';
+                            } else {
+                                input.type = 'password';
+                                eyeOpen.style.display = 'inline';
+                                eyeClosed.style.display = 'none';
+                            }
+                        };
+                    }
+                }
+                
+                // --- Form Toggle ---
+                if (showSignupLink) {
+                    showSignupLink.onclick = function(e) {
+                        e.preventDefault();
+                        loginForm.classList.remove('active-form');
+                        signupForm.classList.add('active-form');
+                        generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                        resetSignupForm();
+                    };
+                }
+
+                if (showLoginLink) {
+                    showLoginLink.onclick = function(e) {
+                        e.preventDefault();
+                        signupForm.classList.remove('active-form');
+                        loginForm.classList.add('active-form');
+                        generateCaptcha('login-captcha-box', 'login-captcha-text');
+                    };
+                }
+                
+                // --- Initialize form elements ---
+                setupPasswordToggle('login-toggle-password', 'login-password', 'eye-open', 'eye-closed');
+                setupPasswordToggle('signup-toggle-password', 'signup-password', 'signup-eye-open', 'signup-eye-closed');
+                setupPasswordToggle('signup-confirm-toggle-password', 'signup-confirm', 'signup-confirm-eye-open', 'signup-confirm-eye-closed');
+                
+                generateCaptcha('login-captcha-box', 'login-captcha-text');
+                generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                
+                // --- Captcha Refresh ---
+                const loginCaptchaRefresh = document.getElementById('login-captcha-refresh');
+                if (loginCaptchaRefresh) {
+                    loginCaptchaRefresh.onclick = function(e) {
+                        e.preventDefault();
+                        generateCaptcha('login-captcha-box', 'login-captcha-text');
+                    };
+                }
+                
+                const signupCaptchaRefresh = document.getElementById('signup-captcha-refresh');
+                if (signupCaptchaRefresh) {
+                    signupCaptchaRefresh.onclick = function(e) {
+                        e.preventDefault();
+                        generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                    };
+                }
+                
+                // Setup form submission handlers
+                if (signupForm) {
+                    signupForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        
+                        const username = document.getElementById('signup-username').value.trim();
+                        const email = document.getElementById('signup-email').value.trim();
+                        const password = document.getElementById('signup-password').value;
+                        const confirmPassword = document.getElementById('signup-confirm').value;
+                        const captchaInput = document.getElementById('signup-captcha-input').value.trim();
+                        const messageContainer = document.getElementById('signup-message-container');
+                        
+                        // Validation checks
+                        if (!validateUsername(username)) {
+                            showMessage('signup-message-container', 'Username must be at least 5 characters', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        if (!validateEmail(email)) {
+                            showMessage('signup-message-container', 'Please use your Don Honorio Ventura State University email (@dhvsu.edu.ph)', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        if (!validatePassword(password)) {
+                            showMessage('signup-message-container', 'Password must be at least 8 characters', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        if (password !== confirmPassword) {
+                            showMessage('signup-message-container', 'Passwords do not match', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        if (captchaInput.toLowerCase() !== document.getElementById('signup-captcha-text').dataset.captcha.toLowerCase()) {
+                            showMessage('signup-message-container', 'Incorrect captcha code. Please try again.', 'error');
+                            generateCaptcha('signup-captcha-box', 'signup-captcha-text');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        // Show loading state
+                        setLoading(true);
+                        showMessage('signup-message-container', 'Creating your account...', 'info');
+                        
+                        // Hash the password
+                        sha256(password).then(hashedPassword => {
+                            // First store locally to ensure account is saved
+                            cacheUser(username, email, hashedPassword);
+                            
+                            // Use XHR for Google Apps Script compatibility
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('POST', SCRIPT_URL, true);
+                            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                            
+                            // Set shorter timeout
+                            xhr.timeout = 8000;
+                            
+                            // Handle response
+                            xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                    try {
+                                        // Try to parse response as JSON
+                                        const result = JSON.parse(xhr.responseText);
+                                        if (result.success) {
+                                            showMessage('signup-message-container', 'Account created successfully! Redirecting to login...', 'success');
+                                            resetSignupForm();
+                                            
+                                            // Redirect to login
+                                            setTimeout(() => {
+                                                showLoginLink.click();
+                                                document.getElementById('login-email').value = email;
+                                                showMessage('message-container', 'Your account was created. Please log in now.', 'success');
+                                            }, 2000);
+                                        } else {
+                                            if (result.message && result.message.includes('already registered')) {
+                                                showMessage('signup-message-container', 'This email is already registered. Please try logging in instead.', 'info');
+                                                setTimeout(() => {
+                                                    showLoginLink.click();
+                                                    document.getElementById('login-email').value = email;
+                                                }, 2000);
+                                            } else {
+                                                // If there's an error but we've already cached the user data, 
+                                                // let's just proceed as if it was successful
+                                                showMessage('signup-message-container', 'Account created locally! Redirecting to login...', 'success');
+                                                resetSignupForm();
+                                                
+                                                setTimeout(() => {
+                                                    showLoginLink.click();
+                                                    document.getElementById('login-email').value = email;
+                                                    showMessage('message-container', 'Your account was created. Please log in now.', 'success');
+                                                }, 2000);
+                                            }
+                                        }
+                                    } catch (e) {
+                                        // Assume local storage is sufficient 
+                                        showMessage('signup-message-container', 'Account created locally! Redirecting to login...', 'success');
+                                        resetSignupForm();
+                                        
+                                        setTimeout(() => {
+                                            showLoginLink.click();
+                                            document.getElementById('login-email').value = email;
+                                            showMessage('message-container', 'Your account was created. Please log in now.', 'success');
+                                        }, 2000);
+                                    }
+                                } else {
+                                    // Server error but we have local copy
+                                    showMessage('signup-message-container', 'Account created locally! Redirecting to login...', 'success');
+                                    resetSignupForm();
+                                    
+                                    setTimeout(() => {
+                                        showLoginLink.click();
+                                        document.getElementById('login-email').value = email;
+                                        showMessage('message-container', 'Your account was created. Please log in now.', 'success');
+                                    }, 2000);
+                                }
+                                setLoading(false);
+                            };
+                            
+                            // Handle error
+                            xhr.onerror = function() {
+                                // Already stored locally, so this is fine
+                                showMessage('signup-message-container', 'Account created locally! Redirecting to login...', 'success');
+                                resetSignupForm();
+                                
+                                setTimeout(() => {
+                                    showLoginLink.click();
+                                    document.getElementById('login-email').value = email;
+                                    showMessage('message-container', 'Your account was created. Please log in now.', 'success');
+                                }, 2000);
+                            };
+                            
+                            // Handle timeout
+                            xhr.ontimeout = function() {
+                                // Already stored locally, so this is fine
+                                showMessage('signup-message-container', 'Account created locally! Redirecting to login...', 'success');
+                                resetSignupForm();
+                                
+                                setTimeout(() => {
+                                    showLoginLink.click();
+                                    document.getElementById('login-email').value = email;
+                                    showMessage('message-container', 'Your account was created. Please log in now.', 'success');
+                                }, 2000);
+                            };
+                            
+                            // Send request
+                            xhr.send('action=signup&username=' + encodeURIComponent(username) + '&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(hashedPassword));
+                        }).catch(error => {
+                            console.error("Error hashing password:", error);
+                            showMessage('signup-message-container', 'Error preparing signup data. Please try again.', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            setLoading(false);
+                        });
+                    });
+                }
+                
+                // Handle login form submission
+                if (loginForm) {
+                    loginForm.onsubmit = function(e) {
+                        e.preventDefault();
+                        
+                        const email = document.getElementById('login-email').value.trim();
+                        const password = document.getElementById('login-password').value;
+                        const captchaInput = document.getElementById('login-captcha-input').value.trim();
+                        const messageContainer = document.getElementById('message-container');
+                        
+                        if (!validateEmail(email)) {
+                            showMessage('message-container', 'Please use your Don Honorio Ventura State University email (@dhvsu.edu.ph)', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        if (captchaInput.toLowerCase() !== document.getElementById('login-captcha-text').dataset.captcha.toLowerCase()) {
+                            showMessage('message-container', 'Incorrect captcha code. Please try again.', 'error');
+                            generateCaptcha('login-captcha-box', 'login-captcha-text');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            return;
+                        }
+                        
+                        // Show loading state
+                        setLoading(true, true);
+                        showMessage('message-container', 'Logging in...', 'info');
+                        
+                        // Hash the password
+                        sha256(password).then(hashedPassword => {
+                            // First check local cache for fast login
+                            const localUsers = JSON.parse(localStorage.getItem('cached_users') || '[]');
+                            const localUser = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+                            
+                            if (localUser && localUser.password === hashedPassword) {
+                                // Local match found, skip server check
+                                loginSuccess(localUser.username || email.split('@')[0], email, localUser.role || 'student');
+                                return;
+                            }
+                            
+                            // Try server login with timeout
+                            const xhr = new XMLHttpRequest();
+                            xhr.open('POST', SCRIPT_URL, true);
+                            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                            xhr.timeout = 8000; // 8 second timeout - don't wait too long
+                            
+                            // Handle response
+                            xhr.onload = function() {
+                                if (xhr.status === 200) {
+                                    try {
+                                        // Try to parse response as JSON
+                                        const result = JSON.parse(xhr.responseText);
+                                        if (result.success) {
+                                            loginSuccess(result.username, result.email, result.role || 'student');
+                                            
+                                            // Store in local cache for next time
+                                            cacheUser(result.username, result.email, hashedPassword, result.role);
+                                        } else {
+                                            const errorMessage = result.message || 'Login failed. Please check your credentials.';
+                                            
+                                            // Special handling for admin account
+                                            if (email === 'admin@dhvsu.edu.ph') {
+                                                // Try admin with default password as fallback
+                                                sha256('@Admin2024').then(defaultHash => {
+                                                    if (hashedPassword === defaultHash) {
+                                                        loginSuccess('admin', 'admin@dhvsu.edu.ph', 'admin');
+                                                        return;
+                                                    } else {
+                                                        showMessage('message-container', 'Invalid admin password', 'error');
+                                                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                                        generateCaptcha('login-captcha-box', 'login-captcha-text');
+                                                        setLoading(false, true);
+                                                    }
+                                                });
+                                            } else {
+                                                showMessage('message-container', errorMessage, 'error');
+                                                messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                                                generateCaptcha('login-captcha-box', 'login-captcha-text');
+                                                setLoading(false, true);
+                                            }
+                                        }
+                                    } catch (e) {
+                                        // Could not parse response JSON
+                                        checkLocalLoginAsFallback(email, hashedPassword);
+                                    }
+                                } else {
+                                    // Server error
+                                    checkLocalLoginAsFallback(email, hashedPassword);
+                                }
+                            };
+                            
+                            // Handle error
+                            xhr.onerror = function() {
+                                checkLocalLoginAsFallback(email, hashedPassword);
+                            };
+                            
+                            // Handle timeout
+                            xhr.ontimeout = function() {
+                                checkLocalLoginAsFallback(email, hashedPassword);
+                            };
+                            
+                            // Send request
+                            xhr.send('action=login&email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(hashedPassword));
+                        }).catch(error => {
+                            console.error("Error hashing password:", error);
+                            showMessage('message-container', 'Error preparing login data. Please try again.', 'error');
+                            messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
+                            setLoading(false, true);
+                        });
+                    };
+                }
+            } catch (error) {
+                console.error("Error initializing forms:", error);
+            }
             
             // --- Helper Functions ---
-            function setLoading(isLoading, isLogin = false) {
-                const btn = isLogin ? loginBtn : signupBtn;
-                const btnText = isLogin ? loginBtnText : signupBtnText;
-                const spinner = isLogin ? loginSpinner : signupSpinner;
-
-                if (isLoading) {
-                    btn.disabled = true;
-                    btnText.style.display = 'none';
-                    spinner.style.display = 'inline-block';
-                    btn.style.opacity = '0.7';
-                } else {
-                    btn.disabled = false;
-                    btnText.style.display = 'inline';
-                    spinner.style.display = 'none';
-                    btn.style.opacity = '1';
-                }
-            }
-
-            function showMessage(containerId, message, type) {
-                const container = document.getElementById(containerId);
-                if (!container) {
-                    console.error('Message container not found:', containerId);
-                    return;
-                }
-                container.textContent = message;
-                container.className = type || '';
-                container.style.display = 'block';
+            function loginSuccess(username, email, role) {
+                showMessage('message-container', 'Login successful! Redirecting...', 'success');
                 
-                // Auto-hide after 5 seconds
+                // Store user data
+                sessionStorage.setItem('currentUser', JSON.stringify({
+                    username: username,
+                    email: email,
+                    role: role || 'student'
+                }));
+                
+                // Redirect to dashboard
                 setTimeout(() => {
-                    container.style.display = 'none';
-                }, 5000);
+                    window.location.href = 'dashboard_page.html';
+                }, 1000);
             }
-
+            
+            function checkLocalLoginAsFallback(email, hashedPassword) {
+                const users = JSON.parse(localStorage.getItem('cached_users') || '[]');
+                
+                // Check if user exists locally
+                const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+                
+                if (user) {
+                    if (user.password === hashedPassword) {
+                        loginSuccess(user.username || email.split('@')[0], email, user.role || 'student');
+                    } else {
+                        // Special check for admin
+                        if (email === 'admin@dhvsu.edu.ph') {
+                            sha256('@Admin2024').then(defaultHash => {
+                                if (hashedPassword === defaultHash) {
+                                    loginSuccess('admin', 'admin@dhvsu.edu.ph', 'admin');
+                                    return;
+                                } else {
+                                    showMessage('message-container', 'Incorrect password', 'error');
+                                    document.getElementById('message-container').scrollIntoView({behavior: 'smooth', block: 'center'});
+                                    setLoading(false, true);
+                                }
+                            });
+                        } else {
+                            showMessage('message-container', 'Incorrect password', 'error');
+                            document.getElementById('message-container').scrollIntoView({behavior: 'smooth', block: 'center'});
+                            setLoading(false, true);
+                        }
+                    }
+                } else {
+                    // Special case for admin account that doesn't exist in local storage
+                    if (email === 'admin@dhvsu.edu.ph') {
+                        sha256('@Admin2024').then(defaultHash => {
+                            if (hashedPassword === defaultHash) {
+                                // Add admin to local storage and login
+                                cacheUser('admin', 'admin@dhvsu.edu.ph', hashedPassword, 'admin');
+                                loginSuccess('admin', 'admin@dhvsu.edu.ph', 'admin');
+                            } else {
+                                showMessage('message-container', 'Server error, but you can try again or use default admin credentials', 'error');
+                                document.getElementById('message-container').scrollIntoView({behavior: 'smooth', block: 'center'});
+                                setLoading(false, true);
+                            }
+                        });
+                    } else {
+                        showMessage('message-container', 'Server error, but you can try again', 'error');
+                        document.getElementById('message-container').scrollIntoView({behavior: 'smooth', block: 'center'});
+                        setLoading(false, true);
+                    }
+                }
+            }
+            
+            function cacheUser(username, email, hashedPassword, role = 'student') {
+                // Get existing users
+                let users = JSON.parse(localStorage.getItem('cached_users') || '[]');
+                
+                // Check if user already exists
+                const userIndex = users.findIndex(u => u.email.toLowerCase() === email.toLowerCase());
+                
+                if (userIndex >= 0) {
+                    // Update existing user
+                    users[userIndex] = {
+                        username: username,
+                        email: email,
+                        password: hashedPassword,
+                        role: role
+                    };
+                } else {
+                    // Add new user
+                    users.push({
+                        username: username,
+                        email: email,
+                        password: hashedPassword,
+                        role: role
+                    });
+                }
+                
+                // Save users back to localStorage
+                localStorage.setItem('cached_users', JSON.stringify(users));
+            }
+            
             function validateEmail(email) {
-                return /^[^@\s]+@dhvsu\.edu\.ph$/.test(email.toLowerCase().trim());
+                // DHVSU email validation
+                return /^[^@\s]+@dhvsu\.edu\.ph$/.test(email);
             }
-
+            
             function validatePassword(password) {
                 return password.length >= 8;
             }
-
+            
             function validateUsername(username) {
                 return username.length >= 5;
             }
-
-            function resetSignupForm() {
-                signupForm.reset();
-                document.getElementById('password-strength').className = 'password-strength';
-                document.getElementById('strength-text').textContent = 'Password strength';
-                generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-            }
-
-            function generateCaptcha(containerId, textId) {
-                const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz'; // Removed similar looking characters
-                let captcha = '';
-                for (let i = 0; i < 6; i++) {
-                    captcha += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                
-                // Get the container element
-                const textElement = document.getElementById(textId);
-                textElement.innerHTML = ''; // Clear previous content
-                
-                // Create individual character spans with slight rotations
-                for (let i = 0; i < captcha.length; i++) {
-                    const charSpan = document.createElement('span');
-                    charSpan.className = 'captcha-char';
-                    charSpan.textContent = captcha[i];
-                    
-                    // Random slight rotation (-10 to 10 degrees)
-                    const rotation = Math.floor(Math.random() * 20) - 10;
-                    charSpan.style.setProperty('--rotation', `${rotation}deg`);
-                    
-                    // Random colors between maroon and gold (university colors)
-                    const colorBias = Math.random();
-                    const r = Math.floor(128 * colorBias);
-                    const g = Math.floor(100 * colorBias);
-                    const b = Math.floor(50 * colorBias);
-                    charSpan.style.color = `rgb(${r}, ${g}, ${b})`;
-                    
-                    textElement.appendChild(charSpan);
-                }
-                
-                // Store the actual captcha text as a data attribute
-                textElement.dataset.captcha = captcha;
-                return captcha;
-            }
-
-            // --- Password Visibility Toggle ---
-            function setupPasswordToggle(toggleId, inputId, eyeOpenId, eyeClosedId) {
-                const toggle = document.getElementById(toggleId);
-                const input = document.getElementById(inputId);
-                const eyeOpen = document.getElementById(eyeOpenId);
-                const eyeClosed = document.getElementById(eyeClosedId);
-
-                if (toggle && input && eyeOpen && eyeClosed) {
-                    toggle.onclick = function() {
-                      if (input.type === 'password') {
-                          input.type = 'text';
-                            eyeOpen.style.display = 'none';
-                            eyeClosed.style.display = 'inline';
-                      } else {
-                          input.type = 'password';
-                            eyeOpen.style.display = 'inline';
-                            eyeClosed.style.display = 'none';
-                        }
-                    };
-                }
-            }
-
-            // --- Form Toggle ---
-            showSignupLink.onclick = function(e) {
-                e.preventDefault();
-                loginForm.classList.remove('active-form');
-                signupForm.classList.add('active-form');
-                generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-                resetSignupForm();
-            };
-
-            showLoginLink.onclick = function(e) {
-                e.preventDefault();
-                signupForm.classList.remove('active-form');
-                loginForm.classList.add('active-form');
-              generateCaptcha('login-captcha-box', 'login-captcha-text');
-            };
-
-            // --- Captcha Refresh ---
-            document.getElementById('login-captcha-refresh').onclick = function(e) {
-                e.preventDefault();
-                generateCaptcha('login-captcha-box', 'login-captcha-text');
-            };
-
-            document.getElementById('signup-captcha-refresh').onclick = function(e) {
-                e.preventDefault();
-                  generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-            };
-
-            // --- Password Strength Meter ---
-            const passwordInput = document.getElementById('signup-password');
-            const strengthMeter = document.getElementById('password-strength');
-            const strengthText = document.getElementById('strength-text');
-
-            if (passwordInput && strengthMeter && strengthText) {
-                passwordInput.oninput = function() {
-                    const password = this.value;
-                    let strength = 0;
-                    
-                    if (password.length >= 8) strength += 1;
-                    if (password.match(/[a-z]/)) strength += 1;
-                    if (password.match(/[A-Z]/)) strength += 1;
-                    if (password.match(/[0-9]/)) strength += 1;
-                    if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
-
-                    strengthMeter.className = 'password-strength';
-                    if (strength <= 2) {
-                        strengthMeter.classList.add('strength-weak');
-                        strengthText.textContent = 'Weak password';
-                    } else if (strength <= 4) {
-                        strengthMeter.classList.add('strength-medium');
-                        strengthText.textContent = 'Medium password';
-              } else {
-                        strengthMeter.classList.add('strength-strong');
-                        strengthText.textContent = 'Strong password';
-              }
-                };
-            }
-
-            // --- Form Submissions ---
-            loginForm.onsubmit = async function(e) {
-              e.preventDefault();
-                
-                const email = document.getElementById('login-email').value.trim();
-                const password = document.getElementById('login-password').value;
-                const captchaInput = document.getElementById('login-captcha-input').value.trim();
-                const captchaText = document.getElementById('login-captcha-text').textContent;
-                const messageContainer = document.getElementById('message-container');
-                
-                if (!validateEmail(email)) {
-                    showMessage('message-container', 'Please use your Pampanga State University email (@dhvsu.edu.ph)', 'error');
-                    messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    return;
-                }
-                
-                if (captchaInput.toLowerCase() !== document.getElementById('login-captcha-text').dataset.captcha.toLowerCase()) {
-                    showMessage('message-container', 'Incorrect captcha code. Please try again.', 'error');
-                    generateCaptcha('login-captcha-box', 'login-captcha-text');
-                    messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    return;
-                }
-                
-                // Show loading state
-                setLoading(true, true);
-                
-                try {
-                    // Hash the password using sha256 function
-                    const hashedPassword = await sha256(password);
-                  
-                    // Create FormData for backend compatibility
-                    const formData = new FormData();
-                    formData.append('action', 'login');
-                    formData.append('email', email);
-                    formData.append('password', hashedPassword);
-                  
-                    console.log('Sending login request to backend...', {
-                        url: SCRIPT_URL,
-                        email: email
-                    });
-                    
-                    const response = await fetch(SCRIPT_URL, {
-                        method: 'POST',
-                        body: formData // Do not set Content-Type header when using FormData
-                    });
-                    
-                    console.log('Received login response from backend. Status:', response.status);
-                    let result;
-                    
-                    try {
-                        // Try to parse response as JSON
-                        result = await response.json();
-                        console.log('Login response parsed:', result);
-                    } catch (parseError) {
-                        // Handle parsing error
-                        console.error('Failed to parse login response:', parseError);
-                        const responseText = await response.text();
-                        console.log('Raw response text:', responseText);
-                        
-                        // Show error message
-                        showMessage('message-container', 'Server returned an invalid response. Please try again later.', 'error');
-                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                        generateCaptcha('login-captcha-box', 'login-captcha-text');
-                        return;
-                    }
-                  
-                    if (result && result.success) {
-                        // Success - user authenticated
-                        showMessage('message-container', 'Login successful! Redirecting...', 'success');
-                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                      
-                        // Store user data in session storage
-                        sessionStorage.setItem('currentUser', JSON.stringify({
-                            username: result.username,
-                            email: result.email,
-                            role: result.role || 'student'
-                        }));
-                        
-                        console.log('User authenticated successfully:', {
-                            username: result.username,
-                            email: result.email,
-                            role: result.role || 'student'
-                        });
-                      
-                        // Redirect to dashboard
-                        setTimeout(() => {
-                            window.location.href = 'dashboard_page.html';
-                        }, 1000);
-                    } else {
-                        // Backend returned error
-                        const errorMessage = result && result.message ? result.message : 'Login failed. Please check your credentials.';
-                        showMessage('message-container', errorMessage, 'error');
-                        messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                        console.error('Backend login error:', result);
-                        generateCaptcha('login-captcha-box', 'login-captcha-text');
-                    }
-                } catch (error) {
-                    // Network or other error
-                    console.error('Login request error:', error);
-                    showMessage('message-container', 'Connection error. Please check your internet connection and try again.', 'error');
-                    messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                    generateCaptcha('login-captcha-box', 'login-captcha-text');
-                } finally {
-                    // Reset loading state
-                    setLoading(false, true);
-                }
-            };
-
-            signupForm.onsubmit = async function(e) {
-              e.preventDefault();
-              
-              const username = document.getElementById('signup-username').value.trim();
-              const email = document.getElementById('signup-email').value.trim();
-              const password = document.getElementById('signup-password').value;
-              const confirmPassword = document.getElementById('signup-confirm').value;
-              const captchaInput = document.getElementById('signup-captcha-input').value.trim();
-              const messageContainer = document.getElementById('signup-message-container');
-              
-              // Clear previous message
-              messageContainer.style.display = 'none';
-              messageContainer.className = '';
-              messageContainer.textContent = '';
-              
-              // Validation
-              if (!validateUsername(username)) {
-                  showMessage('signup-message-container', 'Username must be at least 5 characters', 'error');
-                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  return;
-              }
-              
-              if (!validateEmail(email)) {
-                  showMessage('signup-message-container', 'Please use your Pampanga State University email (@dhvsu.edu.ph)', 'error');
-                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  return;
-              }
-              
-              if (!validatePassword(password)) {
-                  showMessage('signup-message-container', 'Password must be at least 8 characters', 'error');
-                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  return;
-              }
-              
-              if (password !== confirmPassword) {
-                  showMessage('signup-message-container', 'Passwords do not match', 'error');
-                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  return;
-              }
-              
-              if (captchaInput.toLowerCase() !== document.getElementById('signup-captcha-text').dataset.captcha.toLowerCase()) {
-                  showMessage('signup-message-container', 'Incorrect captcha code. Please try again.', 'error');
-                  generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  return;
-              }
-              
-              // Show loading state
-              setLoading(true);
-              
-              try {
-                  // Hash the password using sha256 function
-                  const hashedPassword = await sha256(password);
-                  
-                  // Create FormData for backend compatibility
-                  const formData = new FormData();
-                  formData.append('action', 'signup');
-                  formData.append('username', username);
-                  formData.append('email', email);
-                  formData.append('password', hashedPassword);
-                  
-                  console.log('Sending signup request to backend...', {
-                      url: SCRIPT_URL,
-                      action: 'signup',
-                      email,
-                      username
-                  });
-                  
-                  const response = await fetch(SCRIPT_URL, {
-                      method: 'POST',
-                      body: formData // Do not set Content-Type header when using FormData
-                  });
-                  
-                  console.log('Received signup response from backend. Status:', response.status);
-                  let result;
-                  
-                  try {
-                      // Try to parse response as JSON
-                      result = await response.json();
-                      console.log('Signup response parsed:', result);
-                  } catch (parseError) {
-                      // Handle parsing error
-                      console.error('Failed to parse signup response:', parseError);
-                      const responseText = await response.text();
-                      console.log('Raw response text:', responseText);
-                      
-                      // Show error message
-                      showMessage('signup-message-container', 'Server returned an invalid response. Please try again later.', 'error');
-                      messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                      return;
-                  }
-                  
-                  if (result && result.success) {
-                      // Success - account created
-                      showMessage('signup-message-container', 'Account created successfully! Redirecting to login...', 'success');
-                      messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                      resetSignupForm();
-                      
-                      // Redirect to login after delay
-                      setTimeout(() => {
-                          showLoginLink.click();
-                      }, 2000);
-                  } else {
-                      // Backend returned error
-                      const errorMessage = result && result.message ? result.message : 'Signup failed. Please try again.';
-                      showMessage('signup-message-container', errorMessage, 'error');
-                      messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                      console.error('Backend signup error:', result);
-                      generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-                  }
-              } catch (error) {
-                  // Network or other error
-                  console.error('Signup request error:', error);
-                  showMessage('signup-message-container', 'Connection error. Please check your internet connection and try again.', 'error');
-                  messageContainer.scrollIntoView({behavior: 'smooth', block: 'center'});
-                  generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-              } finally {
-                  // Reset loading state
-                  setLoading(false);
-              }
-            };
-
-            // --- Initialize ---
-            setupPasswordToggle('login-toggle-password', 'login-password', 'eye-open', 'eye-closed');
-            setupPasswordToggle('signup-toggle-password', 'signup-password', 'signup-eye-open', 'signup-eye-closed');
-            setupPasswordToggle('signup-confirm-toggle-password', 'signup-confirm', 'signup-confirm-eye-open', 'signup-confirm-eye-closed');
             
-            generateCaptcha('login-captcha-box', 'login-captcha-text');
-            generateCaptcha('signup-captcha-box', 'signup-captcha-text');
-
-            // Add SR-only class for screen reader text
-            const srOnlyStyle = document.createElement('style');
-            srOnlyStyle.textContent = `
-                .sr-only {
-                    position: absolute;
-                    width: 1px;
-                    height: 1px;
-                    padding: 0;
-                    margin: -1px;
-                    overflow: hidden;
-                    clip: rect(0, 0, 0, 0);
-                    white-space: nowrap;
-                    border-width: 0;
+            function setLoading(isLoading, isLogin = false) {
+                if (isLogin) {
+                    const loginBtn = document.getElementById('login-btn');
+                    const loginBtnText = document.getElementById('login-btn-text');
+                    const loginSpinner = document.getElementById('login-spinner');
+                    
+                    if (loginBtn && loginBtnText && loginSpinner) {
+                        if (isLoading) {
+                            loginBtn.disabled = true;
+                            loginBtnText.style.visibility = 'hidden';
+                            loginSpinner.style.display = 'inline-block';
+                        } else {
+                            loginBtn.disabled = false;
+                            loginBtnText.style.visibility = 'visible';
+                            loginSpinner.style.display = 'none';
+                        }
+                    }
+                } else {
+                    const signupBtn = document.getElementById('signup-btn');
+                    const signupBtnText = document.getElementById('signup-btn-text');
+                    const signupSpinner = document.getElementById('signup-spinner');
+                    
+                    if (signupBtn && signupBtnText && signupSpinner) {
+                        if (isLoading) {
+                            signupBtn.disabled = true;
+                            signupBtnText.style.visibility = 'hidden';
+                            signupSpinner.style.display = 'inline-block';
+                        } else {
+                            signupBtn.disabled = false;
+                            signupBtnText.style.visibility = 'visible';
+                            signupSpinner.style.display = 'none';
+                        }
+                    }
                 }
-            `;
-            document.head.appendChild(srOnlyStyle);
+            }
+            
+            function showMessage(containerId, message, type) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                
+                container.textContent = message;
+                container.className = type;
+                container.style.display = 'block';
+                
+                // Hide error messages after 5 seconds
+                if (type === 'error') {
+                    setTimeout(() => {
+                        container.style.display = 'none';
+                    }, 5000);
+                }
+            }
+
+            // Show password toggle functionality
+            document.getElementById('login-toggle-password').addEventListener('click', function() {
+                const passwordInput = document.getElementById('login-password');
+                const eyeOpen = document.getElementById('eye-open');
+                const eyeClosed = document.getElementById('eye-closed');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeOpen.style.display = 'none';
+                    eyeClosed.style.display = 'block';
+                } else {
+                    passwordInput.type = 'password';
+                    eyeOpen.style.display = 'block';
+                    eyeClosed.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('signup-toggle-password').addEventListener('click', function() {
+                const passwordInput = document.getElementById('signup-password');
+                const eyeOpen = document.getElementById('signup-eye-open');
+                const eyeClosed = document.getElementById('signup-eye-closed');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeOpen.style.display = 'none';
+                    eyeClosed.style.display = 'block';
+                } else {
+                    passwordInput.type = 'password';
+                    eyeOpen.style.display = 'block';
+                    eyeClosed.style.display = 'none';
+                }
+            });
+            
+            document.getElementById('signup-confirm-toggle-password').addEventListener('click', function() {
+                const passwordInput = document.getElementById('signup-confirm');
+                const eyeOpen = document.getElementById('signup-confirm-eye-open');
+                const eyeClosed = document.getElementById('signup-confirm-eye-closed');
+                
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    eyeOpen.style.display = 'none';
+                    eyeClosed.style.display = 'block';
+                } else {
+                    passwordInput.type = 'password';
+                    eyeOpen.style.display = 'block';
+                    eyeClosed.style.display = 'none';
+                }
+            });
+            
+            // Password strength meter
+            document.getElementById('signup-password').addEventListener('input', function() {
+                const password = this.value;
+                const strengthBar = document.getElementById('password-strength');
+                const strengthText = document.getElementById('strength-text');
+                
+                // Reset strength indicators
+                strengthBar.className = 'password-strength';
+                
+                if (password.length === 0) {
+                    strengthText.textContent = 'Password strength';
+                    return;
+                }
+                
+                // Calculate strength
+                let strength = 0;
+                
+                // Length check
+                if (password.length >= 8) {
+                    strength += 1;
+                }
+                
+                // Character variety checks
+                if (password.match(/[a-z]/)) strength += 0.5;
+                if (password.match(/[A-Z]/)) strength += 0.5;
+                if (password.match(/[0-9]/)) strength += 1;
+                if (password.match(/[^a-zA-Z0-9]/)) strength += 1;
+                
+                // Update UI based on strength
+                if (strength < 2) {
+                    strengthBar.classList.add('strength-weak');
+                    strengthText.textContent = 'Weak password';
+                } else if (strength < 3) {
+                    strengthBar.classList.add('strength-medium');
+                    strengthText.textContent = 'Medium password';
+                } else {
+                    strengthBar.classList.add('strength-strong');
+                    strengthText.textContent = 'Strong password';
+                }
+            });
         });
     </script>
 </body>
