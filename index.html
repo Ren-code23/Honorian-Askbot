@@ -128,8 +128,16 @@
             align-items: center;
         }
         
+        /* Replace emoji with image */
         .tagline::before {
-            content: '🤖';
+            content: '';
+            background-image: url('askbot_logo.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
             margin-right: 0.5rem;
         }
         
