@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Honorian AskBot - Pampanga State University</title>
-    <link rel="icon" href="Don_Honorio_Ventura_State_University_logo.png" type="image/png">
+    <link rel="icon" href="askbot_logo.png" type="image/png">
     <style>
         :root {
             --dhvsu-maroon: #800000;
@@ -83,6 +83,13 @@
             padding: 2px;
             border: 2px solid var(--dhvsu-gold);
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        
+        .bot-logo {
+            width: 50px;
+            height: 50px;
+            margin-left: 10px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
         }
         
         .title-container {
@@ -1056,6 +1063,8 @@
             <div class="logo-container">
                 <!-- University logo -->
                 <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Pampanga State University Logo" class="logo">
+                <!-- Bot logo -->
+                <img src="askbot_logo.png" alt="Honorian AskBot Logo" class="bot-logo" id="bot-logo">
                 <div class="title-container">
                     <div class="university-name">Pampanga State University</div>
                     <div class="tagline">Honorian AskBot</div>
@@ -1067,7 +1076,7 @@
         <div class="login-container" role="main">
             <form id="login-form" class="active-form" autocomplete="on" aria-label="Login form">
                 <div class="login-header">
-                    <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Pampanga State University Logo" class="login-logo" id="login-logo">
+                    <img src="askbot_logo.png" alt="Honorian AskBot Logo" class="login-logo" id="login-logo">
                     <div class="welcome-title" style="font-size:1.25rem; color:#800000; font-weight:700; margin-bottom:0.7em; text-align:center; letter-spacing:0.5px;">
                         Welcome to Honorian AskBot!
                     </div>
