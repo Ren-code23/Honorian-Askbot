@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AskBot Logo Generator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+            font-family: Arial, sans-serif;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .logo-container {
+            width: 400px;
+            height: 400px;
+            background-color: white;
+            border-radius: 200px;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .logo {
+            width: 300px;
+            height: 300px;
+            position: relative;
+        }
+        
+        /* Robot Head */
+        .head {
+            width: 100px;
+            height: 100px;
+            background-color: #800000;
+            border-radius: 50%;
+            position: absolute;
+            top: 40px;
+            left: 100px;
+            border: 8px solid #5e0000;
+        }
+        
+        /* Robot Body */
+        .body {
+            width: 150px;
+            height: 120px;
+            background-color: #800000;
+            border-radius: 20px;
+            position: absolute;
+            top: 130px;
+            left: 75px;
+            border: 8px solid #5e0000;
+        }
+        
+        /* Robot Antenna */
+        .antenna {
+            width: 20px;
+            height: 40px;
+            background-color: #800000;
+            position: absolute;
+            top: 0;
+            left: 140px;
+            border-radius: 5px;
+            border: 4px solid #5e0000;
+        }
+        
+        .antenna-top {
+            width: 30px;
+            height: 30px;
+            background-color: #800000;
+            border-radius: 50%;
+            position: absolute;
+            top: -15px;
+            left: 135px;
+            border: 4px solid #5e0000;
+        }
+        
+        /* Robot Ears */
+        .ear-left {
+            width: 25px;
+            height: 50px;
+            background-color: #800000;
+            border-radius: 10px;
+            position: absolute;
+            top: 65px;
+            left: 35px;
+            border: 6px solid #5e0000;
+        }
+        
+        .ear-right {
+            width: 25px;
+            height: 50px;
+            background-color: #800000;
+            border-radius: 10px;
+            position: absolute;
+            top: 65px;
+            left: 240px;
+            border: 6px solid #5e0000;
+        }
+        
+        /* Robot Eyes */
+        .eye-left {
+            width: 30px;
+            height: 30px;
+            background-color: #FFD700;
+            border-radius: 50%;
+            position: absolute;
+            top: 70px;
+            left: 85px;
+            border: 3px solid #5e0000;
+        }
+        
+        .eye-right {
+            width: 30px;
+            height: 30px;
+            background-color: #FFD700;
+            border-radius: 50%;
+            position: absolute;
+            top: 70px;
+            left: 185px;
+            border: 3px solid #5e0000;
+        }
+        
+        /* Robot Mouth/Speaker */
+        .mouth {
+            width: 40px;
+            height: 20px;
+            background-color: #FFD700;
+            border-radius: 5px;
+            position: absolute;
+            top: 170px;
+            left: 130px;
+            border: 3px solid #5e0000;
+        }
+        
+        /* H Letter */
+        .h-letter {
+            position: absolute;
+            top: 175px;
+            left: 130px;
+            font-size: 60px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 2px 2px 0 #5e0000;
+        }
+        
+        .instructions {
+            max-width: 600px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #800000;
+            margin-bottom: 10px;
+        }
+        
+        p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background-color: #800000;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background-color: #5e0000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-container">
+            <div class="logo">
+                <div class="head"></div>
+                <div class="body"></div>
+                <div class="antenna"></div>
+                <div class="antenna-top"></div>
+                <div class="ear-left"></div>
+                <div class="ear-right"></div>
+                <div class="eye-left"></div>
+                <div class="eye-right"></div>
+                <div class="mouth"></div>
+                <div class="h-letter">H</div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h1>Honorian AskBot Logo Generator</h1>
+            <p>This page displays the AskBot logo for Pampanga State University's Honorian AskBot. To save the logo:</p>
+            <ol>
+                <li>Take a screenshot of the logo above</li>
+                <li>Crop it to include only the circular logo</li>
+                <li>Save it as "askbot_logo.png" in your project directory</li>
+            </ol>
+            <p>Alternatively, you can right-click the logo and select "Save Image As" in some browsers.</p>
+            <button id="download-btn">Download Logo</button>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('download-btn').addEventListener('click', function() {
+            // Create a canvas element
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            
+            // Set white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 400, 400);
+            
+            // Convert the logo to an image
+            const logoContainer = document.querySelector('.logo-container');
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            // Create a temporary link to download the image
+            const link = document.createElement('a');
+            link.download = 'askbot_logo.png';
+            link.href = dataUrl;
+            link.click();
+        });
+    </script>
+</body>
+</html> 

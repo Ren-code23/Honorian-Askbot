@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Honorian AskBot - DHVSU's AI Assistant</title>
+    <title>Honorian AskBot - Pampanga State University</title>
     <link rel="icon" href="Don_Honorio_Ventura_State_University_logo.png" type="image/png">
     <style>
         :root {
@@ -81,11 +81,18 @@
             filter: drop-shadow(0 2px 8px rgba(0,0,0,0.13));
             border-radius: 50%;
             background: #fff;
-            padding: 8px;
+            padding: 4px;
             opacity: 0;
             transform: scale(0.95);
             animation: logoFadeIn 1.2s ease 0.2s forwards;
             border: 2px solid rgba(255, 215, 0, 0.2);
+        }
+        
+        .askbot-logo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 50%;
         }
         
         @keyframes logoFadeIn {
@@ -138,35 +145,11 @@
             border: 1px solid rgba(255, 215, 0, 0.2);
         }
         
-        .tagline::before {
-            content: '🤖';
-            margin-right: 0.5rem;
-            font-style: normal;
-        }
-        
-        .profile-link {
-            color: white;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background-color: rgba(255, 255, 255, 0.1);
-            transition: background-color 0.3s;
-        }
-        
-        .profile-link:hover {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .navbar-avatar {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #fff;
-            background: #fff;
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            width: 100%;
         }
         
         main {
@@ -192,11 +175,25 @@
             flex-direction: column;
             gap: 0.5rem;
             transition: box-shadow 0.3s, transform 0.3s;
+            position: relative;
         }
         
         .login-container:hover, .login-container:focus-within {
             box-shadow: 0 12px 36px rgba(128,0,0,0.18), 0 2px 12px rgba(128,0,0,0.10);
             transform: translateY(-2px) scale(1.01);
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 30px;
+            background: var(--dhvsu-maroon);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            z-index: -1;
         }
         
         @keyframes fadeIn {
@@ -207,6 +204,19 @@
         .login-header {
             text-align: center;
             margin-bottom: 2.2rem;
+            position: relative;
+        }
+
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 15px auto;
+            display: block;
+            border-radius: 50%;
+            border: 3px solid var(--dhvsu-gold);
+            padding: 5px;
+            background: #fff;
+            box-shadow: 0 4px 10px rgba(128,0,0,0.15);
         }
         
         .login-header h2 {
@@ -1063,8 +1073,10 @@
     <header>
         <div class="header-content">
             <div class="logo-container">
-                <!-- Logo for Pampanga State University -->
-                <img src="Don_Honorio_Ventura_State_University_logo.png" alt="Pampanga State University Logo" class="logo">
+                <!-- New AskBot logo -->
+                <div class="logo">
+                    <img src="default_profile.png" alt="Honorian AskBot Logo" class="askbot-logo" id="askbot-logo">
+                </div>
                 <div class="title-container">
                     <div class="university-name">Pampanga State University</div>
                     <div class="tagline">Honorian AskBot</div>
@@ -1076,6 +1088,7 @@
         <div class="login-container" role="main">
             <form id="login-form" class="active-form" autocomplete="on" aria-label="Login form">
                 <div class="login-header">
+                    <img src="default_profile.png" alt="AskBot Logo" class="login-logo" id="login-logo">
                     <div class="welcome-title" style="font-size:1.25rem; color:#800000; font-weight:700; margin-bottom:0.7em; text-align:center; letter-spacing:0.5px;">
                         Welcome to Honorian AskBot!
                     </div>
@@ -1957,6 +1970,37 @@
                     strengthText.textContent = 'Strong password';
                 }
             });
+        });
+
+        // Add code to update the logo once available
+        document.addEventListener('DOMContentLoaded', function() {
+            // Base64 encoded SVG logo data
+            const ASKBOT_LOGO_DATA_URL = `data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCI+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIxMDAiIGZpbGw9IndoaXRlIi8+CiAgCiAgPCEtLSBSb2JvdCBIZWFkIC0tPgogIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjcwIiByPSIyNSIgZmlsbD0iIzgwMDAwMCIgc3Ryb2tlPSIjNWUwMDAwIiBzdHJva2Utd2lkdGg9IjQiLz4KICAKICA8IS0tIFJvYm90IEJvZHkgLS0+CiAgPHJlY3QgeD0iNjIuNSIgeT0iOTAiIHdpZHRoPSI3NSIgaGVpZ2h0PSI2MCIgcng9IjEwIiByeT0iMTAiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSI0Ii8+CiAgCiAgPCEtLSBSb2JvdCBBbnRlbm5hIC0tPgogIDxyZWN0IHg9Ijk1IiB5PSI0MCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjIwIiByeD0iMiIgcnk9IjIiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgPGNpcmNsZSBjeD0iMTAwIiBjeT0iMzUiIHI9IjciIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+CiAgCiAgPCEtLSBSb2JvdCBFYXJzIC0tPgogIDxyZWN0IHg9IjQ1IiB5PSI2NSIgd2lkdGg9IjEyIiBoZWlnaHQ9IjI1IiByeD0iNSIgcnk9IjUiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgPHJlY3QgeD0iMTQzIiB5PSI2NSIgd2lkdGg9IjEyIiBoZWlnaHQ9IjI1IiByeD0iNSIgcnk9IjUiIGZpbGw9IiM4MDAwMDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIzIi8+CiAgCiAgPCEtLSBSb2JvdCBFeWVzIC0tPgogIDxjaXJjbGUgY3g9Ijg1IiBjeT0iNzAiIHI9IjgiIGZpbGw9IiNGRkQ3MDAiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIxLjUiLz4KICA8Y2lyY2xlIGN4PSIxMTUiIGN5PSI3MCIgcj0iOCIgZmlsbD0iI0ZGRDcwMCIgc3Ryb2tlPSIjNWUwMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIAogIDwhLS0gUm9ib3QgTW91dGgvU3BlYWtlciAtLT4KICA8cmVjdCB4PSI5MCIgeT0iMTEwIiB3aWR0aD0iMjAiIGhlaWdodD0iMTAiIHJ4PSIyIiByeT0iMiIgZmlsbD0iI0ZGRDcwMCIgc3Ryb2tlPSIjNWUwMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPgogIAogIDwhLS0gSCBMZXR0ZXIgLS0+CiAgPHRleHQgeD0iMTAwIiB5PSIxMjUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIzMCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiNGRkQ3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIHN0cm9rZT0iIzVlMDAwMCIgc3Ryb2tlLXdpZHRoPSIxIj5IPC90ZXh0Pgo8L3N2Zz4=`;
+    
+            // Set the logo in all relevant places
+            const askbotLogo = document.getElementById('askbot-logo');
+            const loginLogo = document.getElementById('login-logo');
+            
+            if (askbotLogo) {
+                askbotLogo.src = ASKBOT_LOGO_DATA_URL;
+            }
+            
+            if (loginLogo) {
+                loginLogo.src = ASKBOT_LOGO_DATA_URL;
+            }
+            
+            // Remove the emoji from tagline
+            const tagline = document.querySelector('.tagline');
+            if (tagline) {
+                tagline.innerHTML = 'Honorian AskBot';
+            }
+            
+            // Generate a favicon dynamically
+            const faviconLink = document.createElement('link');
+            faviconLink.rel = 'icon';
+            faviconLink.type = 'image/svg+xml';
+            faviconLink.href = ASKBOT_LOGO_DATA_URL;
+            document.head.appendChild(faviconLink);
         });
     </script>
 </body>
